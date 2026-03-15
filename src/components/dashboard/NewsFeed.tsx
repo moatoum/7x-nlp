@@ -41,7 +41,7 @@ export function NewsFeed() {
     if (!el || news.length === 0) return;
 
     let animationId: number;
-    let speed = 0.5; // px per frame
+    const speed = 0.5; // px per frame
 
     const step = () => {
       if (!paused && el) {

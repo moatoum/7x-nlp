@@ -21,9 +21,6 @@ export function ConversationPanel() {
     }
   }, [started, startConversation]);
 
-  // Always show text input unless submitted or not started
-  const showTextInput = currentNodeId !== 'submitted' && !inputDisabled && started;
-
   return (
     <div className="flex flex-col h-full bg-white">
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 lg:px-12 xl:px-16">
