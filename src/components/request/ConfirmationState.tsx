@@ -14,8 +14,7 @@ export function ConfirmationState() {
   const handleNewRequest = () => {
     resetConv();
     resetReq();
-    // Re-trigger welcome
-    window.location.reload();
+    // Re-trigger welcome — the ConversationPanel's useEffect detects started=false and auto-starts
   };
 
   return (

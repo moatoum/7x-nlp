@@ -23,7 +23,7 @@ export function ConversationPanel() {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 lg:px-12 xl:px-16">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 lg:px-12 xl:px-16" role="log" aria-live="polite" aria-label="Conversation">
         <div className="max-w-[640px] mx-auto py-8 lg:py-12">
           {messages.map((msg, i) => {
             const isLatest = i === messages.length - 1 && !isTyping;

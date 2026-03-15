@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 export function TypingIndicator() {
   return (
-    <div className="flex items-center gap-3 py-4">
+    <div className="flex items-center gap-3 py-4" role="status" aria-label="7X Assistant is typing">
       <div className="w-7 h-7 rounded-lg bg-black flex items-center justify-center flex-shrink-0">
         <span className="text-white text-[10px] font-bold tracking-tight">7X</span>
       </div>

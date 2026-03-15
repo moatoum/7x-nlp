@@ -52,6 +52,52 @@ function persistSubmission(refNumber: string) {
   });
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Validate required fields and submit, or redirect to missing field
+async function handleSubmission(): Promise<boolean> {
+  const rs = useRequestStore.getState();
+  const cs = useConversationStore.getState();
+
+  const missingFields: string[] = [];
+  if (!rs.contactName) missingFields.push('name');
+  if (!rs.contactEmail) missingFields.push('email');
+  if (!rs.companyName) missingFields.push('company name');
+
+  if (missingFields.length > 0) {
+    cs.setTyping(false);
+    cs.addBotMessage(
+      `Before I can submit, I still need your ${missingFields.join(', ')}. Could you provide that?`
+    );
+    const firstMissing = !rs.contactName ? 'contact_name' : !rs.contactEmail ? 'contact_email' : 'contact_company';
+    cs.transitionTo(firstMissing);
+    cs.setInputDisabled(false);
+    return false;
+  }
+
+  if (rs.contactEmail && !EMAIL_REGEX.test(rs.contactEmail)) {
+    cs.setTyping(false);
+    cs.addBotMessage(
+      `The email "${rs.contactEmail}" doesn't look valid. Could you provide a valid email?`
+    );
+    cs.transitionTo('contact_email');
+    cs.setInputDisabled(false);
+    return false;
+  }
+
+  const refNumber = generateRefNumber();
+  rs.setReferenceNumber(refNumber);
+  rs.setStage('submitted');
+  cs.setTyping(false);
+  cs.addBotMessage(
+    `Your request has been submitted successfully.\n\nReference: ${refNumber}\n\nOur logistics specialists will reach out within 2 business hours. Thank you for choosing 7X.`
+  );
+  cs.transitionTo('submitted');
+  cs.setInputDisabled(true);
+  persistSubmission(refNumber);
+  return true;
+}
+
 // Determine a reasonable node ID based on what fields are filled
 function inferNodeFromFields(fields: Partial<RequestFields>): string {
   if (fields.contactName && fields.contactEmail && fields.companyName) return 'review';
@@ -68,7 +114,7 @@ function inferNodeFromFields(fields: Partial<RequestFields>): string {
 }
 
 // ============================================================
-// TYPEWRITER EFFECT — streams text word-by-word
+// TYPEWRITER EFFECT — streams text in small batches for performance
 // ============================================================
 async function typewriterStream(
   messageId: string,
@@ -76,13 +122,16 @@ async function typewriterStream(
   speed: number = 30
 ): Promise<void> {
   const words = text.split(/(\s+)/); // preserve whitespace
-  for (const word of words) {
-    useConversationStore.getState().appendToStreamingMessage(messageId, word);
-    // Vary speed slightly for natural feel
-    const jitter = speed * (0.5 + Math.random());
+  const BATCH_SIZE = 3; // Process 3 tokens at a time to reduce re-renders
+  for (let i = 0; i < words.length; i += BATCH_SIZE) {
+    const batch = words.slice(i, i + BATCH_SIZE).join('');
+    useConversationStore.getState().appendToStreamingMessage(messageId, batch);
+    const jitter = speed * (0.5 + Math.random()) * BATCH_SIZE;
     await delay(jitter);
   }
 }
+
+const MAX_CHAT_HISTORY = 30; // Bound messages sent to AI
 
 export function useConversation() {
   const startConversation = useCallback(async () => {
@@ -132,18 +181,7 @@ export function useConversation() {
     await delay(randomDelay());
 
     if (nextNodeId === 'submitted') {
-      const refNumber = generateRefNumber();
-      const rs = useRequestStore.getState();
-      rs.setReferenceNumber(refNumber);
-      rs.setStage('submitted');
-      const cs = useConversationStore.getState();
-      cs.setTyping(false);
-      cs.addBotMessage(
-        `Your request has been submitted successfully.\n\nReference: ${refNumber}\n\nOur logistics specialists will reach out within 2 business hours. Thank you for choosing 7X.`
-      );
-      cs.transitionTo('submitted');
-      cs.setInputDisabled(true);
-      persistSubmission(refNumber);
+      await handleSubmission();
       return;
     }
 
@@ -249,10 +287,11 @@ export function useConversation() {
       companyName: reqStore.companyName,
     };
 
-    // Build conversation history for AI
+    // Build conversation history for AI (bounded to last N messages)
     const allMessages = useConversationStore.getState().messages;
     const chatHistory = allMessages
       .filter((m) => m.content.trim() !== '')
+      .slice(-MAX_CHAT_HISTORY)
       .map((m) => ({
         role: (m.role === 'bot' ? 'assistant' : 'user') as 'user' | 'assistant',
         content: m.content,
@@ -269,10 +308,23 @@ export function useConversation() {
       });
 
       if (!response.ok) {
+        // Show specific message for rate limits
+        if (response.status === 429) {
+          const cs = useConversationStore.getState();
+          cs.setTyping(false);
+          cs.addBotMessage("I'm receiving a lot of requests right now. Please wait a moment and try again.");
+          cs.setInputDisabled(false);
+          return;
+        }
         throw new Error(`API error: ${response.status}`);
       }
 
       const aiResponse: AIResponse = await response.json();
+
+      // Guard against empty AI message
+      if (!aiResponse.message || aiResponse.message.trim() === '') {
+        aiResponse.message = "Could you tell me more about what you're looking for?";
+      }
 
       // Apply extracted fields to the request store (triggers highlight)
       if (aiResponse.extractedFields) {
@@ -351,85 +403,83 @@ export function useConversation() {
       // Fallback to rule-based engine
       await handleTextFallback(text);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Rule-based fallback when AI is unavailable
   const handleTextFallback = useCallback(async (text: string) => {
-    const convStore = useConversationStore.getState();
-    const reqStore = useRequestStore.getState();
-    const currentNode = getNode(convStore.currentNodeId);
+    try {
+      const convStore = useConversationStore.getState();
+      const reqStore = useRequestStore.getState();
+      const currentNode = getNode(convStore.currentNodeId);
 
-    const { nextNodeId, fieldUpdate } = processUserInput(text, currentNode, reqStore as RequestFields);
+      const { nextNodeId, fieldUpdate } = processUserInput(text, currentNode, reqStore as RequestFields);
 
-    if (fieldUpdate) {
-      for (const [field, value] of Object.entries(fieldUpdate)) {
-        useRequestStore.getState().updateField(field as keyof RequestFields, value as string | string[] | null);
+      if (fieldUpdate) {
+        for (const [field, value] of Object.entries(fieldUpdate)) {
+          useRequestStore.getState().updateField(field as keyof RequestFields, value as string | string[] | null);
+        }
       }
-    }
 
-    if (nextNodeId === 'submitted') {
-      const refNumber = generateRefNumber();
-      const rs = useRequestStore.getState();
-      rs.setReferenceNumber(refNumber);
-      rs.setStage('submitted');
-      const cs = useConversationStore.getState();
-      cs.setTyping(false);
-      cs.addBotMessage(
-        `Your request has been submitted successfully.\n\nReference: ${refNumber}\n\nOur logistics specialists will reach out within 2 business hours. Thank you for choosing 7X.`
-      );
-      cs.transitionTo('submitted');
-      cs.setInputDisabled(true);
-      persistSubmission(refNumber);
-      return;
-    }
+      if (nextNodeId === 'submitted') {
+        await handleSubmission();
+        return;
+      }
 
-    const nextNode = getNode(nextNodeId);
+      const nextNode = getNode(nextNodeId);
 
-    if (nextNode.type === 'recommendation') {
-      const rs = useRequestStore.getState();
-      const matches = matchServices(rs as RequestFields);
-      rs.setRecommendedServices(matches);
-      rs.setStage('matched');
+      if (nextNode.type === 'recommendation') {
+        const rs = useRequestStore.getState();
+        const matches = matchServices(rs as RequestFields);
+        rs.setRecommendedServices(matches);
+        rs.setStage('matched');
 
-      const recMsg = typeof nextNode.message === 'function'
-        ? nextNode.message(rs as RequestFields)
+        const recMsg = typeof nextNode.message === 'function'
+          ? nextNode.message(rs as RequestFields)
+          : nextNode.message;
+
+        const cs = useConversationStore.getState();
+        cs.setTyping(false);
+        cs.addBotMessageWithCards(recMsg, matches);
+        cs.transitionTo(nextNodeId);
+
+        await delay(800);
+        useConversationStore.getState().setTyping(true);
+        await delay(randomDelay());
+
+        const responseNode = getNode('recommendation_response');
+        const responseMsg = typeof responseNode.message === 'function'
+          ? responseNode.message(useRequestStore.getState() as RequestFields)
+          : responseNode.message;
+
+        const cs2 = useConversationStore.getState();
+        cs2.setTyping(false);
+        cs2.addBotMessage(responseMsg, responseNode.chips);
+        cs2.transitionTo('recommendation_response');
+        cs2.setInputDisabled(false);
+        return;
+      }
+
+      if (nextNodeId === 'review') {
+        useRequestStore.getState().setStage('review');
+      }
+
+      const msg = typeof nextNode.message === 'function'
+        ? nextNode.message(useRequestStore.getState() as RequestFields)
         : nextNode.message;
 
       const cs = useConversationStore.getState();
       cs.setTyping(false);
-      cs.addBotMessageWithCards(recMsg, matches);
+      cs.addBotMessage(msg, nextNode.chips, nextNode.multiSelect);
       cs.transitionTo(nextNodeId);
-
-      await delay(800);
-      useConversationStore.getState().setTyping(true);
-      await delay(randomDelay());
-
-      const responseNode = getNode('recommendation_response');
-      const responseMsg = typeof responseNode.message === 'function'
-        ? responseNode.message(useRequestStore.getState() as RequestFields)
-        : responseNode.message;
-
-      const cs2 = useConversationStore.getState();
-      cs2.setTyping(false);
-      cs2.addBotMessage(responseMsg, responseNode.chips);
-      cs2.transitionTo('recommendation_response');
-      cs2.setInputDisabled(false);
-      return;
+      cs.setInputDisabled(false);
+    } catch (error) {
+      console.error('Fallback engine error:', error);
+      const cs = useConversationStore.getState();
+      cs.setTyping(false);
+      cs.addBotMessage("I'm sorry, something went wrong. Could you try rephrasing that?");
+      cs.setInputDisabled(false);
     }
-
-    if (nextNodeId === 'review') {
-      useRequestStore.getState().setStage('review');
-    }
-
-    const msg = typeof nextNode.message === 'function'
-      ? nextNode.message(useRequestStore.getState() as RequestFields)
-      : nextNode.message;
-
-    const cs = useConversationStore.getState();
-    cs.setTyping(false);
-    cs.addBotMessage(msg, nextNode.chips, nextNode.multiSelect);
-    cs.transitionTo(nextNodeId);
-    cs.setInputDisabled(false);
   }, []);
 
   const handleMultiSelect = useCallback(async (selectedLabels: string[]) => {

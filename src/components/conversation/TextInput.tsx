@@ -68,6 +68,7 @@ export function TextInput({ placeholder = 'Type your message...', onSubmit, disa
           placeholder={placeholder}
           disabled={disabled}
           rows={1}
+          maxLength={2000}
           dir={isArabic(value) ? 'rtl' : 'ltr'}
           className={cn(
             'w-full px-4 py-3 border border-gray-200 rounded-[14px] text-[15px] bg-white resize-none',
