@@ -145,8 +145,6 @@ function AlternatingLogo() {
         <div className="w-8 h-8 rounded-[10px] bg-black flex items-center justify-center">
           <Logo className="w-[20px] h-[12px]" color="white" />
         </div>
-        <span className="text-[14px] font-semibold text-gray-900 tracking-tight">7X</span>
-        <span className="hidden sm:inline text-[12px] text-gray-300 font-medium">Logistics</span>
       </div>
 
       {/* ADIO Logo */}

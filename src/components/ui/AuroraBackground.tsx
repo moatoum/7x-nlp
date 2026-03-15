@@ -17,7 +17,7 @@ export function AuroraBackground({
   return (
     <div
       className={cn(
-        'relative flex flex-col h-[100vh] items-center justify-center bg-white transition-bg',
+        'relative flex flex-col h-[100vh] bg-white transition-bg',
         className
       )}
       {...props}
@@ -35,13 +35,13 @@ export function AuroraBackground({
             after:[background-size:200%,_100%]
             after:animate-aurora after:[background-attachment:fixed] after:mix-blend-difference
             pointer-events-none
-            absolute -inset-[10px] opacity-30 will-change-transform`,
+            absolute -inset-[10px] opacity-50 will-change-transform`,
             showRadialGradient &&
               `[mask-image:radial-gradient(ellipse_at_100%_0%,black_10%,var(--transparent)_70%)]`
           )}
         />
       </div>
-      <div className="relative z-10 w-full">
+      <div className="relative z-10 w-full flex flex-col flex-1">
         {children}
       </div>
     </div>
