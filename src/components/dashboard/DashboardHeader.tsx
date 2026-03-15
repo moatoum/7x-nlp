@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { Cloud, Sun, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, Cloudy } from 'lucide-react';
+import Image from 'next/image';
+import { Cloud, Sun, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, Cloudy, ChevronDown } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 
 interface WeatherData {
@@ -65,6 +66,108 @@ function useWeather() {
   return weather;
 }
 
+function QuickLinks() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 text-[13px] font-medium text-gray-500 hover:text-gray-900 transition-colors"
+      >
+        Quick Links
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-2 w-52 bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-100/50 py-1.5 z-50">
+          <a
+            href="https://7x.ax"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2.5 text-[13px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          >
+            About 7X
+          </a>
+          <a
+            href="https://www.investinabudhabi.gov.ae"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2.5 text-[13px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          >
+            About ADIO
+          </a>
+          <div className="mx-3 my-1 h-px bg-gray-100" />
+          <Link
+            href="/services"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2.5 text-[13px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          >
+            Available Services
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AlternatingLogo() {
+  const [showAdio, setShowAdio] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShowAdio((v) => !v);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="relative h-8 w-[200px] flex items-center justify-center overflow-hidden">
+      {/* 7X Logo */}
+      <div
+        className={`flex items-center gap-2.5 transition-all duration-700 ease-in-out absolute ${
+          showAdio ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'
+        }`}
+      >
+        <div className="w-8 h-8 rounded-[10px] bg-black flex items-center justify-center">
+          <Logo className="w-[20px] h-[12px]" color="white" />
+        </div>
+        <span className="text-[14px] font-semibold text-gray-900 tracking-tight">7X</span>
+        <span className="hidden sm:inline text-[12px] text-gray-300 font-medium">Logistics</span>
+      </div>
+
+      {/* ADIO Logo */}
+      <div
+        className={`flex items-center transition-all duration-700 ease-in-out absolute ${
+          showAdio ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        }`}
+      >
+        <Image
+          src="/adio.png"
+          alt="Abu Dhabi Investment Office"
+          width={140}
+          height={32}
+          className="h-7 w-auto object-contain"
+          priority
+        />
+      </div>
+    </div>
+  );
+}
+
 export function DashboardHeader() {
   const time = useDubaiTime();
   const weather = useWeather();
@@ -78,17 +181,16 @@ export function DashboardHeader() {
 
   return (
     <header className="h-14 flex items-center justify-between px-5 md:px-8 shrink-0">
-      {/* Left — Logo + brand */}
-      <Link href="/" className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-[10px] bg-black flex items-center justify-center">
-          <Logo className="w-[20px] h-[12px]" color="white" />
-        </div>
-        <span className="text-[14px] font-semibold text-gray-900 tracking-tight">7X</span>
-        <span className="hidden sm:inline text-[12px] text-gray-300 font-medium">Logistics</span>
-      </Link>
+      {/* Left — Quick Links */}
+      <div className="w-[200px]">
+        <QuickLinks />
+      </div>
+
+      {/* Center — Alternating Logo */}
+      <AlternatingLogo />
 
       {/* Right — Date + Weather + Time */}
-      <div className="flex items-center gap-3 text-[12px] text-gray-400">
+      <div className="flex items-center justify-end gap-3 text-[12px] text-gray-400 w-[200px]">
         <span className="hidden md:inline">{date}</span>
 
         {weather && (
