@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { LayoutDashboard, FileText, ArrowLeft, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Logo } from '@/components/ui/Logo';
@@ -15,7 +15,6 @@ const NAV_ITEMS = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const sidebarCollapsed = useAdminUiStore((s) => s.sidebarCollapsed);
   const setSidebarCollapsed = useAdminUiStore((s) => s.setSidebarCollapsed);
   const logout = useAdminUiStore((s) => s.logout);
@@ -23,7 +22,7 @@ export function AdminSidebar() {
 
   const handleLogout = () => {
     logout();
-    router.replace('/admin/login');
+    window.location.href = '/admin/login';
   };
 
   return (

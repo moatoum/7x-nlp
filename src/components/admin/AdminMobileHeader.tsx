@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Menu, X, LayoutDashboard, FileText, ArrowLeft, LogOut } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAdminUiStore } from '@/store/adminUiStore';
@@ -18,12 +18,11 @@ export function AdminMobileHeader() {
   const setSidebarOpen = useAdminUiStore((s) => s.setSidebarOpen);
   const logout = useAdminUiStore((s) => s.logout);
   const pathname = usePathname();
-  const router = useRouter();
 
   const handleLogout = () => {
     setSidebarOpen(false);
     logout();
-    router.replace('/admin/login');
+    window.location.href = '/admin/login';
   };
 
   return (

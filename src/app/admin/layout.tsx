@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useSubmissionsStore } from '@/store/submissionsStore';
 import { useAdminUiStore } from '@/store/adminUiStore';
 import { generateSeedData } from '@/lib/seedData';
@@ -12,7 +12,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { initialized, initialize } = useSubmissionsStore();
   const isAuthenticated = useAdminUiStore((s) => s.isAuthenticated);
   const sidebarCollapsed = useAdminUiStore((s) => s.sidebarCollapsed);
-  const router = useRouter();
   const pathname = usePathname();
 
   const isLoginPage = pathname === '/admin/login';
@@ -26,18 +25,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Redirect to login if not authenticated (and not already on login page)
   useEffect(() => {
     if (!isAuthenticated && !isLoginPage) {
-      router.replace('/admin/login');
+      window.location.href = '/admin/login';
     }
-  }, [isAuthenticated, isLoginPage, router]);
+  }, [isAuthenticated, isLoginPage]);
 
   // If on login page, just render children (no sidebar)
   if (isLoginPage) {
     return <>{children}</>;
   }
 
-  // If not authenticated, show nothing while redirecting
+  // If not authenticated, show blank screen while redirecting
   if (!isAuthenticated) {
-    return null;
+    return <div className="h-screen bg-white" />;
   }
 
   return (
