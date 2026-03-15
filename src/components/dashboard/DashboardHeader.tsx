@@ -170,13 +170,6 @@ export function DashboardHeader() {
   const time = useDubaiTime();
   const weather = useWeather();
 
-  const date = new Date().toLocaleDateString('en-US', {
-    timeZone: 'Asia/Dubai',
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-  });
-
   return (
     <header className="h-14 flex items-center justify-between px-5 md:px-8 shrink-0">
       {/* Left — Quick Links */}
@@ -187,18 +180,13 @@ export function DashboardHeader() {
       {/* Center — Alternating Logo */}
       <AlternatingLogo />
 
-      {/* Right — Date + Weather + Time */}
+      {/* Right — Weather + Time */}
       <div className="flex items-center justify-end gap-3 text-[12px] text-gray-400 w-[200px]">
-        <span className="hidden md:inline">{date}</span>
-
         {weather && (
-          <>
-            <span className="hidden md:inline w-px h-3 bg-gray-200" />
-            <div className="flex items-center gap-1.5">
-              {getWeatherIcon(weather.code)}
-              <span className="font-medium">{weather.temp}&#176;C</span>
-            </div>
-          </>
+          <div className="flex items-center gap-1.5">
+            {getWeatherIcon(weather.code)}
+            <span className="font-medium">{weather.temp}&#176;C</span>
+          </div>
         )}
 
         {time && (
@@ -207,8 +195,6 @@ export function DashboardHeader() {
             <span className="font-mono text-gray-500 font-medium tabular-nums">{time}</span>
           </>
         )}
-
-        <span className="text-[11px] text-gray-300 hidden sm:inline">Dubai</span>
       </div>
     </header>
   );

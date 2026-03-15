@@ -17,7 +17,7 @@ export function AuroraBackground({
   return (
     <div
       className={cn(
-        'relative flex flex-col h-[100vh] bg-white transition-bg',
+        'relative flex flex-col min-h-screen bg-white transition-bg',
         className
       )}
       {...props}

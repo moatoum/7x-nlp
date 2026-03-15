@@ -65,11 +65,11 @@ export function NewsFeed() {
         <div className="h-3 w-28 bg-gray-200 rounded animate-pulse mb-5" />
         <div className="flex gap-4 overflow-hidden">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="w-[280px] shrink-0 rounded-xl bg-white border border-gray-100 overflow-hidden">
-              <div className="h-[140px] bg-gray-100 animate-pulse" />
+            <div key={i} className="w-[280px] shrink-0 rounded-xl bg-white/40 backdrop-blur-sm border border-white/60 overflow-hidden">
+              <div className="h-[140px] bg-gray-100/50 animate-pulse" />
               <div className="p-4">
-                <div className="h-4 w-3/4 bg-gray-100 rounded animate-pulse" />
-                <div className="h-3 w-1/3 bg-gray-50 rounded animate-pulse mt-3" />
+                <div className="h-4 w-3/4 bg-gray-100/50 rounded animate-pulse" />
+                <div className="h-3 w-1/3 bg-gray-50/50 rounded animate-pulse mt-3" />
               </div>
             </div>
           ))}
@@ -91,7 +91,7 @@ export function NewsFeed() {
       className="py-6"
     >
       <div className="px-6 md:px-8 mb-4">
-        <h2 className="text-[12px] font-medium text-gray-400 uppercase tracking-[0.08em]">
+        <h2 className="text-[12px] font-medium text-gray-400/70 uppercase tracking-[0.08em]">
           Logistics News
         </h2>
       </div>
@@ -109,10 +109,10 @@ export function NewsFeed() {
               href={item.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-[280px] shrink-0 bg-white rounded-xl border border-gray-100 overflow-hidden hover:border-gray-200 hover:shadow-md hover:shadow-black/[0.04] transition-all group"
+              className="w-[280px] shrink-0 bg-white/40 backdrop-blur-sm rounded-xl border border-white/60 overflow-hidden hover:bg-white/60 hover:border-white/80 hover:shadow-lg hover:shadow-black/[0.04] transition-all group"
             >
               {/* Thumbnail */}
-              <div className="h-[140px] bg-gray-50 overflow-hidden">
+              <div className="h-[140px] bg-gray-50/30 overflow-hidden">
                 <img
                   src={item.image!}
                   alt=""
