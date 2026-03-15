@@ -38,3 +38,8 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+.dir-rtl {
+  direction: rtl;
+  text-align: right;
+}

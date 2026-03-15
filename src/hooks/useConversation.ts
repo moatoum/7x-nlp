@@ -309,6 +309,18 @@ export function useConversation() {
           rs.setStage('matched');
           await typewriterStream(msgId, aiResponse.message);
           useConversationStore.getState().finalizeStreamingMessage(msgId, undefined, matches);
+
+          // Follow up: ask to proceed to contact details
+          await delay(1200);
+          const cs3 = useConversationStore.getState();
+          cs3.setTyping(true);
+          await delay(randomDelay());
+          const followId = cs3.addStreamingBotMessage();
+          cs3.setTyping(false);
+          await typewriterStream(followId, "To get you a detailed quote, I'll need a few contact details. What's your full name?");
+          useConversationStore.getState().finalizeStreamingMessage(followId, [
+            { id: 'proceed', label: 'Sure, let me share my details' },
+          ]);
         } else {
           await typewriterStream(msgId, aiResponse.message);
           useConversationStore.getState().finalizeStreamingMessage(msgId, suggestedChips);

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import type { Message } from '@/engine/types';
 import { ChipGroup } from './ChipGroup';
 import { ServiceCardInline } from './ServiceCardInline';
+import { isArabic } from '@/lib/cn';
 
 interface BotMessageProps {
   message: Message;
@@ -15,6 +16,8 @@ interface BotMessageProps {
 
 export function BotMessage({ message, onChipSelect, onMultiSelect, isLatest, isFirst }: BotMessageProps) {
   const isStreaming = message.isStreaming;
+  const rtl = isArabic(message.content);
+  const langClass = rtl ? 'font-arabic dir-rtl' : '';
 
   return (
     <motion.div
@@ -34,11 +37,11 @@ export function BotMessage({ message, onChipSelect, onMultiSelect, isLatest, isF
               <p className="text-[11px] text-gray-400">Logistics Solutions Advisor</p>
             </div>
           </div>
-          <div className="text-[17px] leading-relaxed text-gray-900 whitespace-pre-line font-medium">
+          <div className={`text-[17px] leading-relaxed text-gray-900 whitespace-pre-line font-medium ${langClass}`}>
             {message.content.split('\n\n')[0]}
           </div>
           {message.content.split('\n\n')[1] && (
-            <div className="text-[15px] leading-relaxed text-gray-600 mt-3 whitespace-pre-line">
+            <div className={`text-[15px] leading-relaxed text-gray-600 mt-3 whitespace-pre-line ${langClass}`}>
               {message.content.split('\n\n').slice(1).join('\n\n')}
             </div>
           )}
@@ -46,12 +49,12 @@ export function BotMessage({ message, onChipSelect, onMultiSelect, isLatest, isF
       )}
 
       {!isFirst && (
-        <div className="flex gap-3">
+        <div className={`flex gap-3 ${rtl ? 'flex-row-reverse' : ''}`}>
           <div className="w-7 h-7 rounded-[9px] bg-black flex items-center justify-center flex-shrink-0 mt-0.5">
             <span className="text-white text-[9px] font-bold tracking-tight">7X</span>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[15px] leading-relaxed text-gray-800 whitespace-pre-line">
+            <div className={`text-[15px] leading-relaxed text-gray-800 whitespace-pre-line ${langClass}`}>
               {message.content}
               {isStreaming && (
                 <span className="inline-block w-[2px] h-[18px] bg-brand-blue ml-0.5 align-text-bottom animate-pulse" />

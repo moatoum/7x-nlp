@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn, isArabic } from '@/lib/cn';
 import { motion } from 'framer-motion';
 
 interface TextInputProps {
@@ -68,13 +68,15 @@ export function TextInput({ placeholder = 'Type your message...', onSubmit, disa
           placeholder={placeholder}
           disabled={disabled}
           rows={1}
+          dir={isArabic(value) ? 'rtl' : 'ltr'}
           className={cn(
             'w-full px-4 py-3 border border-gray-200 rounded-[14px] text-[15px] bg-white resize-none',
             'placeholder:text-gray-350',
             'focus:outline-none focus:ring-2 focus:ring-brand-blue/10 focus:border-brand-blue/50',
             'disabled:opacity-40 disabled:cursor-not-allowed',
             'transition-all duration-200',
-            'min-h-[46px] max-h-[120px]'
+            'min-h-[46px] max-h-[120px]',
+            isArabic(value) && 'font-arabic text-right'
           )}
         />
       </div>

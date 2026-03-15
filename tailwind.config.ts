@@ -30,6 +30,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['var(--font-space-grotesk)', 'system-ui', 'sans-serif'],
+        arabic: ['var(--font-ibm-plex-arabic)', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         'xs': ['12px', { lineHeight: '16px' }],

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import type { ChipOption } from '@/engine/types';
-import { cn } from '@/lib/cn';
+import { cn, isArabic } from '@/lib/cn';
 
 interface ChipGroupProps {
   chips: ChipOption[];
@@ -58,25 +58,32 @@ export function ChipGroup({ chips, multiSelect, onSelect, onMultiSelect }: ChipG
     }
   };
 
+  // Detect if any chip label has Arabic text
+  const hasArabicChips = chips.some((chip) => isArabic(chip.label));
+
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-3">
-      <div className="flex flex-wrap gap-2">
-        {chips.map((chip) => (
-          <motion.button
-            key={chip.id}
-            variants={item}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => handleClick(chip)}
-            className={cn(
-              'px-4 py-2.5 rounded-[12px] text-[13px] font-medium border transition-all duration-200',
-              multiSelect && selected.has(chip.id)
-                ? 'bg-brand-blue text-white border-brand-blue shadow-sm'
-                : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm bg-white'
-            )}
-          >
-            {chip.label}
-          </motion.button>
-        ))}
+      <div className={cn('flex flex-wrap gap-2', hasArabicChips && 'justify-end')}>
+        {chips.map((chip) => {
+          const chipIsArabic = isArabic(chip.label);
+          return (
+            <motion.button
+              key={chip.id}
+              variants={item}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => handleClick(chip)}
+              className={cn(
+                'px-4 py-2.5 rounded-[12px] text-[13px] font-medium border transition-all duration-200',
+                multiSelect && selected.has(chip.id)
+                  ? 'bg-brand-blue text-white border-brand-blue shadow-sm'
+                  : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm bg-white',
+                chipIsArabic && 'font-arabic dir-rtl'
+              )}
+            >
+              {chip.label}
+            </motion.button>
+          );
+        })}
       </div>
       {multiSelect && selected.size > 0 && (
         <motion.button
@@ -84,9 +91,12 @@ export function ChipGroup({ chips, multiSelect, onSelect, onMultiSelect }: ChipG
           animate={{ opacity: 1, y: 0 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleContinue}
-          className="px-5 py-2.5 bg-brand-blue text-white text-[13px] font-medium rounded-[12px] hover:bg-brand-blue-hover transition-colors shadow-sm"
+          className={cn(
+            'px-5 py-2.5 bg-brand-blue text-white text-[13px] font-medium rounded-[12px] hover:bg-brand-blue-hover transition-colors shadow-sm',
+            hasArabicChips && 'font-arabic'
+          )}
         >
-          Continue
+          {hasArabicChips ? 'متابعة' : 'Continue'}
         </motion.button>
       )}
     </motion.div>
