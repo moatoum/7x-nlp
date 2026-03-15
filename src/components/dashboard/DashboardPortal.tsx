@@ -91,7 +91,7 @@ export function DashboardPortal() {
           <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
         </Link>
         <Link
-          href="/admin/submissions"
+          href="/track"
           className="group inline-flex items-center justify-center gap-2.5 h-[48px] px-7 rounded-full border border-gray-200 bg-white/80 backdrop-blur-sm text-gray-700 text-[14px] font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"
         >
           Track Existing Request

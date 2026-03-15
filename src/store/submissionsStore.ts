@@ -10,6 +10,7 @@ interface SubmissionsState {
 
   addSubmission: (submission: Submission) => void;
   updateStatus: (id: string, status: Submission['status']) => void;
+  getByReference: (ref: string) => Submission | undefined;
   initialize: (seed: Submission[]) => void;
 }
 
@@ -30,6 +31,11 @@ export const useSubmissionsStore = create<SubmissionsState>()(
             s.id === id ? { ...s, status } : s
           ),
         })),
+
+      getByReference: (ref) =>
+        get().submissions.find(
+          (s) => s.referenceNumber.toLowerCase() === ref.toLowerCase()
+        ),
 
       initialize: (seed) => {
         if (!get().initialized) {
