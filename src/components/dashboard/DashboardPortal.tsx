@@ -18,7 +18,7 @@ const fadeUp: Variants = {
 export function DashboardPortal() {
   const [titleNumber, setTitleNumber] = useState(0);
   const titles = useMemo(
-    () => ['seamless', 'reliable', 'efficient', 'smarter', 'faster'],
+    () => ['Shipping.', 'Delivery.', 'Logistics.', 'Warehousing.', 'Returns.'],
     []
   );
 
@@ -50,7 +50,7 @@ export function DashboardPortal() {
       {/* Heading with rotating word */}
       <motion.div variants={fadeUp} className="mt-6">
         <h1 className="text-[36px] md:text-[56px] tracking-[-0.03em] text-gray-900 leading-[1.1]">
-          <span className="font-light">Logistics made</span>
+          <span className="font-light">Tell us what you need.</span>
           <span className="relative flex w-full justify-center overflow-hidden md:pb-3 md:pt-1 h-[50px] md:h-[72px]">
             &nbsp;
             {titles.map((title, index) => (
@@ -77,8 +77,8 @@ export function DashboardPortal() {
         variants={fadeUp}
         className="mt-4 text-[15px] md:text-[17px] leading-relaxed text-gray-400 max-w-md"
       >
-        End-to-end logistics across the UAE and GCC. From first mile to last mile,
-        warehousing to customs — tell us what you need.
+        A single national access point for logistics support across the 7X ecosystem,
+        guiding every request to the right team.
       </motion.p>
 
       {/* Two Buttons */}
@@ -99,17 +99,6 @@ export function DashboardPortal() {
         </Link>
       </motion.div>
 
-      {/* Meta */}
-      <motion.div
-        variants={fadeUp}
-        className="mt-10 flex items-center gap-4 text-[11px] text-gray-300 font-medium tracking-wide"
-      >
-        <span>86+ Services</span>
-        <span className="w-px h-3 bg-gray-200" />
-        <span>11 Categories</span>
-        <span className="w-px h-3 bg-gray-200" />
-        <span>GCC-wide</span>
-      </motion.div>
     </motion.div>
   );
 }
