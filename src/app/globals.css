@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --white: #ffffff;
+  --black: #000000;
+  --transparent: transparent;
+
+  --blue-300: #bfdbfe;
+  --blue-400: #93c5fd;
+  --blue-500: #60a5fa;
+  --indigo-300: #c7d2fe;
+  --violet-200: #ddd6fe;
+}
+
 html {
   background-color: #ffffff !important;
   color: #18181b;

@@ -1,17 +1,18 @@
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardPortal } from '@/components/dashboard/DashboardPortal';
+import { AuroraBackground } from '@/components/ui/AuroraBackground';
 import { NewsFeed } from '@/components/dashboard/NewsFeed';
 
 export default function DashboardPage() {
   return (
     <div className="bg-white">
-      {/* First screen — header + centered portal */}
-      <div className="h-screen flex flex-col">
+      {/* First screen — aurora background + header + centered hero */}
+      <AuroraBackground className="h-screen">
         <DashboardHeader />
-        <main className="flex-1 flex items-center justify-center px-6">
+        <main className="flex-1 flex items-center justify-center">
           <DashboardPortal />
         </main>
-      </div>
+      </AuroraBackground>
 
       {/* Below the fold — news */}
       <div className="border-t border-gray-100 bg-[#fafafa]">
