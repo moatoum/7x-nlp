@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { StatsOverview } from '@/components/admin/StatsOverview';
 import { SubmissionsChart } from '@/components/admin/SubmissionsChart';
 import { CategoryChart } from '@/components/admin/CategoryChart';
@@ -8,19 +9,27 @@ import { RecentSubmissions } from '@/components/admin/RecentSubmissions';
 export default function AdminOverviewPage() {
   return (
     <div className="p-6 lg:p-8 max-w-[1200px]">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Overview</h1>
-        <p className="text-sm text-gray-500 mt-1">Submission analytics and insights</p>
-      </div>
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mb-8"
+      >
+        <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">Dashboard</h1>
+        <p className="text-[13px] text-gray-400 mt-1">Overview of submission analytics and activity</p>
+      </motion.div>
 
       <StatsOverview />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
         <SubmissionsChart />
         <CategoryChart />
       </div>
 
-      <div className="mt-8">
+      {/* Recent */}
+      <div className="mt-6">
         <RecentSubmissions />
       </div>
     </div>

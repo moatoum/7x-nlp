@@ -3,17 +3,17 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 import { useSubmissionsStore } from '@/store/submissionsStore';
 import { CATEGORY_LABELS } from '@/engine/catalog';
 import { timeAgo } from '@/lib/formatters';
-import { Badge } from '@/components/ui/Badge';
+import { cn } from '@/lib/cn';
 
-
-const STATUS_BADGE: Record<string, { variant: 'default' | 'blue' | 'green'; className?: string; label: string }> = {
-  submitted: { variant: 'default', label: 'Submitted' },
-  in_review: { variant: 'blue', label: 'In Review' },
-  approved: { variant: 'green', label: 'Approved' },
-  rejected: { variant: 'default', className: 'bg-red-50 text-red-600', label: 'Rejected' },
+const STATUS_DOT: Record<string, { color: string; label: string }> = {
+  submitted: { color: 'bg-gray-400', label: 'Submitted' },
+  in_review: { color: 'bg-blue-500', label: 'In Review' },
+  approved: { color: 'bg-emerald-500', label: 'Approved' },
+  rejected: { color: 'bg-red-500', label: 'Rejected' },
 };
 
 export function RecentSubmissions() {
@@ -32,82 +32,71 @@ export function RecentSubmissions() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut', delay: 0.15 }}
-      className="bg-white rounded-xl border border-gray-100 p-5"
+      className="bg-white rounded-2xl border border-gray-100"
     >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-900">Recent Submissions</h3>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+        <div>
+          <h3 className="text-[13px] font-semibold text-gray-900">Recent Submissions</h3>
+          <p className="text-[11px] text-gray-400 mt-0.5">Latest incoming requests</p>
+        </div>
         <Link
           href="/admin/submissions"
-          className="text-xs text-gray-500 hover:text-gray-900 transition-colors"
+          className="inline-flex items-center gap-1 text-[12px] text-gray-400 hover:text-gray-900 transition-colors font-medium"
         >
-          View all &rarr;
+          View all
+          <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
 
       {recent.length === 0 ? (
-        <p className="text-sm text-gray-400 py-8 text-center">No submissions yet</p>
+        <div className="py-12 text-center">
+          <p className="text-[13px] text-gray-400">No submissions yet</p>
+        </div>
       ) : (
-        <div className="overflow-x-auto -mx-5">
-          <table className="w-full min-w-[540px]">
-            <thead>
-              <tr className="border-b border-gray-50">
-                <th className="text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium px-5 pb-2">
-                  Reference
-                </th>
-                <th className="text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium px-3 pb-2">
-                  Company
-                </th>
-                <th className="text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium px-3 pb-2">
-                  Category
-                </th>
-                <th className="text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium px-3 pb-2">
-                  Date
-                </th>
-                <th className="text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium px-3 pb-2">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.map((submission) => {
-                const statusConfig = STATUS_BADGE[submission.status] || STATUS_BADGE.submitted;
-                return (
-                  <tr
-                    key={submission.id}
-                    className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
-                  >
-                    <td className="px-5 py-2.5">
-                      <Link
-                        href={`/admin/submissions/${submission.id}`}
-                        className="text-sm text-gray-900 hover:text-brand-blue transition-colors font-medium"
-                      >
+        <div className="divide-y divide-gray-50">
+          {recent.map((submission) => {
+            const statusConfig = STATUS_DOT[submission.status] || STATUS_DOT.submitted;
+            return (
+              <Link
+                key={submission.id}
+                href={`/admin/submissions/${submission.id}`}
+                className="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50/50 transition-colors group"
+              >
+                <div className="flex items-center gap-4 min-w-0">
+                  {/* Status dot */}
+                  <div className={cn('w-2 h-2 rounded-full shrink-0', statusConfig.color)} />
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-medium text-gray-900 font-mono">
                         {submission.referenceNumber}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2.5 text-sm text-gray-600">
-                      {submission.companyName || '—'}
-                    </td>
-                    <td className="px-3 py-2.5 text-sm text-gray-600">
-                      {submission.serviceCategory
-                        ? CATEGORY_LABELS[submission.serviceCategory] || submission.serviceCategory
-                        : '—'}
-                    </td>
-                    <td className="px-3 py-2.5 text-sm text-gray-500">
-                      {timeAgo(submission.createdAt)}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <Badge
-                        variant={statusConfig.variant}
-                        className={statusConfig.className}
-                      >
-                        {statusConfig.label}
-                      </Badge>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </span>
+                      {submission.companyName && (
+                        <span className="text-[12px] text-gray-400 truncate">
+                          {submission.companyName}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[11px] text-gray-400">
+                        {submission.serviceCategory
+                          ? CATEGORY_LABELS[submission.serviceCategory] || submission.serviceCategory
+                          : 'Uncategorized'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    <span className="text-[11px] text-gray-400">{timeAgo(submission.createdAt)}</span>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{statusConfig.label}</p>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </motion.div>
