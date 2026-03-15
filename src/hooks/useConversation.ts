@@ -103,11 +103,18 @@ function inferNodeFromFields(fields: Partial<RequestFields>): string {
   if (fields.contactName && fields.contactEmail && fields.companyName) return 'review';
   if (fields.companyName || fields.contactEmail) return 'contact_company';
   if (fields.contactName) return 'contact_email';
-  if (fields.originLocation) return 'recommendation';
-  if (fields.businessType) return 'origin_location';
+  // Only jump to recommendation when all core fields are gathered
+  const hasCoreFields =
+    fields.serviceCategory && fields.serviceSubcategory &&
+    fields.originLocation && fields.destinationLocation &&
+    fields.urgency && fields.businessType && fields.frequency;
+  if (hasCoreFields) return 'recommendation';
+  if (fields.frequency) return 'business_type';
+  if (fields.businessType) return 'frequency';
+  if (fields.originLocation) return 'urgency';
   if (fields.specialRequirements && fields.specialRequirements.length > 0) return 'business_type';
   if (fields.urgency) return 'special_requirements';
-  if (fields.destinationLocation) return 'urgency';
+  if (fields.destinationLocation) return 'origin_location';
   if (fields.serviceSubcategory) return 'ship_destination';
   if (fields.serviceCategory) return 'ship_destination';
   return 'welcome';
@@ -348,9 +355,18 @@ export function useConversation() {
       // === STREAMING TYPEWRITER EFFECT ===
       const msgId = cs.addStreamingBotMessage();
 
-      // Handle recommendations
-      if (aiResponse.shouldShowRecommendations) {
-        const rs = useRequestStore.getState();
+      // Handle recommendations — only show when we have enough context
+      const rs = useRequestStore.getState();
+      const hasEnoughForRecs =
+        !!rs.serviceCategory &&
+        !!rs.serviceSubcategory &&
+        !!rs.originLocation &&
+        !!rs.destinationLocation &&
+        !!rs.urgency &&
+        !!rs.businessType &&
+        !!rs.frequency;
+
+      if (aiResponse.shouldShowRecommendations && hasEnoughForRecs) {
         let matches = scoreServicesFromFields(rs as RequestFields);
         if (matches.length === 0) {
           matches = matchServices(rs as RequestFields);
@@ -369,7 +385,7 @@ export function useConversation() {
           await delay(randomDelay());
           const followId = cs3.addStreamingBotMessage();
           cs3.setTyping(false);
-          await typewriterStream(followId, "To get you a detailed quote, I'll need a few contact details. What's your full name?");
+          await typewriterStream(followId, "To submit your request, I'll need a few contact details. What's your full name?");
           useConversationStore.getState().finalizeStreamingMessage(followId, [
             { id: 'proceed', label: 'Sure, let me share my details' },
           ]);

@@ -87,12 +87,14 @@ You MUST respond with valid JSON only. No markdown, no code blocks, just raw JSO
 }
 
 ## LOGIC
-- Set "shouldShowRecommendations" to true ONLY when ALL of these are captured: serviceCategory, destinationLocation, urgency, AND businessType. Do NOT show recommendations early — gather enough context first.
-- Set "allFieldsComplete" to true only when contactName, contactEmail, AND companyName are all captured
-- For "confidence", estimate how confident you are in your field extractions (0.0-1.0)
-- Always provide "suggestedOptions" for the next question — these become clickable chips
-- Prioritize capturing fields in this order: serviceCategory -> serviceSubcategory -> destinationLocation -> urgency -> businessType -> specialRequirements -> frequency -> originLocation -> contactName -> contactEmail -> companyName
+- Set "shouldShowRecommendations" to true ONLY after you have gathered ALL of these: serviceCategory, serviceSubcategory, originLocation, destinationLocation, urgency, businessType, AND frequency. Do NOT show recommendations early — you must thoroughly understand the request first. If any of these 7 fields is still missing, keep asking.
+- Set "allFieldsComplete" to true only when contactName, contactEmail, AND companyName are all captured.
+- For "confidence", estimate how confident you are in your field extractions (0.0-1.0).
+- Always provide "suggestedOptions" for the next question — these become clickable chips.
+- Prioritize capturing fields in this order: serviceCategory -> serviceSubcategory -> originLocation -> destinationLocation -> frequency -> urgency -> businessType -> specialRequirements -> contactName -> contactEmail -> companyName.
+- Do NOT skip fields. Ask about each missing field one at a time. Be thorough — this is a logistics request, details matter.
 - When you DO show recommendations, your message should introduce them (e.g. "Based on what you've told me, here are my top recommendations:"). Do NOT ask another question in the same message as recommendations.
+- Do NOT mention quotes, pricing, or costs. Users are submitting logistics requests, not requesting quotes. Frame everything around "submitting your request" and "our team will review".
 
 ## EXTRACTION RULES
 - "I need to ship 500 packages to Saudi Arabia monthly" -> serviceCategory: "Ship packages or parcels", destinationLocation: "GCC countries", frequency: "100 - 1,000"
