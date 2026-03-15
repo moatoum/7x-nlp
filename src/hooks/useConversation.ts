@@ -6,6 +6,8 @@ import { useRequestStore } from '@/store/requestStore';
 import { useSubmissionsStore } from '@/store/submissionsStore';
 import { getNode, processUserInput } from '@/engine/engine';
 import { matchServices } from '@/engine/matcher';
+import { scoreServicesFromFields } from '@/engine/ai';
+import type { AIResponse } from '@/engine/ai';
 import type { ChipOption, RequestFields } from '@/engine/types';
 
 function delay(ms: number) {
@@ -50,6 +52,21 @@ function persistSubmission(refNumber: string) {
   });
 }
 
+// Determine a reasonable node ID based on what fields are filled
+function inferNodeFromFields(fields: Partial<RequestFields>): string {
+  if (fields.contactName && fields.contactEmail && fields.companyName) return 'review';
+  if (fields.companyName || fields.contactEmail) return 'contact_company';
+  if (fields.contactName) return 'contact_email';
+  if (fields.originLocation) return 'recommendation';
+  if (fields.businessType) return 'origin_location';
+  if (fields.specialRequirements && fields.specialRequirements.length > 0) return 'business_type';
+  if (fields.urgency) return 'special_requirements';
+  if (fields.destinationLocation) return 'urgency';
+  if (fields.serviceSubcategory) return 'ship_destination';
+  if (fields.serviceCategory) return 'ship_destination';
+  return 'welcome';
+}
+
 export function useConversation() {
   const startConversation = useCallback(async () => {
     const conv = useConversationStore.getState();
@@ -79,20 +96,16 @@ export function useConversation() {
     const currentNode = getNode(convStore.currentNodeId);
     const chip: ChipOption = { id: chipId, label: chipLabel };
 
-    // Show user message
     convStore.addUserMessage(chipLabel);
     convStore.setInputDisabled(true);
     convStore.setTyping(true);
 
-    // Set gathering stage on first interaction
     if (reqStore.stage === 'empty') {
       reqStore.setStage('gathering');
     }
 
-    // Process through engine
     const { nextNodeId, fieldUpdate } = processUserInput(chip, currentNode, reqStore as RequestFields);
 
-    // Apply field updates
     if (fieldUpdate) {
       for (const [field, value] of Object.entries(fieldUpdate)) {
         useRequestStore.getState().updateField(field as keyof RequestFields, value as string | string[] | null);
@@ -101,7 +114,6 @@ export function useConversation() {
 
     await delay(randomDelay());
 
-    // Handle submission
     if (nextNodeId === 'submitted') {
       const refNumber = generateRefNumber();
       const rs = useRequestStore.getState();
@@ -118,7 +130,6 @@ export function useConversation() {
       return;
     }
 
-    // Handle restart
     if (nextNodeId === 'welcome') {
       useConversationStore.getState().reset();
       useRequestStore.getState().reset();
@@ -142,7 +153,6 @@ export function useConversation() {
 
     const nextNode = getNode(nextNodeId);
 
-    // Handle recommendation node — run matcher
     if (nextNode.type === 'recommendation') {
       const rs = useRequestStore.getState();
       const matches = matchServices(rs as RequestFields);
@@ -158,7 +168,6 @@ export function useConversation() {
       cs.addBotMessageWithCards(recMsg, matches);
       cs.transitionTo(nextNodeId);
 
-      // Then show the follow-up question
       await delay(800);
       useConversationStore.getState().setTyping(true);
       await delay(randomDelay());
@@ -176,12 +185,10 @@ export function useConversation() {
       return;
     }
 
-    // Handle review node
     if (nextNodeId === 'review') {
       useRequestStore.getState().setStage('review');
     }
 
-    // Show next node message
     const msg = typeof nextNode.message === 'function'
       ? nextNode.message(useRequestStore.getState() as RequestFields)
       : nextNode.message;
@@ -193,19 +200,132 @@ export function useConversation() {
     cs.setInputDisabled(false);
   }, []);
 
+  // ============================================================
+  // AI-POWERED TEXT HANDLING
+  // ============================================================
   const handleTextSubmit = useCallback(async (text: string) => {
     const convStore = useConversationStore.getState();
     const reqStore = useRequestStore.getState();
-    const currentNode = getNode(convStore.currentNodeId);
 
     convStore.addUserMessage(text);
     convStore.setInputDisabled(true);
     convStore.setTyping(true);
 
-    // Set gathering stage on first interaction
     if (reqStore.stage === 'empty') {
       reqStore.setStage('gathering');
     }
+
+    // Build current fields snapshot
+    const currentFields: Partial<RequestFields> = {
+      serviceCategory: reqStore.serviceCategory,
+      serviceSubcategory: reqStore.serviceSubcategory,
+      businessType: reqStore.businessType,
+      originLocation: reqStore.originLocation,
+      destinationLocation: reqStore.destinationLocation,
+      frequency: reqStore.frequency,
+      urgency: reqStore.urgency,
+      specialRequirements: reqStore.specialRequirements,
+      additionalNotes: reqStore.additionalNotes,
+      contactName: reqStore.contactName,
+      contactEmail: reqStore.contactEmail,
+      contactPhone: reqStore.contactPhone,
+      companyName: reqStore.companyName,
+    };
+
+    // Build conversation history for AI
+    const allMessages = useConversationStore.getState().messages;
+    const chatHistory = allMessages
+      .filter((m) => m.content.trim() !== '')
+      .map((m) => ({
+        role: (m.role === 'bot' ? 'assistant' : 'user') as 'user' | 'assistant',
+        content: m.content,
+      }));
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: chatHistory,
+          currentFields,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const aiResponse: AIResponse = await response.json();
+
+      // Apply extracted fields to the request store
+      if (aiResponse.extractedFields) {
+        const rs = useRequestStore.getState();
+        for (const [field, value] of Object.entries(aiResponse.extractedFields)) {
+          if (value !== null && value !== undefined && value !== '') {
+            rs.updateField(field as keyof RequestFields, value as string | string[] | null);
+          }
+        }
+      }
+
+      // Build suggested chips from AI response
+      const suggestedChips: ChipOption[] | undefined = aiResponse.suggestedOptions?.map((opt) => ({
+        id: opt.id,
+        label: opt.label,
+      }));
+
+      const cs = useConversationStore.getState();
+      cs.setTyping(false);
+
+      // Handle recommendations
+      if (aiResponse.shouldShowRecommendations) {
+        const rs = useRequestStore.getState();
+        const matches = scoreServicesFromFields(rs as RequestFields);
+
+        if (matches.length > 0) {
+          rs.setRecommendedServices(matches);
+          rs.setStage('matched');
+          cs.addBotMessageWithCards(aiResponse.message, matches);
+        } else {
+          // Use existing matcher as fallback
+          const fallbackMatches = matchServices(rs as RequestFields);
+          if (fallbackMatches.length > 0) {
+            rs.setRecommendedServices(fallbackMatches);
+            rs.setStage('matched');
+            cs.addBotMessageWithCards(aiResponse.message, fallbackMatches);
+          } else {
+            cs.addBotMessage(aiResponse.message, suggestedChips);
+          }
+        }
+      } else if (aiResponse.allFieldsComplete) {
+        // All contact fields captured — move to review
+        useRequestStore.getState().setStage('review');
+        cs.addBotMessage(aiResponse.message, [
+          { id: 'submit', label: 'Submit Request' },
+          { id: 'edit', label: 'I want to change something' },
+        ]);
+        cs.transitionTo('review');
+        cs.setInputDisabled(false);
+        return;
+      } else {
+        cs.addBotMessage(aiResponse.message, suggestedChips);
+      }
+
+      // Sync the conversation node for consistency
+      const newNodeId = inferNodeFromFields(useRequestStore.getState());
+      cs.transitionTo(newNodeId);
+      cs.setInputDisabled(false);
+    } catch (error) {
+      console.error('AI chat error:', error);
+      // Fallback to rule-based engine
+      await handleTextFallback(text);
+    }
+  }, []);
+
+  // Rule-based fallback when AI is unavailable
+  const handleTextFallback = useCallback(async (text: string) => {
+    const convStore = useConversationStore.getState();
+    const reqStore = useRequestStore.getState();
+    const currentNode = getNode(convStore.currentNodeId);
 
     const { nextNodeId, fieldUpdate } = processUserInput(text, currentNode, reqStore as RequestFields);
 
@@ -214,8 +334,6 @@ export function useConversation() {
         useRequestStore.getState().updateField(field as keyof RequestFields, value as string | string[] | null);
       }
     }
-
-    await delay(randomDelay());
 
     if (nextNodeId === 'submitted') {
       const refNumber = generateRefNumber();
@@ -291,14 +409,12 @@ export function useConversation() {
     convStore.setInputDisabled(true);
     convStore.setTyping(true);
 
-    // Capture multi-select values
     if (currentNode.capturesField) {
       reqStore.updateField(currentNode.capturesField, selectedLabels);
     }
 
     await delay(randomDelay());
 
-    // Find next node via 'any' edge
     const anyEdge = currentNode.edges.find((e) => e.condition === 'any');
     const nextNodeId = anyEdge?.targetNodeId || 'business_type';
     const nextNode = getNode(nextNodeId);

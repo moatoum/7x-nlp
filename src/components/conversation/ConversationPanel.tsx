@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { useConversationStore } from '@/store/conversationStore';
 import { useConversation } from '@/hooks/useConversation';
 import { useAutoScroll } from '@/hooks/useAutoScroll';
-import { getNode } from '@/engine/engine';
 import { BotMessage } from './BotMessage';
 import { UserMessage } from './UserMessage';
 import { TypingIndicator } from './TypingIndicator';
@@ -22,8 +21,8 @@ export function ConversationPanel() {
     }
   }, [started, startConversation]);
 
-  const currentNode = getNode(currentNodeId);
-  const showTextInput = currentNode.allowFreeText && !inputDisabled && currentNodeId !== 'submitted';
+  // Always show text input unless submitted or not started
+  const showTextInput = currentNodeId !== 'submitted' && !inputDisabled && started;
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -53,17 +52,27 @@ export function ConversationPanel() {
         </div>
       </div>
 
-      {showTextInput && (
-        <div className="border-t border-gray-100/80 px-6 lg:px-12 xl:px-16 py-4 bg-white/80 backdrop-blur-sm">
-          <div className="max-w-[640px] mx-auto">
-            <TextInput
-              placeholder={currentNode.freeTextPlaceholder || 'Type your answer...'}
-              onSubmit={handleTextSubmit}
-              disabled={inputDisabled}
-            />
-          </div>
+      {/* Always-on text input for conversational AI experience */}
+      <div className="border-t border-gray-100/80 px-6 lg:px-12 xl:px-16 py-4 bg-white/80 backdrop-blur-sm">
+        <div className="max-w-[640px] mx-auto">
+          <TextInput
+            placeholder={
+              currentNodeId === 'submitted'
+                ? 'Conversation complete'
+                : inputDisabled
+                  ? 'Thinking...'
+                  : 'Type your message or select an option above...'
+            }
+            onSubmit={handleTextSubmit}
+            disabled={inputDisabled || currentNodeId === 'submitted'}
+          />
+          {currentNodeId !== 'submitted' && (
+            <p className="text-[11px] text-gray-350 mt-2 text-center">
+              Powered by AI — you can type naturally or select from the options above
+            </p>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
