@@ -8,12 +8,16 @@ interface RequestState extends RequestFields {
   stage: RequestStage;
   completionPercent: number;
   referenceNumber: string | null;
+  // Track recently updated fields for highlight animation
+  highlightedFields: Set<string>;
 
   updateField: (field: keyof RequestFields, value: string | string[] | null) => void;
   setRecommendedServices: (services: ServiceMatch[]) => void;
   setStage: (stage: RequestStage) => void;
   computeCompletion: () => void;
   setReferenceNumber: (ref: string) => void;
+  highlightField: (field: string) => void;
+  clearHighlight: (field: string) => void;
   reset: () => void;
 }
 
@@ -39,15 +43,45 @@ export const useRequestStore = create<RequestState>((set, get) => ({
   stage: 'empty',
   completionPercent: 0,
   referenceNumber: null,
+  highlightedFields: new Set(),
 
   updateField: (field, value) => {
+    const prev = get()[field];
     set({ [field]: value } as Partial<RequestState>);
     get().computeCompletion();
+
+    // Trigger highlight if the value actually changed
+    const changed = Array.isArray(prev)
+      ? JSON.stringify(prev) !== JSON.stringify(value)
+      : prev !== value;
+
+    if (changed && value !== null && value !== '' && !(Array.isArray(value) && value.length === 0)) {
+      get().highlightField(field);
+    }
   },
 
   setRecommendedServices: (services) => set({ recommendedServices: services }),
   setStage: (stage) => set({ stage }),
   setReferenceNumber: (ref) => set({ referenceNumber: ref }),
+
+  highlightField: (field) => {
+    set((state) => {
+      const next = new Set(state.highlightedFields);
+      next.add(field);
+      return { highlightedFields: next };
+    });
+    // Auto-clear after animation
+    setTimeout(() => {
+      get().clearHighlight(field);
+    }, 2000);
+  },
+
+  clearHighlight: (field) =>
+    set((state) => {
+      const next = new Set(state.highlightedFields);
+      next.delete(field);
+      return { highlightedFields: next };
+    }),
 
   computeCompletion: () => {
     const state = get();
@@ -75,5 +109,6 @@ export const useRequestStore = create<RequestState>((set, get) => ({
       stage: 'empty',
       completionPercent: 0,
       referenceNumber: null,
+      highlightedFields: new Set(),
     }),
 }));

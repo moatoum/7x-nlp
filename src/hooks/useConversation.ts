@@ -67,6 +67,23 @@ function inferNodeFromFields(fields: Partial<RequestFields>): string {
   return 'welcome';
 }
 
+// ============================================================
+// TYPEWRITER EFFECT — streams text word-by-word
+// ============================================================
+async function typewriterStream(
+  messageId: string,
+  text: string,
+  speed: number = 30
+): Promise<void> {
+  const words = text.split(/(\s+)/); // preserve whitespace
+  for (const word of words) {
+    useConversationStore.getState().appendToStreamingMessage(messageId, word);
+    // Vary speed slightly for natural feel
+    const jitter = speed * (0.5 + Math.random());
+    await delay(jitter);
+  }
+}
+
 export function useConversation() {
   const startConversation = useCallback(async () => {
     const conv = useConversationStore.getState();
@@ -201,7 +218,7 @@ export function useConversation() {
   }, []);
 
   // ============================================================
-  // AI-POWERED TEXT HANDLING
+  // AI-POWERED TEXT HANDLING WITH STREAMING
   // ============================================================
   const handleTextSubmit = useCallback(async (text: string) => {
     const convStore = useConversationStore.getState();
@@ -257,7 +274,7 @@ export function useConversation() {
 
       const aiResponse: AIResponse = await response.json();
 
-      // Apply extracted fields to the request store
+      // Apply extracted fields to the request store (triggers highlight)
       if (aiResponse.extractedFields) {
         const rs = useRequestStore.getState();
         for (const [field, value] of Object.entries(aiResponse.extractedFields)) {
@@ -276,44 +293,47 @@ export function useConversation() {
       const cs = useConversationStore.getState();
       cs.setTyping(false);
 
+      // === STREAMING TYPEWRITER EFFECT ===
+      const msgId = cs.addStreamingBotMessage();
+
       // Handle recommendations
       if (aiResponse.shouldShowRecommendations) {
         const rs = useRequestStore.getState();
-        const matches = scoreServicesFromFields(rs as RequestFields);
+        let matches = scoreServicesFromFields(rs as RequestFields);
+        if (matches.length === 0) {
+          matches = matchServices(rs as RequestFields);
+        }
 
         if (matches.length > 0) {
           rs.setRecommendedServices(matches);
           rs.setStage('matched');
-          cs.addBotMessageWithCards(aiResponse.message, matches);
+          await typewriterStream(msgId, aiResponse.message);
+          useConversationStore.getState().finalizeStreamingMessage(msgId, undefined, matches);
         } else {
-          // Use existing matcher as fallback
-          const fallbackMatches = matchServices(rs as RequestFields);
-          if (fallbackMatches.length > 0) {
-            rs.setRecommendedServices(fallbackMatches);
-            rs.setStage('matched');
-            cs.addBotMessageWithCards(aiResponse.message, fallbackMatches);
-          } else {
-            cs.addBotMessage(aiResponse.message, suggestedChips);
-          }
+          await typewriterStream(msgId, aiResponse.message);
+          useConversationStore.getState().finalizeStreamingMessage(msgId, suggestedChips);
         }
       } else if (aiResponse.allFieldsComplete) {
         // All contact fields captured — move to review
         useRequestStore.getState().setStage('review');
-        cs.addBotMessage(aiResponse.message, [
+        await typewriterStream(msgId, aiResponse.message);
+        useConversationStore.getState().finalizeStreamingMessage(msgId, [
           { id: 'submit', label: 'Submit Request' },
           { id: 'edit', label: 'I want to change something' },
         ]);
-        cs.transitionTo('review');
-        cs.setInputDisabled(false);
+        const cs2 = useConversationStore.getState();
+        cs2.transitionTo('review');
+        cs2.setInputDisabled(false);
         return;
       } else {
-        cs.addBotMessage(aiResponse.message, suggestedChips);
+        await typewriterStream(msgId, aiResponse.message);
+        useConversationStore.getState().finalizeStreamingMessage(msgId, suggestedChips);
       }
 
       // Sync the conversation node for consistency
       const newNodeId = inferNodeFromFields(useRequestStore.getState());
-      cs.transitionTo(newNodeId);
-      cs.setInputDisabled(false);
+      useConversationStore.getState().transitionTo(newNodeId);
+      useConversationStore.getState().setInputDisabled(false);
     } catch (error) {
       console.error('AI chat error:', error);
       // Fallback to rule-based engine

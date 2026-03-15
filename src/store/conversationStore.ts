@@ -11,10 +11,15 @@ interface ConversationState {
   inputDisabled: boolean;
   started: boolean;
   startedAt: number;
+  streamingMessageId: string | null;
 
   addBotMessage: (content: string, chips?: ChipOption[], multiSelect?: boolean) => void;
   addBotMessageWithCards: (content: string, cards: Message['serviceCards']) => void;
   addUserMessage: (content: string) => void;
+  // Streaming support
+  addStreamingBotMessage: () => string;
+  appendToStreamingMessage: (id: string, text: string) => void;
+  finalizeStreamingMessage: (id: string, chips?: ChipOption[], serviceCards?: Message['serviceCards']) => void;
   setTyping: (typing: boolean) => void;
   setInputDisabled: (disabled: boolean) => void;
   transitionTo: (nodeId: string) => void;
@@ -33,6 +38,7 @@ export const useConversationStore = create<ConversationState>((set) => ({
   inputDisabled: false,
   started: false,
   startedAt: 0,
+  streamingMessageId: null,
 
   addBotMessage: (content, chips, multiSelect) =>
     set((state) => ({
@@ -76,6 +82,44 @@ export const useConversationStore = create<ConversationState>((set) => ({
       ],
     })),
 
+  // Create an empty bot message for streaming
+  addStreamingBotMessage: () => {
+    const id = makeId();
+    set((state) => ({
+      messages: [
+        ...state.messages,
+        {
+          id,
+          role: 'bot',
+          content: '',
+          timestamp: Date.now(),
+          isStreaming: true,
+        },
+      ],
+      streamingMessageId: id,
+    }));
+    return id;
+  },
+
+  // Append text to the streaming message
+  appendToStreamingMessage: (id, text) =>
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        m.id === id ? { ...m, content: m.content + text } : m
+      ),
+    })),
+
+  // Finalize streaming — add chips/cards, mark complete
+  finalizeStreamingMessage: (id, chips, serviceCards) =>
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        m.id === id
+          ? { ...m, isStreaming: false, chips, serviceCards }
+          : m
+      ),
+      streamingMessageId: null,
+    })),
+
   setTyping: (typing) => set({ isTyping: typing }),
   setInputDisabled: (disabled) => set({ inputDisabled: disabled }),
 
@@ -97,6 +141,7 @@ export const useConversationStore = create<ConversationState>((set) => ({
       inputDisabled: false,
       started: false,
       startedAt: 0,
+      streamingMessageId: null,
     });
   },
 }));

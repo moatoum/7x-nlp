@@ -35,6 +35,7 @@ export interface Message {
   multiSelect?: boolean;
   selectedChip?: string;
   serviceCards?: ServiceMatch[];
+  isStreaming?: boolean;
 }
 
 export interface ServiceMatch {
