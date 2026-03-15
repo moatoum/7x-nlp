@@ -7,7 +7,7 @@ export default function DashboardPage() {
   return (
     <AuroraBackground className="min-h-screen">
       <DashboardHeader />
-      <main className="flex-1 flex items-center justify-center">
+      <main className="flex-1 flex items-center justify-center py-16 md:py-20">
         <DashboardPortal />
       </main>
 
