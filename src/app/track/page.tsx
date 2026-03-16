@@ -11,6 +11,8 @@ import {
   ClipboardCheck,
   CheckCircle2,
   XCircle,
+  UserCheck,
+  Zap,
   Building2,
   User,
   Mail,
@@ -28,34 +30,22 @@ import type { Submission } from '@/engine/types';
 /* ── Status Steps ── */
 const STEPS = [
   { key: 'submitted', label: 'Submitted', icon: Package },
-  { key: 'in_review', label: 'In Review', icon: ClipboardCheck },
-  { key: 'approved', label: 'Approved', icon: CheckCircle2 },
+  { key: 'under_review', label: 'Under Review', icon: ClipboardCheck },
+  { key: 'assigned', label: 'Assigned', icon: UserCheck },
+  { key: 'actioned', label: 'Actioned', icon: Zap },
+  { key: 'closed', label: 'Closed', icon: CheckCircle2 },
 ] as const;
 
 const STATUS_ORDER: Record<string, number> = {
   submitted: 0,
-  in_review: 1,
-  approved: 2,
-  rejected: -1,
+  under_review: 1,
+  assigned: 2,
+  actioned: 3,
+  closed: 4,
 };
 
 function StatusStepper({ status }: { status: Submission['status'] }) {
-  const isRejected = status === 'rejected';
   const currentStep = STATUS_ORDER[status] ?? 0;
-
-  if (isRejected) {
-    return (
-      <div className="flex items-center gap-3 px-4 py-3 bg-red-50/80 rounded-xl border border-red-100">
-        <XCircle className="w-5 h-5 text-red-500 shrink-0" />
-        <div>
-          <p className="text-sm font-semibold text-red-700">Request Declined</p>
-          <p className="text-[12px] text-red-500 mt-0.5">
-            This request has been reviewed and was not approved. Please submit a new request or contact support.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex items-center gap-0">

@@ -24,7 +24,7 @@ export async function GET(
   }
 }
 
-const VALID_STATUSES = new Set(['submitted', 'in_review', 'approved', 'rejected']);
+const VALID_STATUSES = new Set(['submitted', 'under_review', 'assigned', 'actioned', 'closed']);
 const VALID_TAGS = new Set(['NXN', 'EMX']);
 
 // PATCH /api/submissions/[id] — Update status and/or tag

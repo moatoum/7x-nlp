@@ -14,9 +14,10 @@ const ITEMS_PER_PAGE = 10;
 
 const STATUS_DOT: Record<string, { color: string; label: string }> = {
   submitted: { color: 'bg-gray-400', label: 'Submitted' },
-  in_review: { color: 'bg-blue-500', label: 'In Review' },
-  approved: { color: 'bg-emerald-500', label: 'Approved' },
-  rejected: { color: 'bg-red-500', label: 'Rejected' },
+  under_review: { color: 'bg-blue-500', label: 'Under Review' },
+  assigned: { color: 'bg-purple-500', label: 'Assigned' },
+  actioned: { color: 'bg-emerald-500', label: 'Actioned' },
+  closed: { color: 'bg-gray-500', label: 'Closed' },
 };
 
 export function SubmissionsTable() {

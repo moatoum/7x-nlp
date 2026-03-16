@@ -20,16 +20,18 @@ interface SubmissionDetailProps {
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
   submitted: { color: 'text-gray-600', bg: 'bg-gray-100', label: 'Submitted' },
-  in_review: { color: 'text-blue-600', bg: 'bg-blue-50', label: 'In Review' },
-  approved: { color: 'text-emerald-600', bg: 'bg-emerald-50', label: 'Approved' },
-  rejected: { color: 'text-red-600', bg: 'bg-red-50', label: 'Rejected' },
+  under_review: { color: 'text-blue-600', bg: 'bg-blue-50', label: 'Under Review' },
+  assigned: { color: 'text-purple-600', bg: 'bg-purple-50', label: 'Assigned' },
+  actioned: { color: 'text-emerald-600', bg: 'bg-emerald-50', label: 'Actioned' },
+  closed: { color: 'text-gray-500', bg: 'bg-gray-50', label: 'Closed' },
 };
 
 const STATUS_OPTIONS: { value: Submission['status']; label: string }[] = [
   { value: 'submitted', label: 'Submitted' },
-  { value: 'in_review', label: 'In Review' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'rejected', label: 'Rejected' },
+  { value: 'under_review', label: 'Under Review' },
+  { value: 'assigned', label: 'Assigned' },
+  { value: 'actioned', label: 'Actioned' },
+  { value: 'closed', label: 'Closed' },
 ];
 
 function SectionCard({ title, icon: Icon, children }: { title: string; icon: typeof User; children: React.ReactNode }) {
@@ -377,7 +379,7 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
                   <div className="flex items-start gap-3">
                     <div className={cn(
                       'w-2 h-2 rounded-full mt-1.5 shrink-0',
-                      submission.status === 'rejected' ? 'bg-red-500' : 'bg-blue-500'
+                      submission.status === 'closed' ? 'bg-gray-500' : 'bg-blue-500'
                     )} />
                     <div>
                       <p className="text-[12px] text-gray-700 font-medium">

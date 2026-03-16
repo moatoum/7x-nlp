@@ -53,7 +53,7 @@ const LOCATIONS = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'RAK', 'Fujairah'];
 const URGENCIES = ['Same day', 'Next day', 'Express', 'Standard'];
 const VOLUMES = ['Under 100', '100-1,000', '1,000-10,000', '10,000+'];
 const INDUSTRIES = ['E-commerce / D2C', 'Retail', 'Healthcare / Pharma', 'Manufacturing', 'Food & Beverage', 'Government'];
-const STATUSES: Submission['status'][] = ['submitted', 'submitted', 'submitted', 'in_review', 'in_review', 'approved', 'approved', 'rejected'];
+const STATUSES: Submission['status'][] = ['submitted', 'submitted', 'under_review', 'under_review', 'assigned', 'actioned', 'actioned', 'closed'];
 const SPECIAL_REQS = ['Temperature sensitive', 'High value items', 'Dangerous / hazardous goods', 'Fragile / special handling', 'Oversized or heavy'];
 
 function pick<T>(arr: T[]): T {

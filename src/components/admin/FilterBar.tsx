@@ -8,9 +8,10 @@ import { cn } from '@/lib/cn';
 const STATUS_OPTIONS = [
   { value: null, label: 'All' },
   { value: 'submitted', label: 'Submitted' },
-  { value: 'in_review', label: 'In Review' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'rejected', label: 'Rejected' },
+  { value: 'under_review', label: 'Under Review' },
+  { value: 'assigned', label: 'Assigned' },
+  { value: 'actioned', label: 'Actioned' },
+  { value: 'closed', label: 'Closed' },
 ] as const;
 
 const DATE_RANGE_OPTIONS = [

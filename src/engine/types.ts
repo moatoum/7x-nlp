@@ -97,7 +97,7 @@ export type RequestStage = 'empty' | 'gathering' | 'matched' | 'review' | 'submi
 export interface Submission {
   id: string;
   referenceNumber: string;
-  status: 'submitted' | 'in_review' | 'approved' | 'rejected';
+  status: 'submitted' | 'under_review' | 'assigned' | 'actioned' | 'closed';
   createdAt: number;
   entityType: string | null;
   serviceCategory: string | null;
