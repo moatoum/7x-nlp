@@ -1,5 +1,5 @@
 variables:
-  ingresshostname: 'nls-stg.7x.ae'
+  ingresshostname: 'link-stg.7x.ae'
   replicacount: 1
   environment: 'Staging'
   k8s_namespace: 'staging'
