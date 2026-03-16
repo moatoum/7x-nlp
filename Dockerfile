@@ -1,6 +1,6 @@
 # ============================================================
 # 7X National Logistics Platform — Production Dockerfile
-# Multi-stage build for Azure App Service / Container Apps
+# Multi-stage build for Azure K8s deployment
 # ============================================================
 
 # ── Base ──
@@ -8,11 +8,11 @@ FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# ── Dependencies ──
+# ── Dependencies (all, for build) ──
 FROM base AS deps
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
-RUN npm ci --omit=dev
+RUN npm ci
 RUN npx prisma generate
 
 # ── Builder ──
@@ -24,7 +24,14 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-RUN npm run build
+RUN npx next build
+
+# ── Production dependencies only ──
+FROM base AS proddeps
+COPY package.json package-lock.json ./
+COPY prisma ./prisma/
+RUN npm ci --omit=dev
+RUN npx prisma generate
 
 # ── Runner ──
 FROM base AS runner
@@ -47,8 +54,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Copy Prisma client + schema (needed for runtime DB access)
 COPY --from=builder /app/prisma ./prisma
-COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=deps /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=proddeps /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=proddeps /app/node_modules/@prisma ./node_modules/@prisma
 
 USER nextjs
 
