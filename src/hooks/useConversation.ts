@@ -971,7 +971,7 @@ export function useConversation() {
       const cs2 = useConversationStore.getState();
       cs2.setTyping(false);
       const followId = cs2.addStreamingBotMessage();
-      await typewriterStream(followId, "Great choices. Let me connect you with our team.\n\n" + contactMsg);
+      await typewriterStream(followId, "Great choices. Just a few details to finalize your request.\n\n" + contactMsg);
       useConversationStore.getState().finalizeStreamingMessage(followId);
       useConversationStore.getState().transitionTo(nextContactNodeId);
       useConversationStore.getState().setInputDisabled(false);

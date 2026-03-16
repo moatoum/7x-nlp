@@ -29,7 +29,7 @@ export function Header() {
   }, []);
 
   return (
-    <header className="h-[56px] border-b border-gray-100 bg-white/80 backdrop-blur-xl flex items-center justify-between px-6 flex-shrink-0 z-50">
+    <header className="h-[56px] border-b border-gray-100 bg-white/80 backdrop-blur-xl flex items-center justify-between px-6 flex-shrink-0 fixed top-0 left-0 right-0 z-50 md:relative md:top-auto md:left-auto md:right-auto">
       <div className="flex items-center gap-1.5">
         <AlternatingLogo />
         <div className="hidden sm:flex items-center gap-2">

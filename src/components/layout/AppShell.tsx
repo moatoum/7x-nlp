@@ -11,6 +11,8 @@ export function AppShell() {
     <ErrorBoundary>
       <div className="h-screen flex flex-col bg-white">
         <Header />
+        {/* Spacer for fixed header on mobile */}
+        <div className="h-[56px] flex-shrink-0 md:hidden" />
         <div className="flex-1 flex min-h-0">
           {/* Left: Conversation */}
           <div className="flex-1 min-w-0">

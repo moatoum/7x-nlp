@@ -863,7 +863,7 @@ const nodes: Record<string, ConversationNode> = {
   contact_name: {
     id: 'contact_name',
     type: 'capture',
-    message: 'Great — let me connect you with our team.\n\nWhat\'s your name?',
+    message: 'Great — just a few details to finalize your request.\n\nWhat\'s your name?',
     allowFreeText: true,
     freeTextPlaceholder: 'Your full name',
     capturesField: 'contactName',
