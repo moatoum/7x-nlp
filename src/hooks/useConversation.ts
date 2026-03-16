@@ -247,6 +247,26 @@ async function handleSubmission(): Promise<boolean> {
     return false;
   }
 
+  // Validate contact name is a real name (letters, 2+ chars)
+  if (rs.contactName && (rs.contactName.trim().length < 2 || !/[a-zA-Z\u0600-\u06FF\u0900-\u097F]/.test(rs.contactName))) {
+    cs.setTyping(false);
+    cs.addBotMessage('I need your real name to proceed. Could you provide your full name?');
+    useRequestStore.getState().updateField('contactName', null);
+    cs.transitionTo('contact_name');
+    cs.setInputDisabled(false);
+    return false;
+  }
+
+  // Validate company name (2+ chars)
+  if (rs.companyName && rs.companyName.trim().length < 2) {
+    cs.setTyping(false);
+    cs.addBotMessage('Could you provide your full company name?');
+    useRequestStore.getState().updateField('companyName', null);
+    cs.transitionTo('contact_company');
+    cs.setInputDisabled(false);
+    return false;
+  }
+
   const refNumber = generateRefNumber();
   rs.setReferenceNumber(refNumber);
   rs.setStage('submitted');
@@ -670,7 +690,9 @@ export function useConversation() {
         }
       }
 
-      // Validate extracted email/phone — clear if invalid so AI re-asks just that field
+      // Validate extracted fields — clear invalid ones so AI naturally re-asks
+      const FAKE_DATA_RE = /^(test|xxx|asdf|abc|fake|na|n\/a|none|aaa|qwerty|sample)$/i;
+
       if (aiResponse.extractedFields?.contactEmail) {
         const email = aiResponse.extractedFields.contactEmail as string;
         if (!EMAIL_REGEX.test(email)) {
@@ -681,6 +703,18 @@ export function useConversation() {
         const phone = aiResponse.extractedFields.contactPhone as string;
         if (!isValidPhone(phone)) {
           useRequestStore.getState().updateField('contactPhone', null);
+        }
+      }
+      if (aiResponse.extractedFields?.contactName) {
+        const name = (aiResponse.extractedFields.contactName as string).trim();
+        if (name.length < 2 || !/[a-zA-Z\u0600-\u06FF\u0900-\u097F]/.test(name) || FAKE_DATA_RE.test(name)) {
+          useRequestStore.getState().updateField('contactName', null);
+        }
+      }
+      if (aiResponse.extractedFields?.companyName) {
+        const company = (aiResponse.extractedFields.companyName as string).trim();
+        if (company.length < 2 || FAKE_DATA_RE.test(company)) {
+          useRequestStore.getState().updateField('companyName', null);
         }
       }
 

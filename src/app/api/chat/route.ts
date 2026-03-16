@@ -229,24 +229,47 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // Sanitize extracted fields — only allow whitelisted keys
+    // Sanitize extracted fields — only allow whitelisted keys with validation
     if (parsed.extractedFields && typeof parsed.extractedFields === 'object') {
       const sanitized: Record<string, unknown> = {};
+      const FAKE_DATA = /^(test|xxx|asdf|abc|fake|na|n\/a|none|null|undefined|aaa|bbb|zzz|qwerty|sample)$/i;
+
       for (const [key, value] of Object.entries(parsed.extractedFields)) {
-        if (ALLOWED_FIELDS.has(key) && value !== null && value !== undefined) {
-          // Validate email format
-          if (key === 'contactEmail' && typeof value === 'string' && !EMAIL_REGEX.test(value)) {
-            continue; // skip invalid email
-          }
-          // Validate phone format
-          if (key === 'contactPhone' && typeof value === 'string') {
-            const digitsOnly = value.replace(/\D/g, '');
-            if (digitsOnly.length < 7 || /^(\d)\1+$/.test(digitsOnly)) {
-              continue; // skip invalid phone
-            }
-          }
-          sanitized[key] = value;
+        if (!ALLOWED_FIELDS.has(key) || value === null || value === undefined) continue;
+
+        // Cap string field values at 200 characters
+        if (typeof value === 'string' && value.length > 200) continue;
+
+        // Validate email format
+        if (key === 'contactEmail' && typeof value === 'string') {
+          if (!EMAIL_REGEX.test(value)) continue;
         }
+
+        // Validate phone format: 7+ digits, not all same digit, not sequential
+        if (key === 'contactPhone' && typeof value === 'string') {
+          const digitsOnly = value.replace(/\D/g, '');
+          if (digitsOnly.length < 7 || /^(\d)\1+$/.test(digitsOnly) || digitsOnly === '1234567' || digitsOnly === '12345678') continue;
+        }
+
+        // Validate contact name: 2+ chars, has at least one letter, not fake
+        if (key === 'contactName' && typeof value === 'string') {
+          const trimmed = value.trim();
+          if (trimmed.length < 2 || !/[a-zA-Z\u0600-\u06FF\u0900-\u097F]/.test(trimmed) || FAKE_DATA.test(trimmed)) continue;
+        }
+
+        // Validate company name: 2+ chars, not fake
+        if (key === 'companyName' && typeof value === 'string') {
+          const trimmed = value.trim();
+          if (trimmed.length < 2 || FAKE_DATA.test(trimmed)) continue;
+        }
+
+        // Validate locations: must contain at least one letter, 2+ chars
+        if ((key === 'originLocation' || key === 'destinationLocation') && typeof value === 'string') {
+          const trimmed = value.trim();
+          if (trimmed.length < 2 || !/[a-zA-Z\u0600-\u06FF]/.test(trimmed) || FAKE_DATA.test(trimmed)) continue;
+        }
+
+        sanitized[key] = value;
       }
       parsed.extractedFields = sanitized;
     }
