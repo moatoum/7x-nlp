@@ -16,6 +16,12 @@ interface ConfirmationPayload {
   urgency: string | null;
   frequency: string | null;
   specialRequirements: string[];
+  supplierStatus: string | null;
+  supplierCountry: string | null;
+  goodsCategory: string | null;
+  incoterms: string | null;
+  cargoVolume: string | null;
+  customsRequired: string | null;
   recommendedServices: Array<{ name: string; category: string }>;
 }
 
@@ -32,6 +38,12 @@ function buildEmailHtml(data: ConfirmationPayload): string {
   if (data.urgency) detailRows.push(['Urgency', data.urgency]);
   if (data.frequency) detailRows.push(['Volume', data.frequency]);
   if (data.specialRequirements?.length > 0) detailRows.push(['Special Requirements', data.specialRequirements.join(', ')]);
+  if (data.supplierStatus) detailRows.push(['Supplier Status', data.supplierStatus]);
+  if (data.supplierCountry) detailRows.push(['Supplier Country', data.supplierCountry]);
+  if (data.goodsCategory) detailRows.push(['Goods Category', data.goodsCategory]);
+  if (data.incoterms) detailRows.push(['Incoterms', data.incoterms]);
+  if (data.cargoVolume) detailRows.push(['Cargo Volume', data.cargoVolume]);
+  if (data.customsRequired) detailRows.push(['Customs Assistance', data.customsRequired]);
 
   const details = detailRows
     .map(([label, value]) => `

@@ -25,6 +25,13 @@ model Submission {
   additionalNotes       String?  @map("additional_notes")
   currentCourier        String?  @map("current_courier")
 
+  supplierStatus        String?  @map("supplier_status")
+  supplierCountry       String?  @map("supplier_country")
+  goodsCategory         String?  @map("goods_category")
+  incoterms             String?
+  cargoVolume           String?  @map("cargo_volume")
+  customsRequired       String?  @map("customs_required")
+
   contactName           String?  @map("contact_name")
   contactEmail          String?  @map("contact_email")
   contactPhone          String?  @map("contact_phone")

@@ -52,6 +52,7 @@ const nodes: Record<string, ConversationNode> = {
       { id: 'returns', label: 'Handle returns or repairs', icon: 'RotateCcw' },
       { id: 'customs', label: 'Customs and trade services', icon: 'FileCheck' },
       { id: 'postal', label: 'Postal and mail services', icon: 'Mail' },
+      { id: 'import_goods', label: 'Import goods from a supplier', icon: 'Ship' },
       { id: 'unsure', label: 'I\'m not sure yet', icon: 'HelpCircle' },
     ],
     allowFreeText: true,
@@ -65,6 +66,7 @@ const nodes: Record<string, ConversationNode> = {
       { condition: 'chip', value: 'returns', targetNodeId: 'returns_type', priority: 10 },
       { condition: 'chip', value: 'customs', targetNodeId: 'customs_type', priority: 10 },
       { condition: 'chip', value: 'postal', targetNodeId: 'postal_type', priority: 10 },
+      { condition: 'chip', value: 'import_goods', targetNodeId: 'import_supplier_known', priority: 10 },
       { condition: 'chip', value: 'unsure', targetNodeId: 'unsure_guide', priority: 10 },
       { condition: 'any', targetNodeId: 'unsure_guide', priority: 0 },
     ],
@@ -362,6 +364,133 @@ const nodes: Record<string, ConversationNode> = {
     capturesField: 'serviceSubcategory',
     edges: [
       { condition: 'any', targetNodeId: 'business_type', priority: 0 },
+    ],
+  },
+
+  // ===== IMPORT GOODS PATH =====
+  import_supplier_known: {
+    id: 'import_supplier_known',
+    type: 'question',
+    message: 'Do you already have an established supplier for the goods you want to import?',
+    chips: [
+      { id: 'yes', label: 'Yes, I have a supplier' },
+      { id: 'exploring', label: 'Still exploring suppliers' },
+    ],
+    capturesField: 'supplierStatus',
+    onEnter: () => ({
+      serviceCategory: 'Import goods from a supplier',
+      destinationLocation: 'Within the UAE',
+    }),
+    edges: [
+      { condition: 'chip', value: 'yes', targetNodeId: 'import_supplier_country', priority: 10 },
+      { condition: 'chip', value: 'exploring', targetNodeId: 'import_supplier_country', priority: 10 },
+      { condition: 'any', targetNodeId: 'import_supplier_country', priority: 0 },
+    ],
+  },
+
+  import_supplier_country: {
+    id: 'import_supplier_country',
+    type: 'question',
+    message: 'Which country or region is your supplier based in?',
+    chips: [
+      { id: 'china', label: 'China' },
+      { id: 'india', label: 'India' },
+      { id: 'turkey', label: 'Turkey' },
+      { id: 'europe', label: 'Europe' },
+      { id: 'usa', label: 'USA' },
+      { id: 'other', label: 'Other' },
+    ],
+    allowFreeText: true,
+    freeTextPlaceholder: 'Country or region name',
+    capturesField: 'supplierCountry',
+    edges: [
+      { condition: 'any', targetNodeId: 'import_goods_category', priority: 0 },
+    ],
+  },
+
+  import_goods_category: {
+    id: 'import_goods_category',
+    type: 'question',
+    message: 'What type of goods are you importing?',
+    chips: [
+      { id: 'raw_materials', label: 'Raw materials' },
+      { id: 'components', label: 'Components / parts' },
+      { id: 'finished', label: 'Finished products' },
+      { id: 'machinery', label: 'Machinery / equipment' },
+      { id: 'textiles', label: 'Textiles / garments' },
+      { id: 'food', label: 'Food / perishables' },
+    ],
+    allowFreeText: true,
+    freeTextPlaceholder: 'Or describe your goods...',
+    capturesField: 'goodsCategory',
+    edges: [
+      { condition: 'any', targetNodeId: 'import_incoterms', priority: 0 },
+    ],
+  },
+
+  import_incoterms: {
+    id: 'import_incoterms',
+    type: 'question',
+    message: 'What shipping terms (Incoterms) have you agreed with your supplier?',
+    chips: [
+      { id: 'fob', label: 'FOB (Free on Board)' },
+      { id: 'cif', label: 'CIF (Cost, Insurance & Freight)' },
+      { id: 'exw', label: 'EXW (Ex Works)' },
+      { id: 'ddp', label: 'DDP (Delivered Duty Paid)' },
+      { id: 'not_sure', label: 'Not sure yet' },
+    ],
+    capturesField: 'incoterms',
+    edges: [
+      { condition: 'any', targetNodeId: 'import_cargo_volume', priority: 0 },
+    ],
+  },
+
+  import_cargo_volume: {
+    id: 'import_cargo_volume',
+    type: 'question',
+    message: 'What\'s the expected volume per shipment?',
+    chips: [
+      { id: 'small', label: 'Less than 1 CBM' },
+      { id: 'medium', label: '1 - 5 CBM' },
+      { id: 'fcl_20', label: 'Full container (20ft)' },
+      { id: 'fcl_40', label: 'Full container (40ft)' },
+      { id: 'multi', label: 'Multiple containers' },
+      { id: 'not_sure', label: 'Not sure yet' },
+    ],
+    capturesField: 'cargoVolume',
+    edges: [
+      { condition: 'any', targetNodeId: 'import_customs', priority: 0 },
+    ],
+  },
+
+  import_customs: {
+    id: 'import_customs',
+    type: 'question',
+    message: 'Do you need customs clearance assistance for importing into the UAE?',
+    chips: [
+      { id: 'yes', label: 'Yes, I need help' },
+      { id: 'no', label: 'No, we handle it' },
+      { id: 'not_sure', label: 'Not sure' },
+    ],
+    capturesField: 'customsRequired',
+    edges: [
+      { condition: 'any', targetNodeId: 'import_frequency', priority: 0 },
+    ],
+  },
+
+  import_frequency: {
+    id: 'import_frequency',
+    type: 'question',
+    message: 'How often do you expect to import shipments?',
+    chips: [
+      { id: 'one_time', label: 'One-time shipment' },
+      { id: 'monthly', label: 'Monthly' },
+      { id: 'quarterly', label: 'Quarterly' },
+      { id: 'weekly', label: 'Weekly or more' },
+    ],
+    capturesField: 'frequency',
+    edges: [
+      { condition: 'any', targetNodeId: 'special_requirements', priority: 0 },
     ],
   },
 
@@ -704,6 +833,7 @@ export function getNode(id: string): ConversationNode {
 export function detectCategoryFromText(input: string): string {
   const lower = input.toLowerCase();
   const keywords: Record<string, string[]> = {
+    import_supplier_known: ['import goods', 'importing', 'supplier', 'procurement', 'source from'],
     ship_destination: ['ship', 'send', 'deliver', 'package', 'parcel', 'courier', 'dispatch'],
     freight_type: ['freight', 'cargo', 'container', 'fcl', 'lcl', 'bulk', 'heavy'],
     warehouse_type: ['warehouse', 'storage', 'store', 'inventory', 'stock'],

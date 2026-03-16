@@ -14,6 +14,7 @@ const CATEGORY_MAP: Record<string, string> = {
   'First Mile / Pickup': 'first_mile',
   'Last Mile / Delivery': 'last_mile',
   'Road freight / Trucking': 'road_freight',
+  'Import goods from a supplier': 'trade_customs',
 };
 
 function normalizeCategory(input: string | null): string | null {

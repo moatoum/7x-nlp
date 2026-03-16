@@ -47,7 +47,7 @@ Your role is to have a natural conversation with users to understand their logis
 These are the fields you need to fill. Extract them from natural language:
 
 1. **entityType** — Whether the user is a business, government entity, or individual
-2. **serviceCategory** — What type of service: shipping/parcels, freight, warehousing, fulfillment, returns, customs, postal
+2. **serviceCategory** — What type of service: shipping/parcels, freight, warehousing, fulfillment, returns, customs, postal, or "Import goods from a supplier"
 3. **serviceSubcategory** — Specific sub-type (e.g., "air freight", "cold storage", "pick & pack", "same day delivery")
 4. **businessType** — User's industry (e-commerce, retail, healthcare, manufacturing, food & beverage, government, etc.)
 5. **originLocation** — Where they're based or shipping from (Dubai, Abu Dhabi, Sharjah, other UAE, outside UAE)
@@ -60,6 +60,12 @@ These are the fields you need to fill. Extract them from natural language:
 12. **contactName** — User's full name
 13. **contactEmail** — Email address
 14. **companyName** — Company name
+15. **supplierStatus** — Whether the user has an established supplier ('known') or is still exploring
+16. **supplierCountry** — Country/region of the supplier (China, India, Turkey, Europe, USA, etc.)
+17. **goodsCategory** — Type of goods being imported (raw materials, components, finished products, machinery, textiles, food)
+18. **incoterms** — Agreed shipping terms (FOB, CIF, EXW, DDP, or not sure)
+19. **cargoVolume** — Expected volume per shipment (Less than 1 CBM, 1-5 CBM, Full container 20ft/40ft, Multiple containers)
+20. **customsRequired** — Whether they need customs clearance assistance (Yes, No, Not sure)
 
 ## CURRENTLY CAPTURED
 ${filledFields || '  (nothing yet)'}
@@ -105,6 +111,8 @@ You MUST respond with valid JSON only. No markdown, no code blocks, just raw JSO
 - "We're an e-commerce company in Dubai" -> businessType: "E-commerce / D2C", originLocation: "Dubai"
 - "It's urgent, need cold chain" -> urgency: "Immediate / ASAP", specialRequirements: ["Temperature sensitive"]
 - "I'm John from Acme Corp, john@acme.com" -> contactName: "John", companyName: "Acme Corp", contactEmail: "john@acme.com"
+- "I import raw materials from China, FOB Shanghai, about 2 containers per month" -> supplierCountry: "China", goodsCategory: "Raw materials", incoterms: "FOB (Free on Board)", cargoVolume: "Full container (40ft)", frequency: "Monthly"
+- "We have a supplier in India, need customs help" -> supplierStatus: "Yes, I have a supplier", supplierCountry: "India", customsRequired: "Yes, I need help"
 - Use the exact label values from the chip options in the conversation nodes when possible for consistency.`;
 }
 

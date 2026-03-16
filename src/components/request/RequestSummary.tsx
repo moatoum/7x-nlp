@@ -36,6 +36,12 @@ export function RequestSummary() {
     frequency,
     specialRequirements,
     currentCourier,
+    supplierStatus,
+    supplierCountry,
+    goodsCategory,
+    incoterms,
+    cargoVolume,
+    customsRequired,
     contactName,
     contactEmail,
     companyName,
@@ -62,6 +68,7 @@ export function RequestSummary() {
   const hasServiceInfo = serviceCategory || serviceSubcategory;
   const hasDetails = urgency || originLocation || destinationLocation || frequency;
   const hasBusiness = businessType;
+  const hasImportDetails = supplierStatus || supplierCountry || goodsCategory || incoterms || cargoVolume || customsRequired;
   const hasCourier = !!currentCourier;
   const hasContact = contactName || contactEmail || companyName;
 
@@ -124,6 +131,23 @@ export function RequestSummary() {
           <h4 className="text-xs font-semibold text-gray-900 mb-2">Service</h4>
           <SummaryField label="Category" value={serviceCategory} isHighlighted={isHL('serviceCategory')} fieldKey="serviceCategory" onEdit={handleEdit} />
           <SummaryField label="Type" value={serviceSubcategory} isHighlighted={isHL('serviceSubcategory')} fieldKey="serviceSubcategory" onEdit={handleEdit} />
+        </motion.div>
+      )}
+
+      {/* Import Details */}
+      {hasImportDetails && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
+        >
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">Import Details</h4>
+          <SummaryField label="Supplier" value={supplierStatus} isHighlighted={isHL('supplierStatus')} fieldKey="supplierStatus" onEdit={handleEdit} />
+          <SummaryField label="Supplier Country" value={supplierCountry} isHighlighted={isHL('supplierCountry')} fieldKey="supplierCountry" onEdit={handleEdit} />
+          <SummaryField label="Goods" value={goodsCategory} isHighlighted={isHL('goodsCategory')} fieldKey="goodsCategory" onEdit={handleEdit} />
+          <SummaryField label="Incoterms" value={incoterms} isHighlighted={isHL('incoterms')} fieldKey="incoterms" onEdit={handleEdit} />
+          <SummaryField label="Volume" value={cargoVolume} isHighlighted={isHL('cargoVolume')} fieldKey="cargoVolume" onEdit={handleEdit} />
+          <SummaryField label="Customs Help" value={customsRequired} isHighlighted={isHL('customsRequired')} fieldKey="customsRequired" onEdit={handleEdit} />
         </motion.div>
       )}
 

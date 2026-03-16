@@ -175,6 +175,20 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
             </div>
           </SectionCard>
 
+          {/* Import Details */}
+          {(submission.supplierStatus || submission.supplierCountry || submission.goodsCategory || submission.incoterms || submission.cargoVolume || submission.customsRequired) && (
+            <SectionCard title="Import Details" icon={Package}>
+              <div className="grid grid-cols-2 gap-4">
+                <DetailRow label="Supplier Status" value={submission.supplierStatus} />
+                <DetailRow label="Supplier Country" value={submission.supplierCountry} />
+                <DetailRow label="Goods Category" value={submission.goodsCategory} />
+                <DetailRow label="Incoterms" value={submission.incoterms} />
+                <DetailRow label="Cargo Volume" value={submission.cargoVolume} />
+                <DetailRow label="Customs Assistance" value={submission.customsRequired} />
+              </div>
+            </SectionCard>
+          )}
+
           {/* Route & Volume */}
           <SectionCard title="Route & Volume" icon={MapPin}>
             <div className="grid grid-cols-2 gap-4">

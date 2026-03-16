@@ -35,6 +35,12 @@ async function fetchAIRecommendations(fields: RequestFields): Promise<ServiceMat
       urgency: fields.urgency,
       specialRequirements: fields.specialRequirements,
       additionalNotes: fields.additionalNotes,
+      supplierStatus: fields.supplierStatus,
+      supplierCountry: fields.supplierCountry,
+      goodsCategory: fields.goodsCategory,
+      incoterms: fields.incoterms,
+      cargoVolume: fields.cargoVolume,
+      customsRequired: fields.customsRequired,
     };
 
     const response = await fetch('/api/chat', {
@@ -107,6 +113,12 @@ async function persistSubmission(refNumber: string) {
       specialRequirements: req.specialRequirements,
       additionalNotes: req.additionalNotes,
       currentCourier: req.currentCourier,
+      supplierStatus: req.supplierStatus,
+      supplierCountry: req.supplierCountry,
+      goodsCategory: req.goodsCategory,
+      incoterms: req.incoterms,
+      cargoVolume: req.cargoVolume,
+      customsRequired: req.customsRequired,
       contactName: req.contactName,
       contactEmail: req.contactEmail,
       contactPhone: req.contactPhone,
@@ -191,6 +203,12 @@ async function sendConfirmationEmail(refNumber: string, rs: ReturnType<typeof us
         urgency: rs.urgency,
         frequency: rs.frequency,
         specialRequirements: rs.specialRequirements || [],
+        supplierStatus: rs.supplierStatus,
+        supplierCountry: rs.supplierCountry,
+        goodsCategory: rs.goodsCategory,
+        incoterms: rs.incoterms,
+        cargoVolume: rs.cargoVolume,
+        customsRequired: rs.customsRequired,
         recommendedServices: (rs.recommendedServices || []).map((s) => ({
           name: s.name,
           category: s.category,
@@ -204,6 +222,18 @@ async function sendConfirmationEmail(refNumber: string, rs: ReturnType<typeof us
 
 // Determine a reasonable node ID based on what fields are filled
 function inferNodeFromFields(fields: Partial<RequestFields>): string {
+  // Import flow inference
+  if (fields.serviceCategory === 'Import goods from a supplier') {
+    if (!fields.supplierStatus) return 'import_supplier_known';
+    if (!fields.supplierCountry) return 'import_supplier_country';
+    if (!fields.goodsCategory) return 'import_goods_category';
+    if (!fields.incoterms) return 'import_incoterms';
+    if (!fields.cargoVolume) return 'import_cargo_volume';
+    if (!fields.customsRequired) return 'import_customs';
+    if (!fields.frequency) return 'import_frequency';
+    // Fall through to shared node checks below
+  }
+
   if (fields.contactName && fields.contactEmail && fields.contactPhone && fields.companyName) return 'additional_notes';
   if (fields.contactName && fields.contactEmail && fields.contactPhone) return 'contact_company';
   if (fields.contactName && fields.contactEmail) return 'contact_phone';
@@ -322,6 +352,14 @@ export function useConversation() {
 
     const nextNode = getNode(nextNodeId);
 
+    // Apply onEnter field auto-sets (e.g., import flow sets serviceCategory + destinationLocation)
+    if (nextNode.onEnter) {
+      const autoFields = nextNode.onEnter(useRequestStore.getState() as RequestFields);
+      for (const [field, value] of Object.entries(autoFields)) {
+        useRequestStore.getState().updateField(field as keyof RequestFields, value as string | string[] | null);
+      }
+    }
+
     if (nextNode.type === 'recommendation') {
       const rs = useRequestStore.getState();
 
@@ -404,6 +442,12 @@ export function useConversation() {
       specialRequirements: reqStore.specialRequirements,
       additionalNotes: reqStore.additionalNotes,
       currentCourier: reqStore.currentCourier,
+      supplierStatus: reqStore.supplierStatus,
+      supplierCountry: reqStore.supplierCountry,
+      goodsCategory: reqStore.goodsCategory,
+      incoterms: reqStore.incoterms,
+      cargoVolume: reqStore.cargoVolume,
+      customsRequired: reqStore.customsRequired,
       contactName: reqStore.contactName,
       contactEmail: reqStore.contactEmail,
       contactPhone: reqStore.contactPhone,
@@ -560,6 +604,14 @@ export function useConversation() {
       }
 
       const nextNode = getNode(nextNodeId);
+
+      // Apply onEnter field auto-sets in fallback path too
+      if (nextNode.onEnter) {
+        const autoFields = nextNode.onEnter(useRequestStore.getState() as RequestFields);
+        for (const [field, value] of Object.entries(autoFields)) {
+          useRequestStore.getState().updateField(field as keyof RequestFields, value as string | string[] | null);
+        }
+      }
 
       if (nextNode.type === 'recommendation') {
         const rs = useRequestStore.getState();

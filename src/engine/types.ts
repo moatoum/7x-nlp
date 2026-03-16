@@ -79,6 +79,12 @@ export interface RequestFields {
   specialRequirements: string[];
   additionalNotes: string | null;
   currentCourier: string | null;
+  supplierStatus: string | null;
+  supplierCountry: string | null;
+  goodsCategory: string | null;
+  incoterms: string | null;
+  cargoVolume: string | null;
+  customsRequired: string | null;
   contactName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
@@ -103,6 +109,12 @@ export interface Submission {
   specialRequirements: string[];
   additionalNotes: string | null;
   currentCourier: string | null;
+  supplierStatus: string | null;
+  supplierCountry: string | null;
+  goodsCategory: string | null;
+  incoterms: string | null;
+  cargoVolume: string | null;
+  customsRequired: string | null;
   contactName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
