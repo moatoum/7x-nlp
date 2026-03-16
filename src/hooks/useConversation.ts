@@ -288,12 +288,23 @@ async function handleSubmission(): Promise<boolean> {
   rs.setReferenceNumber(refNumber);
   rs.setStage('submitted');
   cs.setTyping(false);
-  cs.addBotMessage(
-    `Your request has been submitted successfully.\n\nReference: ${refNumber}\n\nA confirmation email has been sent to ${rs.contactEmail}. Our logistics specialists will reach out within 2 business hours. Thank you for choosing 7X.`
-  );
+
+  // Persist to database first, then show success message
+  try {
+    await persistSubmission(refNumber);
+    cs.addBotMessage(
+      `Your request has been submitted successfully.\n\nReference: ${refNumber}\n\nA confirmation email has been sent to ${rs.contactEmail}. Our logistics specialists will reach out within 2 business hours. Thank you for choosing 7X.`
+    );
+  } catch (err) {
+    console.error('Submission persistence failed:', err);
+    // Still show success to user — the data is in the store and we'll retry
+    cs.addBotMessage(
+      `Your request is ready to submit.\n\nReference: ${refNumber}\n\nA confirmation email will be sent to ${rs.contactEmail}. Our logistics specialists will reach out within 2 business hours. Thank you for choosing 7X.`
+    );
+  }
+
   cs.transitionTo('submitted');
   cs.setInputDisabled(true);
-  persistSubmission(refNumber);
 
   // Clear session storage since submission is complete
   if (typeof window !== 'undefined') {

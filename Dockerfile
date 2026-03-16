@@ -57,8 +57,14 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=proddeps /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=proddeps /app/node_modules/@prisma ./node_modules/@prisma
 
+# Copy Prisma CLI (needed for migrate deploy at startup)
+COPY --from=proddeps /app/node_modules/prisma ./node_modules/prisma
+
+# Copy startup script
+COPY --from=builder /app/start.sh ./start.sh
+
 USER nextjs
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["sh", "start.sh"]

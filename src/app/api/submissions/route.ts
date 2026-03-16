@@ -12,9 +12,10 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(submissions.map(toClientSubmission));
-  } catch (error) {
-    console.error('GET /api/submissions error:', error);
-    return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 });
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('GET /api/submissions error:', errMsg, error);
+    return NextResponse.json({ error: `Failed to fetch submissions: ${errMsg}` }, { status: 500 });
   }
 }
 
@@ -99,8 +100,9 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(toClientSubmission(submission), { status: 201 });
-  } catch (error) {
-    console.error('POST /api/submissions error:', error);
-    return NextResponse.json({ error: 'Failed to create submission' }, { status: 500 });
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('POST /api/submissions error:', errMsg, error);
+    return NextResponse.json({ error: `Failed to create submission: ${errMsg}` }, { status: 500 });
   }
 }

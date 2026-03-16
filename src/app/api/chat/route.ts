@@ -21,6 +21,7 @@ function checkRateLimit(ip: string): boolean {
 
 // Allowed field keys that the AI can extract
 const ALLOWED_FIELDS = new Set<string>([
+  'entityType',
   'serviceCategory', 'serviceSubcategory', 'businessType',
   'originLocation', 'destinationLocation', 'frequency',
   'urgency', 'specialRequirements', 'additionalNotes',

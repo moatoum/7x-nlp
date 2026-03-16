@@ -21,9 +21,10 @@ export async function GET() {
         createdAt: l.createdAt.getTime(),
       }))
     );
-  } catch (error) {
-    console.error('GET /api/leads error:', error);
-    return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('GET /api/leads error:', errMsg, error);
+    return NextResponse.json({ error: `Failed to fetch leads: ${errMsg}` }, { status: 500 });
   }
 }
 
@@ -59,8 +60,9 @@ export async function POST(request: NextRequest) {
       { ...lead, createdAt: lead.createdAt.getTime() },
       { status: 201 }
     );
-  } catch (error) {
-    console.error('POST /api/leads error:', error);
-    return NextResponse.json({ error: 'Failed to create lead' }, { status: 500 });
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('POST /api/leads error:', errMsg, error);
+    return NextResponse.json({ error: `Failed to create lead: ${errMsg}` }, { status: 500 });
   }
 }
