@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "project.fullname" . }}
+  labels:
+    app: {{ template "project.name" . }}
+    chart: {{ template "project.chart" . }}
+    draft: {{ .Values.draft | default "draft-app" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  {{- if not .Values.hpa.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}  
+  selector:
+    matchLabels:
+      app: {{ template "project.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "project.name" . }}
+        draft: {{ .Values.draft | default "draft-app" }}
+        release: {{ .Release.Name }}
+        azure.workload.identity/use: "true"
+
+    spec:
+      serviceAccountName: {{ .Values.service_account }}   
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: {{ template "project.name" . }}       
+      initContainers:
+      - args:
+        - -w
+        - net.ipv6.conf.all.disable_ipv6=1
+        command:
+        - /bin/sysctl
+        image: docker.io/busybox
+        imagePullPolicy: IfNotPresent
+        name: disable-ipv6
+        securityContext:
+          privileged: true              
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repo }}/{{ .Chart.Name }}:{{ .Chart.Version }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: {{ .Values.ports.containerPort }}
+              protocol: TCP
+          {{- if .Values.spc.enabled }}     
+          volumeMounts:
+          - name: secrets-store01-inline
+            mountPath: "/mnt/secrets-store"
+            readOnly: true
+          {{- end }}   
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory | quote }}
+            limits:
+              memory: {{ .Values.resources.limits.memory | quote }}
+
+
+          {{- if .Values.probes.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          {{- end }}
+          env:
+          - name: ASPNETCORE_ENVIRONMENT
+            value: {{ .Values.environment }}
+    
+
+
+      {{- if .Values.spc.enabled }}            
+      volumes:
+        - name: secrets-store01-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ template "project.fullname" . }}
+      {{- end }} 

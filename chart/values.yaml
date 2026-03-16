@@ -1,0 +1,23 @@
+image:
+  repo: crepapps.azurecr.io
+
+ports:
+  containerPort: 3000
+
+probes:
+  enabled: false
+
+pdb:
+  enabled: false
+  min_available: 1  
+
+ingress:
+  enabled: true
+  annotations:
+    #kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/client_max_body_size: 10m
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+
+  tlsSecret: "7x-nls-cert"
+  applicationPath: "/"

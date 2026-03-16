@@ -1,0 +1,7 @@
+variables:
+  imagename: 'nls-7x'
+  artifactdirectory: '$(build.artifactstagingdirectory)'
+  k8sserviceconnection: 'sc-shared-k8s'
+  sonarQubeProjectKey: ''
+  sonarQubeProjectName: ''
+  solution: ''
