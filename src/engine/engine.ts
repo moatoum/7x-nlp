@@ -904,6 +904,18 @@ const nodes: Record<string, ConversationNode> = {
     freeTextPlaceholder: 'Company name',
     capturesField: 'companyName',
     edges: [
+      { condition: 'any', targetNodeId: 'additional_info', priority: 0 },
+    ],
+  },
+
+  additional_info: {
+    id: 'additional_info',
+    type: 'capture',
+    message: 'Is there any additional information or anything else you\'d like to let us know about?',
+    allowFreeText: true,
+    freeTextPlaceholder: 'Type any additional details...',
+    capturesField: 'additionalNotes',
+    edges: [
       { condition: 'any', targetNodeId: 'review', priority: 0 },
     ],
   },
@@ -912,7 +924,7 @@ const nodes: Record<string, ConversationNode> = {
   review: {
     id: 'review',
     type: 'info',
-    message: 'Your request is ready for review. Please check the summary panel and submit when you\'re satisfied.',
+    message: 'Your request is ready to submit. Please review the summary panel and submit when you\'re satisfied.',
     chips: [
       { id: 'submit', label: 'Submit Request' },
       { id: 'edit', label: 'I want to change something' },

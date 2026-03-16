@@ -154,17 +154,21 @@ function isValidPhone(phone: string): boolean {
   return true;
 }
 
-/** Return the first unfilled contact capture node, or 'review' if all filled */
+/** Return the first unfilled contact capture node, additional_info if not visited, or 'review' if all done */
 function findNextContactNode(rs: Partial<RequestFields>): string {
   if (!rs.contactName) return 'contact_name';
   if (!rs.contactEmail) return 'contact_email';
   if (!rs.contactPhone) return 'contact_phone';
   if (!rs.companyName) return 'contact_company';
+  // Always ask the additional info question before review
+  const visited = useConversationStore.getState().visitedNodes;
+  if (!visited.includes('additional_info')) return 'additional_info';
   return 'review';
 }
 
 const NEVER_AUTO_SKIP = new Set([
   'contact_name', 'contact_email', 'contact_phone', 'contact_company',
+  'additional_info',
   'review', 'recommendation', 'recommendation_response', 'submitted',
   'entity_type', 'welcome', 'individual_redirect', 'refine_recommendation',
 ]);
@@ -353,7 +357,11 @@ function inferNodeFromFields(fields: Partial<RequestFields>): string {
     // Fall through to recommendation check
   }
 
-  if (fields.contactName && fields.contactEmail && fields.contactPhone && fields.companyName) return 'review';
+  if (fields.contactName && fields.contactEmail && fields.contactPhone && fields.companyName) {
+    const visited = useConversationStore.getState().visitedNodes;
+    if (!visited.includes('additional_info')) return 'additional_info';
+    return 'review';
+  }
   if (fields.contactName && fields.contactEmail && fields.contactPhone) return 'contact_company';
   if (fields.contactName && fields.contactEmail) return 'contact_phone';
   if (fields.contactName) return 'contact_email';
@@ -499,7 +507,7 @@ export function useConversation() {
 
     // Resolve skips: contact fields, volume for one-time, already-captured fields
     let nextNodeId = rawNextNodeId;
-    if (['contact_name', 'contact_email', 'contact_phone', 'contact_company'].includes(nextNodeId)) {
+    if (['contact_name', 'contact_email', 'contact_phone', 'contact_company', 'additional_info'].includes(nextNodeId)) {
       nextNodeId = findNextContactNode(useRequestStore.getState());
     } else {
       nextNodeId = resolveNodeSkip(nextNodeId, useRequestStore.getState());
@@ -613,6 +621,23 @@ export function useConversation() {
 
     if (reqStore.stage === 'empty') {
       reqStore.setStage('gathering');
+    }
+
+    // Special case: additional_info capture — save user's text as-is and go to review
+    if (convStore.currentNodeId === 'additional_info') {
+      useRequestStore.getState().updateField('additionalNotes', text);
+      useRequestStore.getState().setStage('review');
+      const cs = useConversationStore.getState();
+      cs.setTyping(false);
+      const msgId = cs.addStreamingBotMessage();
+      await typewriterStream(msgId, 'Got it, thank you. Your request is ready to submit. Please review the summary panel and submit when you\'re satisfied.');
+      useConversationStore.getState().finalizeStreamingMessage(msgId, [
+        { id: 'submit', label: 'Submit Request' },
+        { id: 'edit', label: 'I want to change something' },
+      ]);
+      useConversationStore.getState().transitionTo('review');
+      useConversationStore.getState().setInputDisabled(false);
+      return;
     }
 
     // Build current fields snapshot
@@ -770,16 +795,32 @@ export function useConversation() {
           useConversationStore.getState().finalizeStreamingMessage(msgId, suggestedChips);
         }
       } else if (aiResponse.allFieldsComplete) {
-        // All contact fields captured — move to review
-        useRequestStore.getState().setStage('review');
-        await typewriterStream(msgId, aiResponse.message);
-        useConversationStore.getState().finalizeStreamingMessage(msgId, [
-          { id: 'submit', label: 'Submit Request' },
-          { id: 'edit', label: 'I want to change something' },
-        ]);
-        const cs2 = useConversationStore.getState();
-        cs2.transitionTo('review');
-        cs2.setInputDisabled(false);
+        // All contact fields captured — check if we still need additional_info
+        const rs2 = useRequestStore.getState();
+        const nextContactNode = findNextContactNode(rs2);
+
+        if (nextContactNode === 'review') {
+          // Everything captured — go to review
+          useRequestStore.getState().setStage('review');
+          await typewriterStream(msgId, 'Your request is ready to submit. Please review the summary panel and submit when you\'re satisfied.');
+          useConversationStore.getState().finalizeStreamingMessage(msgId, [
+            { id: 'submit', label: 'Submit Request' },
+            { id: 'edit', label: 'I want to change something' },
+          ]);
+          const cs2 = useConversationStore.getState();
+          cs2.transitionTo('review');
+          cs2.setInputDisabled(false);
+        } else {
+          // Still need contact fields or additional_info
+          const contactNode = getNode(nextContactNode);
+          const contactMsg = typeof contactNode.message === 'function'
+            ? contactNode.message(rs2 as RequestFields)
+            : contactNode.message;
+          await typewriterStream(msgId, aiResponse.message + '\n\n' + contactMsg);
+          useConversationStore.getState().finalizeStreamingMessage(msgId);
+          useConversationStore.getState().transitionTo(nextContactNode);
+          useConversationStore.getState().setInputDisabled(false);
+        }
         return;
       } else {
         await typewriterStream(msgId, aiResponse.message);
@@ -817,7 +858,7 @@ export function useConversation() {
 
       // Apply field-skip and contact-skip logic
       let nextNodeId = rawFallbackId;
-      if (['contact_name', 'contact_email', 'contact_phone', 'contact_company'].includes(nextNodeId)) {
+      if (['contact_name', 'contact_email', 'contact_phone', 'contact_company', 'additional_info'].includes(nextNodeId)) {
         nextNodeId = findNextContactNode(useRequestStore.getState());
       } else {
         nextNodeId = resolveNodeSkip(nextNodeId, useRequestStore.getState());
@@ -950,12 +991,12 @@ export function useConversation() {
     const nextContactNodeId = findNextContactNode(useRequestStore.getState());
 
     if (nextContactNodeId === 'review') {
-      // All contact fields already captured — go straight to review
+      // All contact fields + additional info captured — go straight to review
       useRequestStore.getState().setStage('review');
       const cs2 = useConversationStore.getState();
       cs2.setTyping(false);
       const followId = cs2.addStreamingBotMessage();
-      await typewriterStream(followId, "Great choices. Your request is ready for review. Please check the summary panel and submit when you're satisfied.");
+      await typewriterStream(followId, "Great choices. Your request is ready to submit. Please review the summary panel and submit when you're satisfied.");
       useConversationStore.getState().finalizeStreamingMessage(followId, [
         { id: 'submit', label: 'Submit Request' },
         { id: 'edit', label: 'I want to change something' },
@@ -971,7 +1012,11 @@ export function useConversation() {
       const cs2 = useConversationStore.getState();
       cs2.setTyping(false);
       const followId = cs2.addStreamingBotMessage();
-      await typewriterStream(followId, "Great choices. Just a few details to finalize your request.\n\n" + contactMsg);
+      // Use appropriate prefix based on whether we're entering contact capture or additional info
+      const prefix = ['contact_name', 'contact_email', 'contact_phone', 'contact_company'].includes(nextContactNodeId)
+        ? "Great choices. Just a few details to finalize your request.\n\n"
+        : "Great choices.\n\n";
+      await typewriterStream(followId, prefix + contactMsg);
       useConversationStore.getState().finalizeStreamingMessage(followId);
       useConversationStore.getState().transitionTo(nextContactNodeId);
       useConversationStore.getState().setInputDisabled(false);
