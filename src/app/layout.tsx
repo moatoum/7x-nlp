@@ -16,9 +16,36 @@ const ibmPlexArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "7X — Logistics Solutions",
-  description: "AI-guided logistics service intake by 7X",
+  title: "7X - National Logistics Support Platform",
+  description:
+    "A single national access point for logistics support across the 7X ecosystem, guiding every request to the right team.",
   viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },
+  openGraph: {
+    title: "7X - National Logistics Support Platform",
+    description:
+      "A single national access point for logistics support across the 7X ecosystem, guiding every request to the right team.",
+    siteName: "7X NLS",
+    type: "website",
+    images: [
+      {
+        url: "/favicon.png",
+        width: 512,
+        height: 512,
+        alt: "7X Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "7X - National Logistics Support Platform",
+    description:
+      "A single national access point for logistics support across the 7X ecosystem, guiding every request to the right team.",
+    images: ["/favicon.png"],
+  },
 };
 
 export default function RootLayout({

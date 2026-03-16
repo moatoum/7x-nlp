@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AzureOpenAI } from 'openai';
 import { buildSystemPrompt } from '@/engine/ai';
 import type { RequestFields } from '@/engine/types';
 
@@ -32,7 +31,6 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_MESSAGES = 40;
 
-// Read env vars (dotenv handles .env.local / .env.azure fallback at top of file)
 function getEnv(key: string): string | undefined {
   return process.env[key] || undefined;
 }
@@ -105,11 +103,10 @@ export async function POST(request: NextRequest) {
     // Validate currentFields is an object (or missing)
     const fields = (currentFields && typeof currentFields === 'object' ? currentFields : {}) as Partial<RequestFields>;
 
-    // Load Azure AI Foundry credentials
+    // Load Azure AI Foundry credentials (Anthropic Claude endpoint)
     const endpoint = getEnv('AZURE_AI_ENDPOINT');
     const apiKey = getEnv('AZURE_AI_KEY');
-    const deployment = getEnv('AZURE_AI_DEPLOYMENT') || '7x-NSL';
-    const apiVersion = getEnv('AZURE_AI_API_VERSION') || '2025-01-01-preview';
+    const model = getEnv('AZURE_AI_DEPLOYMENT') || 'idealabFoundry';
 
     if (!endpoint || !apiKey) {
       return NextResponse.json(
@@ -118,44 +115,77 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const client = new AzureOpenAI({
-      endpoint,
-      apiKey,
-      apiVersion,
-      deployment,
-    });
-
     const systemPrompt = buildSystemPrompt(fields);
 
-    // Build message history for Azure AI Foundry (OpenAI-compatible format)
-    const chatMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-      { role: 'system', content: systemPrompt },
-      ...recentMessages.map((m: { role: string; content: string }) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      })),
-    ];
+    // Build Anthropic Messages API payload
+    const anthropicMessages = recentMessages.map((m: { role: string; content: string }) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    }));
 
-    // Call with timeout
+    // Call Azure AI Foundry — Anthropic Messages API
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
 
-    let response;
+    let aiResponse;
     try {
-      response = await client.chat.completions.create(
-        {
-          model: deployment,
-          max_tokens: 1024,
-          messages: chatMessages,
+      aiResponse = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
         },
-        { signal: controller.signal }
-      );
+        body: JSON.stringify({
+          model,
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: anthropicMessages,
+        }),
+        signal: controller.signal,
+      });
     } finally {
       clearTimeout(timeout);
     }
 
-    // Extract text content
-    const textContent = response.choices?.[0]?.message?.content;
+    if (!aiResponse.ok) {
+      const errorBody = await aiResponse.text();
+      console.error('Claude API error:', aiResponse.status, errorBody);
+
+      if (aiResponse.status === 429) {
+        return NextResponse.json(
+          { error: 'AI service is busy. Please wait a moment and try again.' },
+          { status: 429 }
+        );
+      }
+      if (aiResponse.status === 503) {
+        return NextResponse.json(
+          { error: 'AI service is temporarily unavailable. Please try again shortly.' },
+          { status: 503 }
+        );
+      }
+      if (aiResponse.status === 401) {
+        return NextResponse.json(
+          { error: 'AI service authentication failed.' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: 'Failed to get response from AI service' },
+        { status: 500 }
+      );
+    }
+
+    const aiData = await aiResponse.json();
+
+    // Extract text from Anthropic response format
+    // Response: { content: [{ type: "text", text: "..." }], ... }
+    const textContent = aiData.content
+      ?.filter((block: { type: string }) => block.type === 'text')
+      ?.map((block: { text: string }) => block.text)
+      ?.join('');
+
     if (!textContent) {
       return NextResponse.json(
         { error: 'No text response from AI' },
@@ -229,29 +259,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(parsed);
   } catch (error: unknown) {
     console.error('Chat API error:', error);
-
-    // Differentiate API errors
-    if (error && typeof error === 'object' && 'status' in error) {
-      const apiError = error as { status: number };
-      if (apiError.status === 429) {
-        return NextResponse.json(
-          { error: 'AI service is busy. Please wait a moment and try again.' },
-          { status: 429 }
-        );
-      }
-      if (apiError.status === 503) {
-        return NextResponse.json(
-          { error: 'AI service is temporarily unavailable. Please try again shortly.' },
-          { status: 503 }
-        );
-      }
-      if (apiError.status === 401) {
-        return NextResponse.json(
-          { error: 'AI service authentication failed.' },
-          { status: 500 }
-        );
-      }
-    }
 
     // AbortController timeout
     if (error instanceof DOMException && error.name === 'AbortError') {

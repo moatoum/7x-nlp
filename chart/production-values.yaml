@@ -22,13 +22,11 @@ env:
   - name: DATABASE_URL
     value: "postgresql://7x_nls:prodTREpIUHeb%40uug8kx@psql-shared-prod-aen-db.postgres.database.azure.com:6432/7x_nls?sslmode=verify-ca"
   - name: AZURE_AI_ENDPOINT
-    value: "https://7x-nsl-resource.services.ai.azure.com/api/projects/7x-nsl"
+    value: "https://altha-mmdafubs-eastus2.services.ai.azure.com/anthropic/v1/messages"
   - name: AZURE_AI_KEY
-    value: "ASebiaJImrbDEQ9sFFvTKXLI1bJlS165Xf7Sl9p9q3AQ6S78Yh6RJQQJ99CCACF24PCXJ3w3AAAAACOGDBYs"
+    value: "ALg3BuKQfpuWpA9xZRcLF1xooaJzN2g9Ntap1xMMAsMI6U1GDl4uJQQJ99CCACHYHv6XJ3w3AAAAACOGEJtt"
   - name: AZURE_AI_DEPLOYMENT
-    value: "7x-NSL"
-  - name: AZURE_AI_API_VERSION
-    value: "2025-01-01-preview"
+    value: "claude-sonnet-4-5"
   - name: RESEND_API_KEY
     value: "re_hn64mAGa_J464ngAwGmzFkGvdzguCF5dr"
   - name: ADMIN_USERNAME
