@@ -343,24 +343,6 @@ export default function ServicesPage() {
           </div>
         </div>
       </div>
-
-      {/* CTA footer */}
-      <section className="border-t border-gray-100 bg-gray-50/50">
-        <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-12 text-center">
-          <h3 className="text-[20px] font-semibold text-gray-900">
-            Need a custom solution?
-          </h3>
-          <p className="mt-2 text-[14px] text-gray-400">
-            Tell us what you need and we will match you with the right service.
-          </p>
-          <Link
-            href="/intake"
-            className="mt-5 inline-flex items-center gap-2 h-[44px] px-6 rounded-full bg-black text-white text-[14px] font-medium hover:bg-gray-900 transition-colors"
-          >
-            Start a Request
-          </Link>
-        </div>
-      </section>
     </div>
   );
 }
