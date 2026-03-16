@@ -1,79 +1,109 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { Submission, Note } from '@/engine/types';
 
 interface SubmissionsState {
   submissions: Submission[];
-  initialized: boolean;
+  loading: boolean;
+  error: string | null;
 
-  addSubmission: (submission: Submission) => void;
-  updateStatus: (id: string, status: Submission['status']) => void;
-  addNote: (submissionId: string, note: Note) => void;
+  /** Fetch all submissions from DB (admin) */
+  fetchSubmissions: () => Promise<void>;
+
+  /** Create a new submission via API (intake flow) */
+  createSubmission: (submission: Omit<Submission, 'notes'>) => Promise<Submission>;
+
+  /** Update submission status (admin) — optimistic + API */
+  updateStatus: (id: string, status: Submission['status']) => Promise<void>;
+
+  /** Add a note to a submission (admin) */
+  addNote: (submissionId: string, note: { content: string; visibility: string; author: string }) => Promise<void>;
+
+  /** Sync lookup from local cache */
   getByReference: (ref: string) => Submission | undefined;
-  initialize: (seed: Submission[]) => void;
+
+  /** Fetch a single submission by reference from DB (tracking page) */
+  fetchByReference: (ref: string) => Promise<Submission | null>;
 }
 
-export const useSubmissionsStore = create<SubmissionsState>()(
-  persist(
-    (set, get) => ({
-      submissions: [],
-      initialized: false,
+export const useSubmissionsStore = create<SubmissionsState>()((set, get) => ({
+  submissions: [],
+  loading: false,
+  error: null,
 
-      addSubmission: (submission) =>
-        set((state) => ({
-          submissions: [submission, ...state.submissions],
-        })),
-
-      updateStatus: (id, status) =>
-        set((state) => ({
-          submissions: state.submissions.map((s) =>
-            s.id === id ? { ...s, status } : s
-          ),
-        })),
-
-      addNote: (submissionId, note) =>
-        set((state) => ({
-          submissions: state.submissions.map((s) =>
-            s.id === submissionId
-              ? { ...s, notes: [...(s.notes || []), note] }
-              : s
-          ),
-        })),
-
-      getByReference: (ref) =>
-        get().submissions.find(
-          (s) => s.referenceNumber.toLowerCase() === ref.toLowerCase()
-        ),
-
-      initialize: (seed) => {
-        if (!get().initialized) {
-          set({ submissions: seed, initialized: true });
-        }
-      },
-    }),
-    {
-      name: '7x-submissions',
+  fetchSubmissions: async () => {
+    set({ loading: true, error: null });
+    try {
+      const res = await fetch('/api/submissions');
+      if (!res.ok) throw new Error('Failed to fetch submissions');
+      const data: Submission[] = await res.json();
+      set({ submissions: data, loading: false });
+    } catch (err) {
+      set({ error: (err as Error).message, loading: false });
     }
-  )
-);
+  },
 
-// Sync submissions store across browser tabs
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (e.key === '7x-submissions' && e.newValue) {
-      try {
-        const parsed = JSON.parse(e.newValue);
-        if (parsed?.state?.submissions) {
-          useSubmissionsStore.setState({
-            submissions: parsed.state.submissions,
-            initialized: parsed.state.initialized ?? false,
-          });
-        }
-      } catch {
-        // ignore parse errors
-      }
+  createSubmission: async (submission) => {
+    const res = await fetch('/api/submissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(submission),
+    });
+    if (!res.ok) throw new Error('Failed to create submission');
+    const created: Submission = await res.json();
+    set((state) => ({ submissions: [created, ...state.submissions] }));
+    return created;
+  },
+
+  updateStatus: async (id, status) => {
+    // Optimistic update
+    set((state) => ({
+      submissions: state.submissions.map((s) =>
+        s.id === id ? { ...s, status } : s
+      ),
+    }));
+    try {
+      await fetch(`/api/submissions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+    } catch {
+      // Revert on failure
+      get().fetchSubmissions();
     }
-  });
-}
+  },
+
+  addNote: async (submissionId, note) => {
+    const res = await fetch(`/api/submissions/${submissionId}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(note),
+    });
+    if (!res.ok) throw new Error('Failed to add note');
+    const created: Note = await res.json();
+    set((state) => ({
+      submissions: state.submissions.map((s) =>
+        s.id === submissionId
+          ? { ...s, notes: [...(s.notes || []), created] }
+          : s
+      ),
+    }));
+  },
+
+  getByReference: (ref) =>
+    get().submissions.find(
+      (s) => s.referenceNumber.toLowerCase() === ref.toLowerCase()
+    ),
+
+  fetchByReference: async (ref) => {
+    try {
+      const res = await fetch(`/api/submissions/track/${encodeURIComponent(ref)}`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
+}));

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAdminUiStore } from '@/store/adminUiStore';
+import { useSubmissionsStore } from '@/store/submissionsStore';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminMobileHeader } from '@/components/admin/AdminMobileHeader';
 
@@ -18,12 +19,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setMounted(true);
   }, []);
 
+  const fetchSubmissions = useSubmissionsStore((s) => s.fetchSubmissions);
+
   // Redirect to login if not authenticated (and not already on login page)
   useEffect(() => {
     if (mounted && !isAuthenticated && !isLoginPage) {
       window.location.href = '/admin/login';
     }
   }, [mounted, isAuthenticated, isLoginPage]);
+
+  // Fetch submissions from DB when authenticated
+  useEffect(() => {
+    if (mounted && isAuthenticated && !isLoginPage) {
+      fetchSubmissions();
+    }
+  }, [mounted, isAuthenticated, isLoginPage, fetchSubmissions]);
 
   // If on login page, just render children (no sidebar)
   if (isLoginPage) {

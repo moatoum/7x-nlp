@@ -17,16 +17,23 @@ export function NotesSection({ submissionId, notes }: NotesSectionProps) {
   const [content, setContent] = useState('');
   const [visibility, setVisibility] = useState<'internal' | 'external'>('internal');
 
-  const handleSubmit = () => {
-    if (!content.trim()) return;
-    addNote(submissionId, {
-      id: crypto.randomUUID(),
-      content: content.trim(),
-      visibility,
-      createdAt: Date.now(),
-      author: 'Admin',
-    });
-    setContent('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!content.trim() || saving) return;
+    setSaving(true);
+    try {
+      await addNote(submissionId, {
+        content: content.trim(),
+        visibility,
+        author: 'Admin',
+      });
+      setContent('');
+    } catch (err) {
+      console.error('Failed to add note:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const sortedNotes = [...notes].sort((a, b) => b.createdAt - a.createdAt);
@@ -87,7 +94,7 @@ export function NotesSection({ submissionId, notes }: NotesSectionProps) {
             {/* Submit */}
             <button
               onClick={handleSubmit}
-              disabled={!content.trim()}
+              disabled={!content.trim() || saving}
               className={cn(
                 'flex items-center gap-1.5 py-1.5 px-3.5 rounded-lg text-[11px] font-semibold transition-all',
                 content.trim()

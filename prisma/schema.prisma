@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Submission {
+  id                    String   @id @default(uuid())
+  referenceNumber       String   @unique @map("reference_number")
+  status                String   @default("submitted")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  serviceCategory       String?  @map("service_category")
+  serviceSubcategory    String?  @map("service_subcategory")
+  businessType          String?  @map("business_type")
+  originLocation        String?  @map("origin_location")
+  destinationLocation   String?  @map("destination_location")
+  frequency             String?
+  urgency               String?
+  specialRequirements   String[] @map("special_requirements")
+  additionalNotes       String?  @map("additional_notes")
+
+  contactName           String?  @map("contact_name")
+  contactEmail          String?  @map("contact_email")
+  contactPhone          String?  @map("contact_phone")
+  companyName           String?  @map("company_name")
+
+  conversationDuration  Int      @default(0) @map("conversation_duration")
+  nodesVisited          String[] @map("nodes_visited")
+  totalMessages         Int      @default(0) @map("total_messages")
+
+  notes                 Note[]
+  recommendedServices   RecommendedService[]
+
+  @@map("submissions")
+}
+
+model Note {
+  id           String   @id @default(uuid())
+  content      String
+  visibility   String   @default("internal")
+  createdAt    DateTime @default(now()) @map("created_at")
+  author       String   @default("Admin")
+
+  submissionId String   @map("submission_id")
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
+
+model RecommendedService {
+  id           String  @id @default(uuid())
+  serviceId    String  @map("service_id")
+  name         String
+  category     String
+  description  String
+  vertical     String
+  confidence   Float?
+
+  submissionId String  @map("submission_id")
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@map("recommended_services")
+}

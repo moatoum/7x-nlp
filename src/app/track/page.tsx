@@ -288,36 +288,40 @@ function NotFound({ code }: { code: string }) {
 /* ── Inner Content (uses useSearchParams) ── */
 function TrackContent() {
   const searchParams = useSearchParams();
-  const getByReference = useSubmissionsStore((s) => s.getByReference);
+  const fetchByReference = useSubmissionsStore((s) => s.fetchByReference);
 
   const [code, setCode] = useState('');
   const [result, setResult] = useState<Submission | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [searching, setSearching] = useState(false);
 
   // Pre-fill from query param
   useEffect(() => {
     const ref = searchParams.get('ref');
     if (ref) {
       setCode(ref);
-      const found = getByReference(ref);
-      if (found) {
-        setResult(found);
+      setSearching(true);
+      fetchByReference(ref).then((found) => {
+        if (found) {
+          setResult(found);
+        } else {
+          setNotFound(true);
+        }
         setSearched(true);
-      } else {
-        setNotFound(true);
-        setSearched(true);
-      }
+        setSearching(false);
+      });
     }
-  }, [searchParams, getByReference]);
+  }, [searchParams, fetchByReference]);
 
   const handleSearch = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
       const trimmed = code.trim();
       if (!trimmed) return;
 
-      const found = getByReference(trimmed);
+      setSearching(true);
+      const found = await fetchByReference(trimmed);
       if (found) {
         setResult(found);
         setNotFound(false);
@@ -326,8 +330,9 @@ function TrackContent() {
         setNotFound(true);
       }
       setSearched(true);
+      setSearching(false);
     },
-    [code, getByReference]
+    [code, fetchByReference]
   );
 
   return (
@@ -382,9 +387,10 @@ function TrackContent() {
             />
             <button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-[40px] px-5 rounded-full bg-black text-white text-[13px] font-medium hover:bg-gray-900 transition-all"
+              disabled={searching}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-[40px] px-5 rounded-full bg-black text-white text-[13px] font-medium hover:bg-gray-900 transition-all disabled:opacity-50"
             >
-              Track
+              {searching ? 'Searching...' : 'Track'}
             </button>
           </div>
         </motion.form>

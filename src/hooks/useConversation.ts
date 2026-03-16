@@ -87,33 +87,36 @@ function generateRefNumber() {
   return `7X-${date}-${code}`;
 }
 
-function persistSubmission(refNumber: string) {
+async function persistSubmission(refNumber: string) {
   const req = useRequestStore.getState();
   const conv = useConversationStore.getState();
-  useSubmissionsStore.getState().addSubmission({
-    id: crypto.randomUUID(),
-    referenceNumber: refNumber,
-    status: 'submitted',
-    createdAt: Date.now(),
-    serviceCategory: req.serviceCategory,
-    serviceSubcategory: req.serviceSubcategory,
-    businessType: req.businessType,
-    originLocation: req.originLocation,
-    destinationLocation: req.destinationLocation,
-    frequency: req.frequency,
-    urgency: req.urgency,
-    specialRequirements: req.specialRequirements,
-    additionalNotes: req.additionalNotes,
-    contactName: req.contactName,
-    contactEmail: req.contactEmail,
-    contactPhone: req.contactPhone,
-    companyName: req.companyName,
-    recommendedServices: req.recommendedServices,
-    conversationDuration: conv.startedAt ? Date.now() - conv.startedAt : 0,
-    nodesVisited: conv.visitedNodes,
-    totalMessages: conv.messages.length,
-    notes: [],
-  });
+  try {
+    await useSubmissionsStore.getState().createSubmission({
+      id: crypto.randomUUID(),
+      referenceNumber: refNumber,
+      status: 'submitted',
+      createdAt: Date.now(),
+      serviceCategory: req.serviceCategory,
+      serviceSubcategory: req.serviceSubcategory,
+      businessType: req.businessType,
+      originLocation: req.originLocation,
+      destinationLocation: req.destinationLocation,
+      frequency: req.frequency,
+      urgency: req.urgency,
+      specialRequirements: req.specialRequirements,
+      additionalNotes: req.additionalNotes,
+      contactName: req.contactName,
+      contactEmail: req.contactEmail,
+      contactPhone: req.contactPhone,
+      companyName: req.companyName,
+      recommendedServices: req.recommendedServices,
+      conversationDuration: conv.startedAt ? Date.now() - conv.startedAt : 0,
+      nodesVisited: conv.visitedNodes,
+      totalMessages: conv.messages.length,
+    });
+  } catch (err) {
+    console.error('Failed to persist submission:', err);
+  }
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
