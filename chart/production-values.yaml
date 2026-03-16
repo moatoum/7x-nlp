@@ -1,0 +1,19 @@
+spc:
+  enabled: false
+
+objects: |
+     array:  
+        - |
+          objectType: secret              # object types: secret, key, or cert  
+        
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 3
+  targetMemoryUtilizationPercentage: 75
+resources:
+  requests:
+    memory: "256Mi"
+  limits:
+    memory: "512Mi"

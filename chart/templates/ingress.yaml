@@ -1,0 +1,43 @@
+{{- if .Values.ingress.enabled -}}
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+
+  name: {{ template "project.fullname" . }}
+  labels:
+    app: {{ template "project.name" . }}
+    chart: {{ template "project.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+{{- with .Values.ingress.annotations }}
+  annotations:
+
+{{ toYaml . | indent 4 }}
+{{- end }}
+
+spec:
+
+{{- if .Values.ingress.tlsSecret }}
+
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      secretName: {{ .Values.ingress.tlsSecret }}
+
+{{- end }}
+  ingressClassName: nginx
+  rules:
+
+    - host: {{ .Values.ingress.host }} 
+      http:
+        paths:
+          - path: {{ .Values.ingress.applicationPath }} 
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ template "project.fullname" . }}
+                port: 
+                  name: http
+
+{{- end }}

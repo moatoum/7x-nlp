@@ -1,0 +1,17 @@
+variables:
+  ingresshostname: 'nls-stg.7x.ae'
+  replicacount: 1
+  environment: 'Staging'
+  k8s_namespace: 'staging'
+  helm_valuefiles: "$(System.DefaultWorkingDirectory)/chart/staging-values.yaml"                    
+  helm_overridevalues: ''
+  service_account: 'stg-sa'
+  managedidentityid: '70c9141a-735d-446b-bb37-a300d7af248b'
+  kvname: 'kvshdsaenrpa'
+  helm_arguments: > 
+      --set environment=$(environment) 
+      --set replicaCount=$(replicacount)
+      --set service_account=$(service_account)
+      --set ingress.host=$(ingresshostname)
+      --set managedidentityid=$(managedidentityid)
+      --set kvname=$(kvname)

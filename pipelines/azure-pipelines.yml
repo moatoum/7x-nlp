@@ -1,0 +1,23 @@
+trigger: 
+  - main
+  - develop
+
+pool: ADO-agent
+
+resources:
+  repositories:
+    - repository: cicd-templates
+      name: devops/cicd-templates
+      type: git
+      ref: main
+
+
+variables:
+   - template: template-variables-global.yml@cicd-templates
+   - template: /pipelines/vars-common.yml
+
+
+extends:
+  template: template-main-k8s-cicd.yml@cicd-templates
+  parameters:
+      single_dockerfile: 'false'

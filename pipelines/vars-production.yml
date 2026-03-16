@@ -1,0 +1,17 @@
+variables:
+  ingresshostname: 'nls.7x.ae'
+  replicacount: 2
+  environment: 'Production'
+  k8s_namespace: '7x'
+  helm_valuefiles: "$(System.DefaultWorkingDirectory)/chart/production-values.yaml"                   
+  helm_overridevalues: ''
+  service_account: 'prod-sa'
+  managedidentityid: '77a9470a-0c73-461f-9c03-154ce5354a72'
+  kvname: 'kvshdpaenrpa'
+  helm_arguments: > 
+      --set environment=$(environment) 
+      --set replicaCount=$(replicacount)
+      --set service_account=$(service_account)
+      --set ingress.host=$(ingresshostname)
+      --set managedidentityid=$(managedidentityid)
+      --set kvname=$(kvname)
