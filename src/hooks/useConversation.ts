@@ -105,43 +105,57 @@ function generateRefNumber() {
 async function persistSubmission(refNumber: string) {
   const req = useRequestStore.getState();
   const conv = useConversationStore.getState();
-  try {
-    await useSubmissionsStore.getState().createSubmission({
-      id: crypto.randomUUID(),
-      referenceNumber: refNumber,
-      status: 'submitted',
-      createdAt: Date.now(),
-      entityType: req.entityType,
-      serviceCategory: req.serviceCategory,
-      serviceSubcategory: req.serviceSubcategory,
-      businessType: req.businessType,
-      originLocation: req.originLocation,
-      destinationLocation: req.destinationLocation,
-      frequency: req.frequency,
-      urgency: req.urgency,
-      specialRequirements: req.specialRequirements,
-      additionalNotes: req.additionalNotes,
-      currentCourier: req.currentCourier,
-      supplierStatus: req.supplierStatus,
-      supplierCountry: req.supplierCountry,
-      goodsCategory: req.goodsCategory,
-      incoterms: req.incoterms,
-      cargoVolume: req.cargoVolume,
-      customsRequired: req.customsRequired,
-      storageType: req.storageType,
-      contactName: req.contactName,
-      contactEmail: req.contactEmail,
-      contactPhone: req.contactPhone,
-      companyName: req.companyName,
-      tag: null,
-      recommendedServices: req.recommendedServices,
-      conversationDuration: conv.startedAt ? Date.now() - conv.startedAt : 0,
-      nodesVisited: conv.visitedNodes,
-      totalMessages: conv.messages.length,
-    });
-  } catch (err) {
-    console.error('Failed to persist submission:', err);
+
+  const payload = {
+    id: crypto.randomUUID(),
+    referenceNumber: refNumber,
+    status: 'submitted' as const,
+    createdAt: Date.now(),
+    entityType: req.entityType,
+    serviceCategory: req.serviceCategory,
+    serviceSubcategory: req.serviceSubcategory,
+    businessType: req.businessType,
+    originLocation: req.originLocation,
+    destinationLocation: req.destinationLocation,
+    frequency: req.frequency,
+    urgency: req.urgency,
+    specialRequirements: req.specialRequirements,
+    additionalNotes: req.additionalNotes,
+    currentCourier: req.currentCourier,
+    supplierStatus: req.supplierStatus,
+    supplierCountry: req.supplierCountry,
+    goodsCategory: req.goodsCategory,
+    incoterms: req.incoterms,
+    cargoVolume: req.cargoVolume,
+    customsRequired: req.customsRequired,
+    storageType: req.storageType,
+    contactName: req.contactName,
+    contactEmail: req.contactEmail,
+    contactPhone: req.contactPhone,
+    companyName: req.companyName,
+    tag: null,
+    recommendedServices: req.recommendedServices,
+    conversationDuration: conv.startedAt ? Date.now() - conv.startedAt : 0,
+    nodesVisited: conv.visitedNodes,
+    totalMessages: conv.messages.length,
+  };
+
+  // POST directly to avoid store abstraction hiding errors
+  const res = await fetch('/api/submissions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    console.error('Submission API error:', res.status, err);
+    throw new Error(err.error || `HTTP ${res.status}`);
   }
+
+  const created = await res.json();
+  // Also update the local store
+  useSubmissionsStore.getState().submissions.unshift(created);
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
