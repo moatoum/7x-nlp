@@ -446,6 +446,27 @@ export function useConversation() {
       return;
     }
 
+    // Vague chips ("I'm not sure", "Other", etc.) — prompt freetext instead of rigid routing
+    const FREETEXT_PROMPT_PAIRS = new Set([
+      'welcome:unsure',
+      'freight_type:not_sure',
+      'ops_challenge:ops_other',
+      'gcc_goods_type:others',
+      'intl_goods_type:others',
+      'freight_road_destination:others',
+      'warehouse_business_type:other',
+      'business_type:other',
+      'import_supplier_country:other',
+    ]);
+
+    if (FREETEXT_PROMPT_PAIRS.has(`${convStore.currentNodeId}:${chipId}`)) {
+      await delay(randomDelay());
+      convStore.setTyping(false);
+      convStore.addBotMessage("No problem — just tell me what you need and I'll guide you from there.");
+      convStore.setInputDisabled(false);
+      return;
+    }
+
     const { nextNodeId: rawNextNodeId, fieldUpdate } = processUserInput(chip, currentNode, reqStore as RequestFields);
 
     if (fieldUpdate) {
