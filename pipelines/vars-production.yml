@@ -1,5 +1,5 @@
 variables:
-  ingresshostname: 'nls.7x.ae'
+  ingresshostname: 'link.7x.ae'
   replicacount: 2
   environment: 'Production'
   k8s_namespace: '7x'
