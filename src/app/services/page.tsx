@@ -7,8 +7,8 @@ import { cn } from '@/lib/cn';
 
 interface ServiceItem {
   solution: string;
-  vertical: string;
   description: string;
+  sla?: string;
 }
 
 interface ServiceCategory {
@@ -19,155 +19,95 @@ interface ServiceCategory {
 
 const categories: ServiceCategory[] = [
   {
-    id: 'first-mile',
-    name: 'First Mile Logistics',
-    services: [
-      { solution: 'Scheduled Pickup', vertical: 'E-commerce', description: 'Regular pickup from online merchants and fulfillment centers' },
-      { solution: 'Scheduled Pickup', vertical: 'Retail', description: 'Collection of shipments from retail stores and distribution centers' },
-      { solution: 'On-Demand Pickup', vertical: 'SME', description: 'Ad-hoc pickup requests from small businesses via digital platforms' },
-      { solution: 'On-Demand Pickup', vertical: 'Quick Commerce', description: 'Rapid pickup from dark stores or micro-fulfillment centers' },
-      { solution: 'Vendor Pickup', vertical: 'Manufacturing', description: 'Collection of components and materials from suppliers' },
-      { solution: 'Vendor Pickup', vertical: 'Automotive', description: 'Pickup of spare parts and automotive components' },
-      { solution: 'Temperature Controlled Pickup', vertical: 'Food & Grocery', description: 'Pickup of chilled or frozen products' },
-      { solution: 'Temperature Controlled Pickup', vertical: 'Pharma', description: 'Pickup of temperature sensitive pharmaceuticals' },
-      { solution: 'Secure Pickup', vertical: 'Luxury Goods', description: 'Secure pickup of high value shipments' },
-      { solution: 'Dangerous Goods Pickup', vertical: 'Chemicals', description: 'Certified pickup of hazardous chemical shipments' },
-    ],
-  },
-  {
     id: 'domestic-courier',
     name: 'Domestic Courier & Parcel',
     services: [
-      { solution: 'Same Day Delivery', vertical: 'Quick Commerce', description: 'Ultra fast delivery from urban micro hubs' },
-      { solution: 'Same Day Delivery', vertical: 'Healthcare', description: 'Delivery of laboratory samples and medical supplies' },
-      { solution: 'Next Day Delivery', vertical: 'E-commerce', description: 'Standard next day delivery for online retail' },
-      { solution: 'Next Day Delivery', vertical: 'Retail', description: 'Overnight replenishment deliveries to retail stores' },
-      { solution: 'Temperature Controlled Delivery', vertical: 'Food', description: 'Delivery of chilled and frozen food products' },
-      { solution: 'Temperature Controlled Delivery', vertical: 'Pharma', description: 'Controlled temperature delivery of medicines' },
-      { solution: 'High Value Delivery', vertical: 'Luxury Goods', description: 'Secure delivery with insurance and verification' },
-      { solution: 'High Value Delivery', vertical: 'Electronics', description: 'Secure delivery of expensive electronic devices' },
-      { solution: 'Dangerous Goods Delivery', vertical: 'Batteries & Electronics', description: 'Transport of lithium battery shipments' },
-      { solution: 'Identity Verified Delivery', vertical: 'Government', description: 'Delivery requiring ID or OTP authentication' },
+      { solution: 'On-demand Delivery', description: 'Ultra fast delivery from urban micro hubs', sla: 'Under 2 hours' },
+      { solution: 'Same Day Delivery', description: 'Delivery of laboratory samples and medical supplies', sla: 'Within 4-6 hours' },
+      { solution: 'Next Day Delivery', description: 'Standard next day delivery for online retail', sla: 'NDD' },
+      { solution: 'Malls and Store Replenishment', description: 'Overnight replenishment deliveries to retail stores', sla: 'Based on Mall schedule' },
+      { solution: 'Temperature Controlled Delivery', description: 'Delivery of chilled and frozen food products', sla: 'NDD' },
+      { solution: 'High Value Delivery', description: 'Secure delivery with insurance and verification', sla: 'NDD' },
+      { solution: 'Dangerous Goods Delivery', description: 'Transport of lithium battery shipments', sla: 'NDD' },
+      { solution: 'Identity Verified Delivery', description: 'Delivery requiring ID or OTP authentication', sla: 'NDD' },
+      { solution: 'Out of Home Delivery Network', description: 'Delivering to pick up and drop off points', sla: 'NDD' },
     ],
   },
   {
     id: 'international',
-    name: 'International Parcel & Cross Border',
+    name: 'International Courier and Parcel',
     services: [
-      { solution: 'Global Express', vertical: 'E-commerce', description: 'Fast cross border shipping for online retailers' },
-      { solution: 'Global Express', vertical: 'Luxury Goods', description: 'Secure international shipping of high value products' },
-      { solution: 'Deferred Shipping', vertical: 'SME Export', description: 'Lower cost international shipping solution' },
-      { solution: 'Cross Border Delivery', vertical: 'Marketplace', description: 'Logistics for global marketplace sellers' },
-      { solution: 'Temperature Controlled Shipping', vertical: 'Pharma', description: 'Cold chain international shipping' },
-      { solution: 'Temperature Controlled Shipping', vertical: 'Food Export', description: 'Export logistics for perishable foods' },
-      { solution: 'Dangerous Goods Shipping', vertical: 'Chemicals', description: 'International shipment of regulated hazardous cargo' },
+      { solution: 'Premium Express', description: 'Fast cross border shipping', sla: '2-3 Days' },
+      { solution: 'Deferred Express', description: 'Lower cost international shipping solution by land', sla: '5-7 Days' },
+      { solution: 'Standard Express', description: 'Balanced solution between cost and transit time', sla: '3-5 Days' },
+      { solution: 'Temperature Controlled Shipping', description: 'Cold chain international shipping', sla: '3-5 Days' },
+      { solution: 'Dangerous Goods Shipping', description: 'International shipment for batteries and ID 8000', sla: '3-5 Days' },
     ],
   },
   {
     id: 'freight',
     name: 'Freight Forwarding',
     services: [
-      { solution: 'Air Freight', vertical: 'Industrial', description: 'Transport of manufacturing cargo via air' },
-      { solution: 'Air Freight Charter', vertical: 'Emergency Logistics', description: 'Dedicated aircraft for urgent cargo' },
-      { solution: 'Sea Freight FCL', vertical: 'Manufacturing', description: 'Full container shipping for industrial cargo' },
-      { solution: 'Sea Freight LCL', vertical: 'SME Export', description: 'Shared container shipping for small exporters' },
-      { solution: 'Reefer Container', vertical: 'Food', description: 'Refrigerated container shipping for perishables' },
-      { solution: 'Reefer Container', vertical: 'Pharma', description: 'Temperature controlled ocean transport' },
-      { solution: 'Breakbulk Shipping', vertical: 'Heavy Industry', description: 'Shipping of oversized industrial equipment' },
-      { solution: 'Dangerous Goods Air Freight', vertical: 'Chemicals', description: 'Air shipment of hazardous cargo under IATA rules' },
-      { solution: 'Dangerous Goods Sea Freight', vertical: 'Energy', description: 'Ocean shipping of hazardous energy materials' },
+      { solution: 'Air Freight', description: 'Transport of manufacturing cargo via air' },
+      { solution: 'Air Freight Charter', description: 'Dedicated aircraft for urgent cargo' },
+      { solution: 'Air Freight Reefer', description: 'Refrigerated container shipping' },
+      { solution: 'Air Freight Dangerous', description: 'Air shipment of hazardous cargo under IATA rules' },
+      { solution: 'Sea Freight FCL', description: 'Full container shipping for industrial cargo' },
+      { solution: 'Sea Freight LCL', description: 'Shared container shipping for small exporters' },
+      { solution: 'Sea Freight Reefer Container', description: 'Temperature controlled ocean transport' },
+      { solution: 'Sea Freight Dangerous Goods', description: 'Ocean shipping of hazardous energy materials' },
+      { solution: 'Breakbulk Shipping', description: 'Shipping of oversized industrial equipment' },
     ],
   },
   {
     id: 'road-freight',
     name: 'Road Freight & Trucking',
     services: [
-      { solution: 'Full Truckload', vertical: 'Manufacturing', description: 'Dedicated trucks transporting industrial goods' },
-      { solution: 'Less Than Truckload', vertical: 'SME', description: 'Shared truck capacity for smaller shipments' },
-      { solution: 'Cross Border Trucking', vertical: 'GCC Trade', description: 'Regional trucking across GCC markets' },
-      { solution: 'Express Trucking', vertical: 'Spare Parts', description: 'Rapid delivery of time critical industrial parts' },
-      { solution: 'Temperature Controlled Trucking', vertical: 'Food', description: 'Refrigerated road transport for perishables' },
-      { solution: 'Temperature Controlled Trucking', vertical: 'Pharma', description: 'Controlled temperature trucking' },
-      { solution: 'Dangerous Goods Trucking', vertical: 'Chemicals', description: 'Specialized trucking for hazardous materials' },
-      { solution: 'Heavy Haul Transport', vertical: 'Construction', description: 'Transport of oversized construction equipment' },
+      { solution: 'Full Truckload', description: 'Dedicated trucks transporting industrial goods' },
+      { solution: 'Less Than Truckload', description: 'Shared truck capacity for smaller shipments' },
+      { solution: 'Temperature Controlled Trucking', description: 'Controlled temperature trucking' },
+      { solution: 'Dangerous Goods Trucking', description: 'Specialized trucking for hazardous materials' },
+      { solution: 'Heavy Haul Transport', description: 'Transport of oversized construction equipment' },
     ],
   },
   {
     id: 'warehousing',
-    name: 'Warehousing & Storage',
+    name: 'Warehousing & Fulfillment',
     services: [
-      { solution: 'General Warehousing', vertical: 'Consumer Goods', description: 'Storage of retail and consumer inventory' },
-      { solution: 'General Warehousing', vertical: 'Industrial', description: 'Storage of manufacturing inputs' },
-      { solution: 'Bonded Warehousing', vertical: 'International Trade', description: 'Duty deferred storage for imported goods' },
-      { solution: 'Cold Storage', vertical: 'Food', description: 'Refrigerated warehousing for perishable food' },
-      { solution: 'Cold Storage', vertical: 'Pharma', description: 'Temperature controlled pharmaceutical storage' },
-      { solution: 'High Value Storage', vertical: 'Luxury', description: 'Secure vault storage for high value goods' },
-      { solution: 'Spare Parts Storage', vertical: 'Automotive', description: 'Storage of automotive spare parts' },
-      { solution: 'Micro Fulfillment', vertical: 'Quick Commerce', description: 'Urban fulfillment enabling rapid delivery' },
-      { solution: 'Hazardous Goods Storage', vertical: 'Chemicals', description: 'Storage of dangerous goods in compliant facilities' },
-    ],
-  },
-  {
-    id: 'fulfillment',
-    name: 'Fulfillment Services',
-    services: [
-      { solution: 'Pick & Pack', vertical: 'E-commerce', description: 'Order picking and packing for online retail shipments' },
-      { solution: 'Fashion Fulfillment', vertical: 'Apparel', description: 'Handling and distribution of fashion products' },
-      { solution: 'Electronics Fulfillment', vertical: 'Electronics', description: 'Specialized handling of electronic goods' },
-      { solution: 'Multi Channel Fulfillment', vertical: 'Omnichannel Retail', description: 'Serving orders across multiple channels' },
-      { solution: 'Grocery Fulfillment', vertical: 'Quick Commerce', description: 'Rapid grocery order processing' },
-      { solution: 'DG Fulfillment', vertical: 'Electronics', description: 'Fulfillment for products containing lithium batteries' },
-    ],
-  },
-  {
-    id: 'last-mile',
-    name: 'Last Mile Delivery',
-    services: [
-      { solution: 'Home Delivery', vertical: 'E-commerce', description: 'Parcel delivery to residential customers' },
-      { solution: 'Home Delivery', vertical: 'Grocery', description: 'Delivery of groceries to households' },
-      { solution: 'Furniture Delivery', vertical: 'Home & Furniture', description: 'Delivery of bulky furniture items' },
-      { solution: 'Locker Delivery', vertical: 'E-commerce', description: 'Delivery to automated parcel lockers' },
-      { solution: 'Click & Collect', vertical: 'Retail', description: 'Delivery to stores for customer pickup' },
-      { solution: 'Temperature Controlled Delivery', vertical: 'Food', description: 'Last mile chilled and frozen delivery' },
-      { solution: 'Temperature Controlled Delivery', vertical: 'Pharma', description: 'Controlled temperature medicine delivery' },
-      { solution: 'Secure Delivery', vertical: 'Luxury', description: 'High security last mile delivery' },
-      { solution: 'DG Certified Delivery', vertical: 'Industrial', description: 'Delivery of small dangerous goods shipments' },
+      { solution: 'General Warehousing Mainland', description: 'Duty and tax paid storage within Dubai Mainland' },
+      { solution: 'General Warehousing Free Zone', description: 'Duty and VAT exempted/deferred storage' },
+      { solution: 'Cold Storage', description: 'Cold chain warehousing with multiple temperature controlled options and humidity control' },
+      { solution: 'E-commerce Fulfillment', description: 'Piece level pick and pack' },
+      { solution: 'Micro Fulfillment', description: 'Urban fulfillment enabling rapid delivery' },
+      { solution: 'Dangerous Goods Storage', description: 'Storage of dangerous goods in compliant facilities' },
     ],
   },
   {
     id: 'reverse',
     name: 'Reverse Logistics',
     services: [
-      { solution: 'Customer Returns', vertical: 'E-commerce', description: 'Collection and processing of returned online orders' },
-      { solution: 'Warranty Returns', vertical: 'Electronics', description: 'Return of defective devices to manufacturers' },
-      { solution: 'Repair Logistics', vertical: 'Industrial Equipment', description: 'Transport of equipment to repair facilities' },
-      { solution: 'Battery Recycling', vertical: 'Electronics', description: 'Collection of used lithium batteries' },
-      { solution: 'Hazardous Waste Returns', vertical: 'Chemicals', description: 'Return logistics for hazardous waste disposal' },
+      { solution: 'Customer Initiated Returns', description: 'Collection and processing of returned online orders' },
+      { solution: 'Warranty Returns', description: 'Return of defective devices to manufacturers' },
+      { solution: 'Return & Repair', description: 'Transport of equipment to repair facilities' },
     ],
   },
   {
     id: 'trade-customs',
     name: 'Trade & Customs Services',
     services: [
-      { solution: 'Import Clearance', vertical: 'E-commerce', description: 'Customs clearance for cross border online orders' },
-      { solution: 'Import Clearance', vertical: 'Industrial', description: 'Clearance of manufacturing imports' },
-      { solution: 'Export Clearance', vertical: 'SME Export', description: 'Export documentation and customs processing' },
-      { solution: 'Regulatory Compliance', vertical: 'Pharma', description: 'Compliance with pharmaceutical regulations' },
-      { solution: 'DG Documentation', vertical: 'Chemicals', description: 'Preparation of dangerous goods declarations' },
+      { solution: 'Import Clearance', description: 'Customs clearance for cross border inbound shipments' },
+      { solution: 'Export Clearance', description: 'Export documentation and customs processing' },
+      { solution: 'DG Documentation', description: 'Preparation of dangerous goods declarations' },
     ],
   },
   {
     id: 'postal',
     name: 'Postal Services',
     services: [
-      { solution: 'Letter Mail', vertical: 'Consumer', description: 'Delivery of personal letters' },
-      { solution: 'Letter Mail', vertical: 'Business', description: 'Delivery of corporate correspondence' },
-      { solution: 'Registered Mail', vertical: 'Legal', description: 'Secure delivery of legal documents' },
-      { solution: 'Postal Parcels', vertical: 'E-commerce', description: 'Parcel delivery through postal networks' },
-      { solution: 'Cross Border Small Packets', vertical: 'E-commerce', description: 'International small packet shipping' },
-      { solution: 'Direct Mail', vertical: 'Marketing', description: 'Distribution of marketing materials' },
-      { solution: 'Postal Lockers', vertical: 'E-commerce', description: 'Automated lockers for parcel pickup and returns' },
-      { solution: 'Postal Financial Services', vertical: 'Remittances', description: 'Money transfer and financial services via postal networks' },
+      { solution: 'Letter Mail', description: 'Delivery of personal mail for both individuals and corporates' },
+      { solution: 'Registered Mail', description: 'Secure delivery of legal documents' },
+      { solution: 'Postal Parcels', description: 'Parcel delivery through postal networks' },
+      { solution: 'Cross Border Small Packets', description: 'International small packet shipping' },
     ],
   },
 ];
@@ -321,16 +261,18 @@ export default function ServicesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
                   {cat.services.map((svc, i) => (
                     <div
-                      key={`${svc.solution}-${svc.vertical}-${i}`}
+                      key={`${svc.solution}-${i}`}
                       className="py-3.5 border-b border-gray-50 last:border-b-0"
                     >
                       <div className="flex items-center gap-2.5 mb-0.5">
                         <h3 className="text-[14px] font-semibold text-gray-800 leading-snug">
                           {svc.solution}
                         </h3>
-                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-gray-100 text-[10px] font-medium text-gray-400">
-                          {svc.vertical}
-                        </span>
+                        {svc.sla && (
+                          <span className="shrink-0 px-1.5 py-0.5 rounded bg-gray-100 text-[10px] font-medium text-gray-400">
+                            {svc.sla}
+                          </span>
+                        )}
                       </div>
                       <p className="text-[13px] text-gray-400 leading-relaxed">
                         {svc.description}
