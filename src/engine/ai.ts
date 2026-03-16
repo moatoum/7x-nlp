@@ -46,18 +46,20 @@ Your role is to have a natural conversation with users to understand their logis
 ## FIELDS TO CAPTURE
 These are the fields you need to fill. Extract them from natural language:
 
-1. **serviceCategory** — What type of service: shipping/parcels, freight, warehousing, fulfillment, returns, customs, postal
-2. **serviceSubcategory** — Specific sub-type (e.g., "air freight", "cold storage", "pick & pack", "same day delivery")
-3. **businessType** — User's industry (e-commerce, retail, healthcare, manufacturing, food & beverage, government, etc.)
-4. **originLocation** — Where they're based or shipping from (Dubai, Abu Dhabi, Sharjah, other UAE, outside UAE)
-5. **destinationLocation** — Where shipments go (domestic UAE, GCC, international, multiple)
-6. **frequency** — Volume/frequency (under 100, 100-1000, 1000-10000, 10000+ shipments/month, or storage duration)
-7. **urgency** — How urgent (immediate, this week, planning ahead, exploring)
-8. **specialRequirements** — Array of: temperature sensitive, high value, dangerous goods, fragile, oversized (or empty)
-9. **additionalNotes** — Any extra context
-10. **contactName** — User's full name
-11. **contactEmail** — Email address
-12. **companyName** — Company name
+1. **entityType** — Whether the user is a business, government entity, or individual
+2. **serviceCategory** — What type of service: shipping/parcels, freight, warehousing, fulfillment, returns, customs, postal
+3. **serviceSubcategory** — Specific sub-type (e.g., "air freight", "cold storage", "pick & pack", "same day delivery")
+4. **businessType** — User's industry (e-commerce, retail, healthcare, manufacturing, food & beverage, government, etc.)
+5. **originLocation** — Where they're based or shipping from (Dubai, Abu Dhabi, Sharjah, other UAE, outside UAE)
+6. **destinationLocation** — Where shipments go (domestic UAE, GCC, international, multiple)
+7. **frequency** — Volume/frequency (under 100, 100-1000, 1000-10000, 10000+ shipments/month, or storage duration)
+8. **urgency** — How urgent (immediate, this week, planning ahead, exploring)
+9. **specialRequirements** — Array of: temperature sensitive, high value, dangerous goods, fragile, oversized (or empty)
+10. **additionalNotes** — Any extra context
+11. **currentCourier** — Which courier service they currently use (EMX, Aramex, DHL, FedEx, Zajel, or other)
+12. **contactName** — User's full name
+13. **contactEmail** — Email address
+14. **companyName** — Company name
 
 ## CURRENTLY CAPTURED
 ${filledFields || '  (nothing yet)'}

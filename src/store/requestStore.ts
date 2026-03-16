@@ -22,6 +22,7 @@ interface RequestState extends RequestFields {
 }
 
 const initialFields: RequestFields = {
+  entityType: null,
   serviceCategory: null,
   serviceSubcategory: null,
   businessType: null,
@@ -31,6 +32,7 @@ const initialFields: RequestFields = {
   urgency: null,
   specialRequirements: [],
   additionalNotes: null,
+  currentCourier: null,
   contactName: null,
   contactEmail: null,
   contactPhone: null,

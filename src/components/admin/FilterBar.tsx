@@ -25,18 +25,22 @@ export function FilterBar() {
   const categoryFilter = useAdminUiStore((s) => s.categoryFilter);
   const statusFilter = useAdminUiStore((s) => s.statusFilter);
   const dateRange = useAdminUiStore((s) => s.dateRange);
+  const entityFilter = useAdminUiStore((s) => s.entityFilter);
+  const tagFilter = useAdminUiStore((s) => s.tagFilter);
   const setSearchQuery = useAdminUiStore((s) => s.setSearchQuery);
   const setCategoryFilter = useAdminUiStore((s) => s.setCategoryFilter);
   const setStatusFilter = useAdminUiStore((s) => s.setStatusFilter);
   const setDateRange = useAdminUiStore((s) => s.setDateRange);
+  const setEntityFilter = useAdminUiStore((s) => s.setEntityFilter);
+  const setTagFilter = useAdminUiStore((s) => s.setTagFilter);
   const resetFilters = useAdminUiStore((s) => s.resetFilters);
 
   const hasActiveFilters =
-    searchQuery || categoryFilter || statusFilter || dateRange !== '30d';
+    searchQuery || categoryFilter || statusFilter || dateRange !== '30d' || entityFilter || tagFilter;
 
   return (
     <div className="space-y-3">
-      {/* Search + Category */}
+      {/* Search + Dropdowns */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
@@ -68,6 +72,26 @@ export function FilterBar() {
               {label}
             </option>
           ))}
+        </select>
+
+        <select
+          value={entityFilter || ''}
+          onChange={(e) => setEntityFilter(e.target.value || null)}
+          className="h-10 px-3 rounded-xl border border-gray-200 text-sm bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-gray-300 transition-all appearance-none cursor-pointer min-w-[130px]"
+        >
+          <option value="">All Entities</option>
+          <option value="A business">Business</option>
+          <option value="A governmental entity">Government</option>
+        </select>
+
+        <select
+          value={tagFilter || ''}
+          onChange={(e) => setTagFilter(e.target.value || null)}
+          className="h-10 px-3 rounded-xl border border-gray-200 text-sm bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-gray-300 transition-all appearance-none cursor-pointer min-w-[110px]"
+        >
+          <option value="">All Tags</option>
+          <option value="NXN">NXN</option>
+          <option value="EMX">EMX</option>
         </select>
 
         {hasActiveFilters && (

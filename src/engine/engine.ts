@@ -5,6 +5,40 @@ import type { ConversationNode, ChipOption, RequestFields } from './types';
 // ============================================================
 
 const nodes: Record<string, ConversationNode> = {
+  // ===== PHASE 0: ENTITY TYPE GATE =====
+  entity_type: {
+    id: 'entity_type',
+    type: 'question',
+    message: 'Welcome to NLS Platform. Before we begin, are you...',
+    chips: [
+      { id: 'business', label: 'A business' },
+      { id: 'government', label: 'A governmental entity' },
+      { id: 'individual', label: 'An individual' },
+    ],
+    capturesField: 'entityType',
+    edges: [
+      { condition: 'chip', value: 'business', targetNodeId: 'welcome', priority: 10 },
+      { condition: 'chip', value: 'government', targetNodeId: 'welcome', priority: 10 },
+      { condition: 'chip', value: 'individual', targetNodeId: 'individual_redirect', priority: 10 },
+      { condition: 'any', targetNodeId: 'welcome', priority: 0 },
+    ],
+  },
+
+  individual_redirect: {
+    id: 'individual_redirect',
+    type: 'info',
+    message: 'This platform is designed for businesses and government entities. For individual shipping needs, please visit waslah.ae where you can find services tailored for you.',
+    chips: [
+      { id: 'actually_business', label: "I'm actually a business" },
+      { id: 'go_waslah', label: 'Go to waslah.ae' },
+    ],
+    edges: [
+      { condition: 'chip', value: 'actually_business', targetNodeId: 'welcome', priority: 10 },
+      { condition: 'chip', value: 'go_waslah', targetNodeId: 'individual_redirect', priority: 10 },
+      { condition: 'any', targetNodeId: 'individual_redirect', priority: 0 },
+    ],
+  },
+
   // ===== PHASE 1: WELCOME =====
   welcome: {
     id: 'welcome',
@@ -531,9 +565,41 @@ const nodes: Record<string, ConversationNode> = {
       { id: 'restart', label: 'Start over' },
     ],
     edges: [
-      { condition: 'chip', value: 'proceed', targetNodeId: 'contact_name', priority: 10 },
+      { condition: 'chip', value: 'proceed', targetNodeId: 'current_courier', priority: 10 },
       { condition: 'chip', value: 'different', targetNodeId: 'unsure_guide', priority: 10 },
       { condition: 'chip', value: 'restart', targetNodeId: 'welcome', priority: 10 },
+      { condition: 'any', targetNodeId: 'current_courier', priority: 0 },
+    ],
+  },
+
+  // ===== CURRENT COURIER =====
+  current_courier: {
+    id: 'current_courier',
+    type: 'question',
+    message: 'Which courier service do you currently use for your logistics needs?',
+    chips: [
+      { id: 'emx', label: 'EMX' },
+      { id: 'aramex', label: 'Aramex' },
+      { id: 'dhl', label: 'DHL' },
+      { id: 'fedex', label: 'FedEx' },
+      { id: 'zajel', label: 'Zajel' },
+      { id: 'other', label: 'Other' },
+    ],
+    capturesField: 'currentCourier',
+    edges: [
+      { condition: 'chip', value: 'other', targetNodeId: 'current_courier_other', priority: 10 },
+      { condition: 'any', targetNodeId: 'contact_name', priority: 0 },
+    ],
+  },
+
+  current_courier_other: {
+    id: 'current_courier_other',
+    type: 'capture',
+    message: 'What courier service do you currently use?',
+    allowFreeText: true,
+    freeTextPlaceholder: 'Courier name',
+    capturesField: 'currentCourier',
+    edges: [
       { condition: 'any', targetNodeId: 'contact_name', priority: 0 },
     ],
   },
@@ -583,6 +649,22 @@ const nodes: Record<string, ConversationNode> = {
     freeTextPlaceholder: 'Company name',
     capturesField: 'companyName',
     edges: [
+      { condition: 'any', targetNodeId: 'additional_notes', priority: 0 },
+    ],
+  },
+
+  // ===== ADDITIONAL NOTES =====
+  additional_notes: {
+    id: 'additional_notes',
+    type: 'capture',
+    message: 'Anything else you\'d like us to know about your logistics needs?',
+    allowFreeText: true,
+    freeTextPlaceholder: 'Additional notes (optional)',
+    chips: [
+      { id: 'skip', label: 'No, continue' },
+    ],
+    capturesField: 'additionalNotes',
+    edges: [
       { condition: 'any', targetNodeId: 'review', priority: 0 },
     ],
   },
@@ -616,7 +698,7 @@ const nodes: Record<string, ConversationNode> = {
 // ============================================================
 
 export function getNode(id: string): ConversationNode {
-  return nodes[id] || nodes['welcome'];
+  return nodes[id] || nodes['entity_type'];
 }
 
 export function detectCategoryFromText(input: string): string {

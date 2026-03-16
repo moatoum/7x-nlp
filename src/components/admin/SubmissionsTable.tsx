@@ -25,6 +25,8 @@ export function SubmissionsTable() {
   const categoryFilter = useAdminUiStore((s) => s.categoryFilter);
   const statusFilter = useAdminUiStore((s) => s.statusFilter);
   const dateRange = useAdminUiStore((s) => s.dateRange);
+  const entityFilter = useAdminUiStore((s) => s.entityFilter);
+  const tagFilter = useAdminUiStore((s) => s.tagFilter);
   const [page, setPage] = useState(0);
 
   const filtered = useMemo(() => {
@@ -49,6 +51,14 @@ export function SubmissionsTable() {
       result = result.filter((s) => s.status === statusFilter);
     }
 
+    if (entityFilter) {
+      result = result.filter((s) => s.entityType === entityFilter);
+    }
+
+    if (tagFilter) {
+      result = result.filter((s) => s.tag === tagFilter);
+    }
+
     if (dateRange !== 'all') {
       const rangeMs: Record<string, number> = {
         '7d': 7 * 86400000,
@@ -61,9 +71,9 @@ export function SubmissionsTable() {
 
     result.sort((a, b) => b.createdAt - a.createdAt);
     return result;
-  }, [submissions, searchQuery, categoryFilter, statusFilter, dateRange]);
+  }, [submissions, searchQuery, categoryFilter, statusFilter, dateRange, entityFilter, tagFilter]);
 
-  useEffect(() => setPage(0), [searchQuery, categoryFilter, statusFilter, dateRange]);
+  useEffect(() => setPage(0), [searchQuery, categoryFilter, statusFilter, dateRange, entityFilter, tagFilter]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const pageItems = filtered.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
@@ -103,6 +113,9 @@ export function SubmissionsTable() {
                   </th>
                   <th className="text-left text-[11px] uppercase tracking-wider text-gray-300 font-medium px-3 py-3.5">
                     Status
+                  </th>
+                  <th className="text-left text-[11px] uppercase tracking-wider text-gray-300 font-medium px-3 py-3.5">
+                    Tag
                   </th>
                   <th className="w-10" />
                 </tr>
@@ -148,6 +161,20 @@ export function SubmissionsTable() {
                           <div className={cn('w-1.5 h-1.5 rounded-full', statusConfig.color)} />
                           <span className="text-[12px] text-gray-500 font-medium">{statusConfig.label}</span>
                         </div>
+                      </td>
+                      <td className="px-3 py-3.5">
+                        {submission.tag ? (
+                          <span className={cn(
+                            'inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider',
+                            submission.tag === 'NXN'
+                              ? 'bg-violet-50 text-violet-600'
+                              : 'bg-amber-50 text-amber-600'
+                          )}>
+                            {submission.tag}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-gray-200">--</span>
+                        )}
                       </td>
                       <td className="px-3 py-3.5">
                         <Link

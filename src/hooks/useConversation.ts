@@ -96,6 +96,7 @@ async function persistSubmission(refNumber: string) {
       referenceNumber: refNumber,
       status: 'submitted',
       createdAt: Date.now(),
+      entityType: req.entityType,
       serviceCategory: req.serviceCategory,
       serviceSubcategory: req.serviceSubcategory,
       businessType: req.businessType,
@@ -105,10 +106,12 @@ async function persistSubmission(refNumber: string) {
       urgency: req.urgency,
       specialRequirements: req.specialRequirements,
       additionalNotes: req.additionalNotes,
+      currentCourier: req.currentCourier,
       contactName: req.contactName,
       contactEmail: req.contactEmail,
       contactPhone: req.contactPhone,
       companyName: req.companyName,
+      tag: null,
       recommendedServices: req.recommendedServices,
       conversationDuration: conv.startedAt ? Date.now() - conv.startedAt : 0,
       nodesVisited: conv.visitedNodes,
@@ -201,10 +204,11 @@ async function sendConfirmationEmail(refNumber: string, rs: ReturnType<typeof us
 
 // Determine a reasonable node ID based on what fields are filled
 function inferNodeFromFields(fields: Partial<RequestFields>): string {
-  if (fields.contactName && fields.contactEmail && fields.contactPhone && fields.companyName) return 'review';
+  if (fields.contactName && fields.contactEmail && fields.contactPhone && fields.companyName) return 'additional_notes';
   if (fields.contactName && fields.contactEmail && fields.contactPhone) return 'contact_company';
   if (fields.contactName && fields.contactEmail) return 'contact_phone';
   if (fields.contactName) return 'contact_email';
+  if (fields.currentCourier) return 'contact_name';
   // Only jump to recommendation when all core fields are gathered
   const hasCoreFields =
     fields.serviceCategory && fields.serviceSubcategory &&
@@ -219,6 +223,7 @@ function inferNodeFromFields(fields: Partial<RequestFields>): string {
   if (fields.destinationLocation) return 'origin_location';
   if (fields.serviceSubcategory) return 'ship_destination';
   if (fields.serviceCategory) return 'ship_destination';
+  if (!fields.entityType) return 'entity_type';
   return 'welcome';
 }
 
@@ -253,15 +258,15 @@ export function useConversation() {
     await delay(600);
 
     const req = useRequestStore.getState();
-    const welcomeNode = getNode('welcome');
-    const msg = typeof welcomeNode.message === 'function'
-      ? welcomeNode.message(req as RequestFields)
-      : welcomeNode.message;
+    const entityNode = getNode('entity_type');
+    const msg = typeof entityNode.message === 'function'
+      ? entityNode.message(req as RequestFields)
+      : entityNode.message;
 
     const c = useConversationStore.getState();
     c.setTyping(false);
-    c.addBotMessage(msg, welcomeNode.chips, welcomeNode.multiSelect);
-    c.transitionTo('welcome');
+    c.addBotMessage(msg, entityNode.chips, entityNode.multiSelect);
+    c.transitionTo('entity_type');
     c.setInputDisabled(false);
   }, []);
 
@@ -388,6 +393,7 @@ export function useConversation() {
 
     // Build current fields snapshot
     const currentFields: Partial<RequestFields> = {
+      entityType: reqStore.entityType,
       serviceCategory: reqStore.serviceCategory,
       serviceSubcategory: reqStore.serviceSubcategory,
       businessType: reqStore.businessType,
@@ -397,6 +403,7 @@ export function useConversation() {
       urgency: reqStore.urgency,
       specialRequirements: reqStore.specialRequirements,
       additionalNotes: reqStore.additionalNotes,
+      currentCourier: reqStore.currentCourier,
       contactName: reqStore.contactName,
       contactEmail: reqStore.contactEmail,
       contactPhone: reqStore.contactPhone,
@@ -661,13 +668,18 @@ export function useConversation() {
 
     await delay(randomDelay());
 
-    // Ask for contact details
+    // Ask about current courier before contact details
+    const courierNode = getNode('current_courier');
+    const courierMsg = typeof courierNode.message === 'function'
+      ? courierNode.message(useRequestStore.getState() as RequestFields)
+      : courierNode.message;
+
     const cs2 = useConversationStore.getState();
     cs2.setTyping(false);
     const followId = cs2.addStreamingBotMessage();
-    await typewriterStream(followId, "Great choices. To submit your request, I'll need a few contact details.\n\nWhat's your full name?");
-    useConversationStore.getState().finalizeStreamingMessage(followId);
-    useConversationStore.getState().transitionTo('contact_name');
+    await typewriterStream(followId, "Great choices. Before we proceed with your details, I have one quick question.\n\n" + courierMsg);
+    useConversationStore.getState().finalizeStreamingMessage(followId, courierNode.chips);
+    useConversationStore.getState().transitionTo('current_courier');
     useConversationStore.getState().setInputDisabled(false);
   }, []);
 

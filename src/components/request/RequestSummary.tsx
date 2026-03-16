@@ -26,6 +26,7 @@ function isStepComplete(step: typeof STEPS[number], state: RequestFields): boole
 export function RequestSummary() {
   const store = useRequestStore();
   const {
+    entityType,
     serviceCategory,
     serviceSubcategory,
     urgency,
@@ -34,6 +35,7 @@ export function RequestSummary() {
     destinationLocation,
     frequency,
     specialRequirements,
+    currentCourier,
     contactName,
     contactEmail,
     companyName,
@@ -56,9 +58,11 @@ export function RequestSummary() {
     [updateField]
   );
 
+  const hasEntityType = !!entityType;
   const hasServiceInfo = serviceCategory || serviceSubcategory;
   const hasDetails = urgency || originLocation || destinationLocation || frequency;
   const hasBusiness = businessType;
+  const hasCourier = !!currentCourier;
   const hasContact = contactName || contactEmail || companyName;
 
   return (
@@ -97,6 +101,18 @@ export function RequestSummary() {
           })}
         </div>
       </div>
+
+      {/* Entity Type */}
+      {hasEntityType && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
+        >
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">Entity</h4>
+          <SummaryField label="Type" value={entityType} isHighlighted={isHL('entityType')} fieldKey="entityType" onEdit={handleEdit} />
+        </motion.div>
+      )}
 
       {/* Service Type */}
       {hasServiceInfo && (
@@ -161,6 +177,18 @@ export function RequestSummary() {
       {/* Recommended Services */}
       {recommendedServices.length > 0 && (
         <RecommendedServices services={recommendedServices} />
+      )}
+
+      {/* Current Courier */}
+      {hasCourier && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
+        >
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">Current Courier</h4>
+          <SummaryField label="Provider" value={currentCourier} isHighlighted={isHL('currentCourier')} fieldKey="currentCourier" onEdit={handleEdit} />
+        </motion.div>
       )}
 
       {/* Contact */}

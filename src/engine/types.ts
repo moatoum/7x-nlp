@@ -68,6 +68,7 @@ export interface Service {
 }
 
 export interface RequestFields {
+  entityType: string | null;
   serviceCategory: string | null;
   serviceSubcategory: string | null;
   businessType: string | null;
@@ -77,6 +78,7 @@ export interface RequestFields {
   urgency: string | null;
   specialRequirements: string[];
   additionalNotes: string | null;
+  currentCourier: string | null;
   contactName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
@@ -90,6 +92,7 @@ export interface Submission {
   referenceNumber: string;
   status: 'submitted' | 'in_review' | 'approved' | 'rejected';
   createdAt: number;
+  entityType: string | null;
   serviceCategory: string | null;
   serviceSubcategory: string | null;
   businessType: string | null;
@@ -99,10 +102,12 @@ export interface Submission {
   urgency: string | null;
   specialRequirements: string[];
   additionalNotes: string | null;
+  currentCourier: string | null;
   contactName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
   companyName: string | null;
+  tag: string | null;
   recommendedServices: ServiceMatch[];
   conversationDuration: number;
   nodesVisited: string[];

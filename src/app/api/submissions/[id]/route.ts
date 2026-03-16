@@ -24,7 +24,7 @@ export async function GET(
   }
 }
 
-// PATCH /api/submissions/[id] — Update status
+// PATCH /api/submissions/[id] — Update status and/or tag
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -32,9 +32,13 @@ export async function PATCH(
   try {
     const body = await request.json();
 
+    const data: Record<string, unknown> = {};
+    if (body.status !== undefined) data.status = body.status;
+    if (body.tag !== undefined) data.tag = body.tag;
+
     const submission = await prisma.submission.update({
       where: { id: params.id },
-      data: { status: body.status },
+      data,
       include: { notes: true, recommendedServices: true },
     });
 

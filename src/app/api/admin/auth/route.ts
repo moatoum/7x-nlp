@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
+interface AdminAccount {
+  username: string;
+  password: string;
+  role: 'admin' | 'viewer';
+}
+
+const ACCOUNTS: AdminAccount[] = [
+  { username: 'nxn', password: process.env.NXN_PASSWORD || 'nxn', role: 'admin' },
+  { username: 'emu', password: process.env.EMU_PASSWORD || 'emu', role: 'viewer' },
+  // Legacy fallback: keep old single-account support
+  ...(process.env.ADMIN_USERNAME
+    ? [{ username: process.env.ADMIN_USERNAME, password: process.env.ADMIN_PASSWORD || 'admin', role: 'admin' as const }]
+    : []),
+];
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,8 +23,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
     }
 
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      return NextResponse.json({ success: true });
+    const account = ACCOUNTS.find(
+      (a) => a.username === username && a.password === password
+    );
+
+    if (account) {
+      return NextResponse.json({
+        success: true,
+        username: account.username,
+        role: account.role,
+      });
     }
 
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });

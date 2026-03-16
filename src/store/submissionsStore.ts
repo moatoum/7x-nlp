@@ -20,6 +20,9 @@ interface SubmissionsState {
   /** Add a note to a submission (admin) */
   addNote: (submissionId: string, note: { content: string; visibility: string; author: string }) => Promise<void>;
 
+  /** Update submission tag (admin) — optimistic + API */
+  updateTag: (id: string, tag: string | null) => Promise<void>;
+
   /** Sync lookup from local cache */
   getByReference: (ref: string) => Submission | undefined;
 
@@ -71,6 +74,24 @@ export const useSubmissionsStore = create<SubmissionsState>()((set, get) => ({
       });
     } catch {
       // Revert on failure
+      get().fetchSubmissions();
+    }
+  },
+
+  updateTag: async (id, tag) => {
+    // Optimistic update
+    set((state) => ({
+      submissions: state.submissions.map((s) =>
+        s.id === id ? { ...s, tag } : s
+      ),
+    }));
+    try {
+      await fetch(`/api/submissions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tag }),
+      });
+    } catch {
       get().fetchSubmissions();
     }
   },

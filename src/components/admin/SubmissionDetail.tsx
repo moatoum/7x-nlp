@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, User, Briefcase, MapPin, Package, Clock, MessageSquare, Layers, AlertTriangle, FileText, Copy, Check } from 'lucide-react';
+import { ArrowLeft, User, Briefcase, MapPin, Package, Clock, MessageSquare, Layers, AlertTriangle, FileText, Copy, Check, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useSubmissionsStore } from '@/store/submissionsStore';
+import { useAdminUiStore } from '@/store/adminUiStore';
 import { CATEGORY_LABELS } from '@/engine/catalog';
 import { formatDate, formatDuration } from '@/lib/formatters';
 import { Badge } from '@/components/ui/Badge';
@@ -63,6 +64,9 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
     s.submissions.find((sub) => sub.id === id)
   );
   const updateStatus = useSubmissionsStore((s) => s.updateStatus);
+  const updateTag = useSubmissionsStore((s) => s.updateTag);
+  const canEditStatus = useAdminUiStore((s) => s.canEditStatus);
+  const canSetTag = useAdminUiStore((s) => s.canSetTag);
   const [copied, setCopied] = useState(false);
 
   if (!submission) {
@@ -155,6 +159,7 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
           {/* Request Details */}
           <SectionCard title="Request Details" icon={Package}>
             <div className="grid grid-cols-2 gap-4">
+              <DetailRow label="Entity Type" value={submission.entityType} />
               <DetailRow
                 label="Category"
                 value={
@@ -166,6 +171,7 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
               <DetailRow label="Subcategory" value={submission.serviceSubcategory} />
               <DetailRow label="Business Type" value={submission.businessType} />
               <DetailRow label="Urgency" value={submission.urgency} />
+              <DetailRow label="Current Courier" value={submission.currentCourier} />
             </div>
           </SectionCard>
 
@@ -210,6 +216,9 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
                 <Layers className="w-3.5 h-3.5 text-gray-400" />
               </div>
               <h3 className="text-[13px] font-semibold text-gray-900">Update Status</h3>
+              {!canEditStatus() && (
+                <span className="ml-auto text-[10px] text-gray-300 font-medium">Read-only</span>
+              )}
             </div>
             <div className="p-5">
               <div className="flex bg-gray-100 rounded-xl p-1 gap-0.5">
@@ -219,12 +228,14 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
                   return (
                     <button
                       key={opt.value}
-                      onClick={() => updateStatus(submission.id, opt.value)}
+                      onClick={() => canEditStatus() && updateStatus(submission.id, opt.value)}
+                      disabled={!canEditStatus()}
                       className={cn(
                         'flex-1 py-2 px-2 rounded-lg text-[11px] font-semibold transition-all',
                         isActive
                           ? `bg-white shadow-sm ${cfg.color}`
-                          : 'text-gray-400 hover:text-gray-600'
+                          : 'text-gray-400 hover:text-gray-600',
+                        !canEditStatus() && !isActive && 'opacity-50 cursor-not-allowed hover:text-gray-400'
                       )}
                     >
                       {opt.label}
@@ -234,6 +245,44 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
               </div>
             </div>
           </div>
+
+          {/* Tag selector (NXN / EMX) */}
+          {canSetTag() && (
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-gray-50">
+                <div className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center">
+                  <Tag className="w-3.5 h-3.5 text-gray-400" />
+                </div>
+                <h3 className="text-[13px] font-semibold text-gray-900">Assign Tag</h3>
+              </div>
+              <div className="p-5">
+                <div className="flex gap-2">
+                  {(['NXN', 'EMX'] as const).map((tag) => {
+                    const isActive = submission.tag === tag;
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => updateTag(submission.id, isActive ? null : tag)}
+                        className={cn(
+                          'flex-1 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wider transition-all border',
+                          isActive && tag === 'NXN' && 'bg-violet-50 border-violet-200 text-violet-600',
+                          isActive && tag === 'EMX' && 'bg-amber-50 border-amber-200 text-amber-600',
+                          !isActive && 'bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-200 hover:text-gray-600'
+                        )}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+                {submission.tag && (
+                  <p className="text-[11px] text-gray-300 text-center mt-2">
+                    Click active tag to remove
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Conversation metadata */}
           <SectionCard title="Conversation Insights" icon={MessageSquare}>

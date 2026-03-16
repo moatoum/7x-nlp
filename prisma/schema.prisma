@@ -13,6 +13,7 @@ model Submission {
   status                String   @default("submitted")
   createdAt             DateTime @default(now()) @map("created_at")
 
+  entityType            String?  @map("entity_type")
   serviceCategory       String?  @map("service_category")
   serviceSubcategory    String?  @map("service_subcategory")
   businessType          String?  @map("business_type")
@@ -22,11 +23,14 @@ model Submission {
   urgency               String?
   specialRequirements   String[] @map("special_requirements")
   additionalNotes       String?  @map("additional_notes")
+  currentCourier        String?  @map("current_courier")
 
   contactName           String?  @map("contact_name")
   contactEmail          String?  @map("contact_email")
   contactPhone          String?  @map("contact_phone")
   companyName           String?  @map("company_name")
+
+  tag                   String?
 
   conversationDuration  Int      @default(0) @map("conversation_duration")
   nodesVisited          String[] @map("nodes_visited")
