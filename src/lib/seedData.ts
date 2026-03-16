@@ -114,6 +114,7 @@ export function generateSeedData(count: number = 32): Submission[] {
       incoterms: null,
       cargoVolume: null,
       customsRequired: null,
+      storageType: null,
       contactName: name,
       contactEmail: email,
       contactPhone: null,

@@ -34,6 +34,7 @@ export function toClientSubmission(db: PrismaSubmissionFull): Submission {
     incoterms: db.incoterms,
     cargoVolume: db.cargoVolume,
     customsRequired: db.customsRequired,
+    storageType: db.storageType,
     contactName: db.contactName,
     contactEmail: db.contactEmail,
     contactPhone: db.contactPhone,

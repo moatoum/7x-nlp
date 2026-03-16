@@ -39,6 +39,7 @@ const initialFields: RequestFields = {
   incoterms: null,
   cargoVolume: null,
   customsRequired: null,
+  storageType: null,
   contactName: null,
   contactEmail: null,
   contactPhone: null,

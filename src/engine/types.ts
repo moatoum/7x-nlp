@@ -85,6 +85,7 @@ export interface RequestFields {
   incoterms: string | null;
   cargoVolume: string | null;
   customsRequired: string | null;
+  storageType: string | null;
   contactName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
@@ -115,6 +116,7 @@ export interface Submission {
   incoterms: string | null;
   cargoVolume: string | null;
   customsRequired: string | null;
+  storageType: string | null;
   contactName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;

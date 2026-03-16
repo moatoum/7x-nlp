@@ -47,8 +47,7 @@ const nodes: Record<string, ConversationNode> = {
     chips: [
       { id: 'ship_parcels', label: 'Ship packages or parcels', icon: 'Package' },
       { id: 'freight', label: 'Move large cargo or freight', icon: 'Container' },
-      { id: 'warehouse', label: 'Store or warehouse goods', icon: 'Warehouse' },
-      { id: 'fulfill', label: 'Fulfill online orders', icon: 'ShoppingBag' },
+      { id: 'warehouse', label: 'Warehousing & Fulfilment', icon: 'Warehouse' },
       { id: 'returns', label: 'Handle returns or repairs', icon: 'RotateCcw' },
       { id: 'customs', label: 'Customs and trade services', icon: 'FileCheck' },
       { id: 'postal', label: 'Postal and mail services', icon: 'Mail' },
@@ -62,7 +61,6 @@ const nodes: Record<string, ConversationNode> = {
       { condition: 'chip', value: 'ship_parcels', targetNodeId: 'ship_destination', priority: 10 },
       { condition: 'chip', value: 'freight', targetNodeId: 'freight_type', priority: 10 },
       { condition: 'chip', value: 'warehouse', targetNodeId: 'warehouse_type', priority: 10 },
-      { condition: 'chip', value: 'fulfill', targetNodeId: 'fulfill_type', priority: 10 },
       { condition: 'chip', value: 'returns', targetNodeId: 'returns_type', priority: 10 },
       { condition: 'chip', value: 'customs', targetNodeId: 'customs_type', priority: 10 },
       { condition: 'chip', value: 'postal', targetNodeId: 'postal_type', priority: 10 },
@@ -89,11 +87,32 @@ const nodes: Record<string, ConversationNode> = {
     capturesField: 'serviceCategory',
     edges: [
       { condition: 'chip', value: 'need_pickup', targetNodeId: 'pickup_scope', priority: 10 },
-      { condition: 'chip', value: 'need_delivery', targetNodeId: 'ship_destination', priority: 10 },
+      { condition: 'chip', value: 'need_delivery', targetNodeId: 'unsure_delivery_destination', priority: 10 },
       { condition: 'chip', value: 'need_storage', targetNodeId: 'warehouse_type', priority: 10 },
       { condition: 'chip', value: 'need_ship_intl', targetNodeId: 'international_speed', priority: 10 },
       { condition: 'chip', value: 'need_help_ops', targetNodeId: 'ops_challenge', priority: 10 },
       { condition: 'any', targetNodeId: 'ship_destination', priority: 0 },
+    ],
+  },
+
+  // Unsure > "I need something delivered" — has 4 chips (includes Multiple destinations per CSV)
+  unsure_delivery_destination: {
+    id: 'unsure_delivery_destination',
+    type: 'question',
+    message: 'Where do your shipments need to go?',
+    chips: [
+      { id: 'domestic', label: 'Within the UAE' },
+      { id: 'gcc', label: 'GCC countries' },
+      { id: 'international', label: 'International' },
+      { id: 'mixed', label: 'Multiple destinations' },
+    ],
+    capturesField: 'destinationLocation',
+    edges: [
+      { condition: 'chip', value: 'domestic', targetNodeId: 'domestic_speed', priority: 10 },
+      { condition: 'chip', value: 'gcc', targetNodeId: 'gcc_urgency', priority: 10 },
+      { condition: 'chip', value: 'international', targetNodeId: 'international_speed', priority: 10 },
+      { condition: 'chip', value: 'mixed', targetNodeId: 'urgency', priority: 10 },
+      { condition: 'any', targetNodeId: 'domestic_speed', priority: 0 },
     ],
   },
 
@@ -123,14 +142,12 @@ const nodes: Record<string, ConversationNode> = {
       { id: 'domestic', label: 'Within the UAE' },
       { id: 'gcc', label: 'GCC countries' },
       { id: 'international', label: 'International' },
-      { id: 'mixed', label: 'Multiple destinations' },
     ],
     capturesField: 'destinationLocation',
     edges: [
       { condition: 'chip', value: 'domestic', targetNodeId: 'domestic_speed', priority: 10 },
-      { condition: 'chip', value: 'gcc', targetNodeId: 'gcc_details', priority: 10 },
+      { condition: 'chip', value: 'gcc', targetNodeId: 'gcc_urgency', priority: 10 },
       { condition: 'chip', value: 'international', targetNodeId: 'international_speed', priority: 10 },
-      { condition: 'chip', value: 'mixed', targetNodeId: 'domestic_speed', priority: 10 },
       { condition: 'any', targetNodeId: 'domestic_speed', priority: 0 },
     ],
   },
@@ -140,10 +157,9 @@ const nodes: Record<string, ConversationNode> = {
     type: 'question',
     message: 'How quickly do you need deliveries completed?',
     chips: [
+      { id: 'on_demand', label: 'On Demand Delivery' },
       { id: 'same_day', label: 'Same day' },
       { id: 'next_day', label: 'Next day' },
-      { id: 'standard', label: 'Standard (2-3 days)' },
-      { id: 'flexible', label: 'Flexible' },
     ],
     capturesField: 'urgency',
     edges: [
@@ -151,22 +167,56 @@ const nodes: Record<string, ConversationNode> = {
     ],
   },
 
-  gcc_details: {
-    id: 'gcc_details',
+  // GCC sub-path: urgency → speed → goods type
+  gcc_urgency: {
+    id: 'gcc_urgency',
     type: 'question',
-    message: 'What type of goods are you shipping across the GCC?',
+    message: 'How urgent is this?',
     chips: [
-      { id: 'gcc_general', label: 'General cargo' },
-      { id: 'gcc_perishable', label: 'Perishable goods' },
-      { id: 'gcc_heavy', label: 'Heavy / oversized' },
-      { id: 'gcc_hazardous', label: 'Hazardous materials' },
+      { id: 'immediate', label: 'Immediate / ASAP' },
+      { id: 'this_week', label: 'This week' },
+      { id: 'planning', label: 'Planning ahead' },
+      { id: 'exploring', label: 'Just exploring options' },
     ],
-    capturesField: 'serviceSubcategory',
+    capturesField: 'urgency',
     edges: [
-      { condition: 'any', targetNodeId: 'urgency', priority: 0 },
+      { condition: 'any', targetNodeId: 'gcc_speed', priority: 0 },
     ],
   },
 
+  gcc_speed: {
+    id: 'gcc_speed',
+    type: 'question',
+    message: 'What shipping speed do you need?',
+    chips: [
+      { id: 'express', label: 'Express (fastest)' },
+      { id: 'standard', label: 'Standard' },
+      { id: 'economy', label: 'Economy / deferred' },
+    ],
+    capturesField: 'urgency',
+    edges: [
+      { condition: 'any', targetNodeId: 'gcc_goods_type', priority: 0 },
+    ],
+  },
+
+  gcc_goods_type: {
+    id: 'gcc_goods_type',
+    type: 'question',
+    message: 'What type of goods are you shipping across the GCC?',
+    chips: [
+      { id: 'general', label: 'General cargo' },
+      { id: 'perishable', label: 'Perishable goods' },
+      { id: 'heavy', label: 'Heavy / oversized' },
+      { id: 'dangerous', label: 'Dangerous Goods' },
+      { id: 'others', label: 'Others' },
+    ],
+    capturesField: 'serviceSubcategory',
+    edges: [
+      { condition: 'any', targetNodeId: 'special_requirements', priority: 0 },
+    ],
+  },
+
+  // International sub-path: speed → goods type
   international_speed: {
     id: 'international_speed',
     type: 'question',
@@ -174,9 +224,26 @@ const nodes: Record<string, ConversationNode> = {
     chips: [
       { id: 'express', label: 'Express (fastest)' },
       { id: 'standard', label: 'Standard' },
-      { id: 'deferred', label: 'Economy / deferred' },
+      { id: 'economy', label: 'Economy / deferred' },
     ],
     capturesField: 'urgency',
+    edges: [
+      { condition: 'any', targetNodeId: 'intl_goods_type', priority: 0 },
+    ],
+  },
+
+  intl_goods_type: {
+    id: 'intl_goods_type',
+    type: 'question',
+    message: 'What type of goods are you shipping internationally?',
+    chips: [
+      { id: 'general', label: 'General cargo' },
+      { id: 'perishable', label: 'Perishable goods' },
+      { id: 'heavy', label: 'Heavy / oversized' },
+      { id: 'dangerous', label: 'Dangerous Goods' },
+      { id: 'others', label: 'Others' },
+    ],
+    capturesField: 'serviceSubcategory',
     edges: [
       { condition: 'any', targetNodeId: 'special_requirements', priority: 0 },
     ],
@@ -223,12 +290,48 @@ const nodes: Record<string, ConversationNode> = {
     chips: [
       { id: 'ftl', label: 'Full truckload (FTL)' },
       { id: 'ltl', label: 'Less than truckload (LTL)' },
-      { id: 'cross_border', label: 'Cross border (GCC)' },
       { id: 'heavy', label: 'Heavy / oversized' },
     ],
     capturesField: 'serviceSubcategory',
     edges: [
-      { condition: 'any', targetNodeId: 'urgency', priority: 0 },
+      { condition: 'any', targetNodeId: 'freight_road_urgency', priority: 0 },
+    ],
+  },
+
+  freight_road_urgency: {
+    id: 'freight_road_urgency',
+    type: 'question',
+    message: 'How urgent is this?',
+    chips: [
+      { id: 'immediate', label: 'Immediate / ASAP' },
+      { id: 'this_week', label: 'This week' },
+      { id: 'planning', label: 'Planning ahead' },
+      { id: 'exploring', label: 'Just exploring options' },
+    ],
+    capturesField: 'urgency',
+    edges: [
+      { condition: 'any', targetNodeId: 'freight_road_destination', priority: 0 },
+    ],
+  },
+
+  freight_road_destination: {
+    id: 'freight_road_destination',
+    type: 'question',
+    message: 'What are your top destinations?',
+    chips: [
+      { id: 'uae', label: 'UAE' },
+      { id: 'ksa', label: 'KSA' },
+      { id: 'kuwait', label: 'Kuwait' },
+      { id: 'bahrain', label: 'Bahrain' },
+      { id: 'oman', label: 'Oman' },
+      { id: 'qatar', label: 'Qatar' },
+      { id: 'others', label: 'Others' },
+    ],
+    allowFreeText: true,
+    freeTextPlaceholder: 'Or type destination...',
+    capturesField: 'destinationLocation',
+    edges: [
+      { condition: 'any', targetNodeId: 'special_requirements', priority: 0 },
     ],
   },
 
@@ -242,76 +345,121 @@ const nodes: Record<string, ConversationNode> = {
       { id: 'pallets', label: 'Pallets / crates' },
       { id: 'oversized', label: 'Oversized / project cargo' },
     ],
-    capturesField: 'frequency',
+    capturesField: 'cargoVolume',
+    edges: [
+      { condition: 'any', targetNodeId: 'freight_air_sea_destination', priority: 0 },
+    ],
+  },
+
+  freight_air_sea_destination: {
+    id: 'freight_air_sea_destination',
+    type: 'question',
+    message: 'What is your top destination region?',
+    chips: [
+      { id: 'gcc', label: 'GCC' },
+      { id: 'europe', label: 'Europe' },
+      { id: 'usa', label: 'USA' },
+      { id: 'africa', label: 'Africa' },
+      { id: 'asia', label: 'Asia' },
+    ],
+    allowFreeText: true,
+    freeTextPlaceholder: 'Or type region...',
+    capturesField: 'destinationLocation',
     edges: [
       { condition: 'any', targetNodeId: 'special_requirements', priority: 0 },
     ],
   },
 
-  // ===== WAREHOUSING PATH =====
+  // ===== WAREHOUSING & FULFILMENT PATH (merged) =====
   warehouse_type: {
     id: 'warehouse_type',
     type: 'question',
     message: 'What type of warehousing do you need?',
     chips: [
-      { id: 'general', label: 'General storage' },
-      { id: 'cold', label: 'Cold / temperature controlled' },
-      { id: 'bonded', label: 'Bonded warehouse' },
+      { id: 'general_mainland', label: 'General storage Mainland' },
+      { id: 'micro_fulfilment', label: 'Micro Fulfilment' },
+      { id: 'general_freezone', label: 'General Storage Freezone' },
       { id: 'high_value', label: 'High value / secure' },
-      { id: 'fulfillment', label: 'Fulfillment center' },
+      { id: 'ecommerce_fulfilment', label: 'E-commerce Fulfilment' },
+      { id: 'cold_storage', label: 'Cold Storage' },
     ],
     capturesField: 'serviceSubcategory',
     edges: [
-      { condition: 'any', targetNodeId: 'warehouse_duration', priority: 0 },
+      { condition: 'any', targetNodeId: 'warehouse_storage_type', priority: 0 },
     ],
   },
 
-  warehouse_duration: {
-    id: 'warehouse_duration',
+  warehouse_storage_type: {
+    id: 'warehouse_storage_type',
     type: 'question',
-    message: 'How long do you need storage for?',
+    message: 'What type of storage do you need?',
     chips: [
-      { id: 'short', label: 'Short term (< 3 months)' },
-      { id: 'medium', label: '3 - 12 months' },
-      { id: 'long', label: 'Long term (1+ year)' },
-      { id: 'ongoing', label: 'Ongoing / flexible' },
+      { id: 'pallets', label: 'Pallets' },
+      { id: 'cartons', label: 'Cartons' },
+      { id: 'pieces', label: 'Pieces' },
+    ],
+    capturesField: 'storageType',
+    edges: [
+      { condition: 'any', targetNodeId: 'warehouse_storage_volume', priority: 0 },
+    ],
+  },
+
+  warehouse_storage_volume: {
+    id: 'warehouse_storage_volume',
+    type: 'question',
+    message: ((context: RequestFields) => {
+      const unit = context.storageType === 'Pieces' ? 'Pieces' : 'CBM';
+      return `What's your expected monthly storage in ${unit}?`;
+    }) as ConversationNode['message'],
+    chips: [
+      { id: 'under_100', label: 'Under 100' },
+      { id: '100_1000', label: '100 - 1,000' },
+      { id: '1000_10000', label: '1,000 - 10,000' },
+      { id: 'over_10000', label: '10,000+' },
+    ],
+    capturesField: 'cargoVolume',
+    edges: [
+      { condition: 'any', targetNodeId: 'warehouse_io_volume', priority: 0 },
+    ],
+  },
+
+  warehouse_io_volume: {
+    id: 'warehouse_io_volume',
+    type: 'question',
+    message: ((context: RequestFields) => {
+      const unit = context.storageType === 'Pieces' ? 'Pieces' : 'CBM';
+      return `What's your expected monthly inbound/outbound volume in ${unit}?`;
+    }) as ConversationNode['message'],
+    chips: [
+      { id: 'under_100', label: 'Under 100' },
+      { id: '100_1000', label: '100 - 1,000' },
+      { id: '1000_10000', label: '1,000 - 10,000' },
+      { id: 'over_10000', label: '10,000+' },
     ],
     capturesField: 'frequency',
     edges: [
-      { condition: 'any', targetNodeId: 'business_type', priority: 0 },
+      { condition: 'any', targetNodeId: 'warehouse_business_type', priority: 0 },
     ],
   },
 
-  // ===== FULFILLMENT PATH =====
-  fulfill_type: {
-    id: 'fulfill_type',
+  warehouse_business_type: {
+    id: 'warehouse_business_type',
     type: 'question',
-    message: 'What kind of fulfillment support do you need?',
+    message: 'What industry is your business in?',
     chips: [
-      { id: 'pick_pack', label: 'Pick & pack' },
-      { id: 'multi_channel', label: 'Multi-channel fulfillment' },
-      { id: 'grocery', label: 'Grocery / fresh' },
-      { id: 'specialized', label: 'Specialized (fashion, electronics)' },
+      { id: 'ecommerce', label: 'E-commerce / D2C' },
+      { id: 'retail', label: 'Retail' },
+      { id: 'healthcare', label: 'Healthcare / Pharma' },
+      { id: 'manufacturing', label: 'Manufacturing' },
+      { id: 'food', label: 'Food & Beverage' },
+      { id: 'government', label: 'Government' },
+      { id: 'other', label: 'Other' },
     ],
-    capturesField: 'serviceSubcategory',
+    allowFreeText: true,
+    freeTextPlaceholder: 'Or type your industry...',
+    capturesField: 'businessType',
     edges: [
-      { condition: 'any', targetNodeId: 'fulfill_volume', priority: 0 },
-    ],
-  },
-
-  fulfill_volume: {
-    id: 'fulfill_volume',
-    type: 'question',
-    message: 'What\'s your expected monthly order volume?',
-    chips: [
-      { id: 'low', label: 'Under 500 orders' },
-      { id: 'medium', label: '500 - 5,000 orders' },
-      { id: 'high', label: '5,000 - 50,000 orders' },
-      { id: 'enterprise', label: '50,000+ orders' },
-    ],
-    capturesField: 'frequency',
-    edges: [
-      { condition: 'any', targetNodeId: 'business_type', priority: 0 },
+      { condition: 'any', targetNodeId: 'origin_location', priority: 0 },
     ],
   },
 
@@ -321,10 +469,9 @@ const nodes: Record<string, ConversationNode> = {
     type: 'question',
     message: 'What type of returns or reverse logistics do you need?',
     chips: [
-      { id: 'customer_returns', label: 'Customer returns (e-commerce)' },
+      { id: 'customer_returns', label: 'Customer Initiated Returns (e-commerce)' },
       { id: 'warranty', label: 'Warranty / defective returns' },
-      { id: 'repair', label: 'Repair logistics' },
-      { id: 'recycling', label: 'Recycling / waste disposal' },
+      { id: 'repair', label: 'Return & Repair logistics' },
     ],
     capturesField: 'serviceSubcategory',
     edges: [
@@ -357,9 +504,7 @@ const nodes: Record<string, ConversationNode> = {
     chips: [
       { id: 'letter', label: 'Letter mail' },
       { id: 'registered', label: 'Registered / secure mail' },
-      { id: 'parcels', label: 'Postal parcels' },
-      { id: 'direct_mail', label: 'Direct mail / marketing' },
-      { id: 'lockers', label: 'Postal lockers' },
+      { id: 'postal_shipping', label: 'Postal Shipping' },
     ],
     capturesField: 'serviceSubcategory',
     edges: [
@@ -367,7 +512,7 @@ const nodes: Record<string, ConversationNode> = {
     ],
   },
 
-  // ===== IMPORT GOODS PATH =====
+  // ===== IMPORT GOODS PATH (unchanged) =====
   import_supplier_known: {
     id: 'import_supplier_known',
     type: 'question',
@@ -587,7 +732,6 @@ const nodes: Record<string, ConversationNode> = {
   },
 
   // ===== PRE-RECOMMENDATION FILL NODES =====
-  // These capture a single missing field and loop back to recommendation
   _fill_destination: {
     id: '_fill_destination',
     type: 'question',
@@ -694,41 +838,9 @@ const nodes: Record<string, ConversationNode> = {
       { id: 'restart', label: 'Start over' },
     ],
     edges: [
-      { condition: 'chip', value: 'proceed', targetNodeId: 'current_courier', priority: 10 },
+      { condition: 'chip', value: 'proceed', targetNodeId: 'contact_name', priority: 10 },
       { condition: 'chip', value: 'different', targetNodeId: 'unsure_guide', priority: 10 },
       { condition: 'chip', value: 'restart', targetNodeId: 'welcome', priority: 10 },
-      { condition: 'any', targetNodeId: 'current_courier', priority: 0 },
-    ],
-  },
-
-  // ===== CURRENT COURIER =====
-  current_courier: {
-    id: 'current_courier',
-    type: 'question',
-    message: 'Which courier service do you currently use for your logistics needs?',
-    chips: [
-      { id: 'emx', label: 'EMX' },
-      { id: 'aramex', label: 'Aramex' },
-      { id: 'dhl', label: 'DHL' },
-      { id: 'fedex', label: 'FedEx' },
-      { id: 'zajel', label: 'Zajel' },
-      { id: 'other', label: 'Other' },
-    ],
-    capturesField: 'currentCourier',
-    edges: [
-      { condition: 'chip', value: 'other', targetNodeId: 'current_courier_other', priority: 10 },
-      { condition: 'any', targetNodeId: 'contact_name', priority: 0 },
-    ],
-  },
-
-  current_courier_other: {
-    id: 'current_courier_other',
-    type: 'capture',
-    message: 'What courier service do you currently use?',
-    allowFreeText: true,
-    freeTextPlaceholder: 'Courier name',
-    capturesField: 'currentCourier',
-    edges: [
       { condition: 'any', targetNodeId: 'contact_name', priority: 0 },
     ],
   },
@@ -778,22 +890,6 @@ const nodes: Record<string, ConversationNode> = {
     freeTextPlaceholder: 'Company name',
     capturesField: 'companyName',
     edges: [
-      { condition: 'any', targetNodeId: 'additional_notes', priority: 0 },
-    ],
-  },
-
-  // ===== ADDITIONAL NOTES =====
-  additional_notes: {
-    id: 'additional_notes',
-    type: 'capture',
-    message: 'Anything else you\'d like us to know about your logistics needs?',
-    allowFreeText: true,
-    freeTextPlaceholder: 'Additional notes (optional)',
-    chips: [
-      { id: 'skip', label: 'No, continue' },
-    ],
-    capturesField: 'additionalNotes',
-    edges: [
       { condition: 'any', targetNodeId: 'review', priority: 0 },
     ],
   },
@@ -836,8 +932,7 @@ export function detectCategoryFromText(input: string): string {
     import_supplier_known: ['import goods', 'importing', 'supplier', 'procurement', 'source from'],
     ship_destination: ['ship', 'send', 'deliver', 'package', 'parcel', 'courier', 'dispatch'],
     freight_type: ['freight', 'cargo', 'container', 'fcl', 'lcl', 'bulk', 'heavy'],
-    warehouse_type: ['warehouse', 'storage', 'store', 'inventory', 'stock'],
-    fulfill_type: ['fulfillment', 'fulfill', 'pick and pack', 'orders', 'ecommerce fulfillment'],
+    warehouse_type: ['warehouse', 'storage', 'store', 'inventory', 'stock', 'fulfillment', 'fulfill', 'fulfilment', 'pick and pack', 'ecommerce fulfillment'],
     returns_type: ['return', 'reverse', 'warranty', 'repair', 'recycl', 'defective'],
     customs_type: ['customs', 'clearance', 'import', 'export', 'compliance', 'declaration'],
     postal_type: ['mail', 'letter', 'postal', 'stamp', 'registered mail', 'post office'],

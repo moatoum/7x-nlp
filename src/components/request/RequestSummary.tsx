@@ -35,7 +35,7 @@ export function RequestSummary() {
     destinationLocation,
     frequency,
     specialRequirements,
-    currentCourier,
+    storageType,
     supplierStatus,
     supplierCountry,
     goodsCategory,
@@ -69,7 +69,8 @@ export function RequestSummary() {
   const hasDetails = urgency || originLocation || destinationLocation || frequency;
   const hasBusiness = businessType;
   const hasImportDetails = supplierStatus || supplierCountry || goodsCategory || incoterms || cargoVolume || customsRequired;
-  const hasCourier = !!currentCourier;
+  const isWarehousing = serviceCategory?.toLowerCase().includes('warehouse') || serviceCategory?.toLowerCase().includes('fulfilment') || serviceCategory?.toLowerCase().includes('fulfillment') || serviceCategory?.toLowerCase().includes('store');
+  const hasWarehouseDetails = isWarehousing && (storageType || cargoVolume || frequency);
   const hasContact = contactName || contactEmail || companyName;
 
   return (
@@ -151,6 +152,20 @@ export function RequestSummary() {
         </motion.div>
       )}
 
+      {/* Warehousing Details */}
+      {hasWarehouseDetails && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
+        >
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">Warehousing</h4>
+          <SummaryField label="Storage Type" value={storageType} isHighlighted={isHL('storageType')} fieldKey="storageType" onEdit={handleEdit} />
+          <SummaryField label="Storage Volume" value={cargoVolume} isHighlighted={isHL('cargoVolume')} fieldKey="cargoVolume" onEdit={handleEdit} />
+          <SummaryField label="I/O Volume" value={frequency} isHighlighted={isHL('frequency')} fieldKey="frequency" onEdit={handleEdit} />
+        </motion.div>
+      )}
+
       {/* Details */}
       {hasDetails && (
         <motion.div
@@ -201,18 +216,6 @@ export function RequestSummary() {
       {/* Recommended Services */}
       {recommendedServices.length > 0 && (
         <RecommendedServices services={recommendedServices} />
-      )}
-
-      {/* Current Courier */}
-      {hasCourier && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
-        >
-          <h4 className="text-xs font-semibold text-gray-900 mb-2">Current Courier</h4>
-          <SummaryField label="Provider" value={currentCourier} isHighlighted={isHL('currentCourier')} fieldKey="currentCourier" onEdit={handleEdit} />
-        </motion.div>
       )}
 
       {/* Contact */}

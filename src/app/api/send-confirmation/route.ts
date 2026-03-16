@@ -22,6 +22,7 @@ interface ConfirmationPayload {
   incoterms: string | null;
   cargoVolume: string | null;
   customsRequired: string | null;
+  storageType: string | null;
   recommendedServices: Array<{ name: string; category: string }>;
 }
 
@@ -44,6 +45,7 @@ function buildEmailHtml(data: ConfirmationPayload): string {
   if (data.incoterms) detailRows.push(['Incoterms', data.incoterms]);
   if (data.cargoVolume) detailRows.push(['Cargo Volume', data.cargoVolume]);
   if (data.customsRequired) detailRows.push(['Customs Assistance', data.customsRequired]);
+  if (data.storageType) detailRows.push(['Storage Type', data.storageType]);
 
   const details = detailRows
     .map(([label, value]) => `

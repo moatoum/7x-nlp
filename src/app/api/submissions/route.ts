@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         incoterms: body.incoterms ?? null,
         cargoVolume: body.cargoVolume ?? null,
         customsRequired: body.customsRequired ?? null,
+        storageType: body.storageType ?? null,
         contactName: body.contactName ?? null,
         contactEmail: body.contactEmail ?? null,
         contactPhone: body.contactPhone ?? null,

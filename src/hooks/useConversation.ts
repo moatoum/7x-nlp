@@ -41,6 +41,7 @@ async function fetchAIRecommendations(fields: RequestFields): Promise<ServiceMat
       incoterms: fields.incoterms,
       cargoVolume: fields.cargoVolume,
       customsRequired: fields.customsRequired,
+      storageType: fields.storageType,
     };
 
     const response = await fetch('/api/chat', {
@@ -71,8 +72,16 @@ async function fetchAIRecommendations(fields: RequestFields): Promise<ServiceMat
 
 /** Check if all required fields are captured; return first missing fill-node ID or null */
 function findMissingFieldNode(rs: Partial<RequestFields>): string | null {
-  if (!rs.destinationLocation) return '_fill_destination';
-  if (!rs.urgency) return '_fill_urgency';
+  const cat = (rs.serviceCategory || '').toLowerCase();
+  const isWarehousing = cat.includes('warehouse') || cat.includes('fulfilment') || cat.includes('fulfillment') || cat.includes('store');
+  const isCustoms = cat.includes('customs') || cat.includes('trade');
+  const isPostal = cat.includes('postal') || cat.includes('mail');
+  const isReturns = cat.includes('return') || cat.includes('repair');
+  const skipDestination = isWarehousing || isCustoms || isPostal || isReturns;
+  const skipUrgency = isWarehousing || isCustoms || isPostal;
+
+  if (!skipDestination && !rs.destinationLocation) return '_fill_destination';
+  if (!skipUrgency && !rs.urgency) return '_fill_urgency';
   if (!rs.businessType) return '_fill_business_type';
   if (!rs.frequency) return '_fill_volume';
   if (!rs.originLocation) return '_fill_origin';
@@ -119,6 +128,7 @@ async function persistSubmission(refNumber: string) {
       incoterms: req.incoterms,
       cargoVolume: req.cargoVolume,
       customsRequired: req.customsRequired,
+      storageType: req.storageType,
       contactName: req.contactName,
       contactEmail: req.contactEmail,
       contactPhone: req.contactPhone,
@@ -209,6 +219,7 @@ async function sendConfirmationEmail(refNumber: string, rs: ReturnType<typeof us
         incoterms: rs.incoterms,
         cargoVolume: rs.cargoVolume,
         customsRequired: rs.customsRequired,
+        storageType: rs.storageType,
         recommendedServices: (rs.recommendedServices || []).map((s) => ({
           name: s.name,
           category: s.category,
@@ -234,16 +245,27 @@ function inferNodeFromFields(fields: Partial<RequestFields>): string {
     // Fall through to shared node checks below
   }
 
-  if (fields.contactName && fields.contactEmail && fields.contactPhone && fields.companyName) return 'additional_notes';
+  // Warehousing flow inference
+  const catLower = (fields.serviceCategory || '').toLowerCase();
+  const isWarehousing = catLower.includes('warehouse') || catLower.includes('fulfilment') || catLower.includes('fulfillment') || catLower.includes('store');
+  if (isWarehousing) {
+    if (!fields.serviceSubcategory) return 'warehouse_type';
+    if (!fields.storageType) return 'warehouse_storage_type';
+    if (!fields.cargoVolume) return 'warehouse_storage_volume';
+    if (!fields.frequency) return 'warehouse_io_volume';
+    if (!fields.businessType) return 'warehouse_business_type';
+    if (!fields.originLocation) return 'origin_location';
+    // Fall through to recommendation check
+  }
+
+  if (fields.contactName && fields.contactEmail && fields.contactPhone && fields.companyName) return 'review';
   if (fields.contactName && fields.contactEmail && fields.contactPhone) return 'contact_company';
   if (fields.contactName && fields.contactEmail) return 'contact_phone';
   if (fields.contactName) return 'contact_email';
-  if (fields.currentCourier) return 'contact_name';
   // Only jump to recommendation when all core fields are gathered
   const hasCoreFields =
     fields.serviceCategory && fields.serviceSubcategory &&
-    fields.originLocation && fields.destinationLocation &&
-    fields.urgency && fields.businessType && fields.frequency;
+    fields.originLocation && fields.businessType && fields.frequency;
   if (hasCoreFields) return 'recommendation';
   if (fields.frequency) return 'business_type';
   if (fields.businessType) return 'frequency';
@@ -448,6 +470,7 @@ export function useConversation() {
       incoterms: reqStore.incoterms,
       cargoVolume: reqStore.cargoVolume,
       customsRequired: reqStore.customsRequired,
+      storageType: reqStore.storageType,
       contactName: reqStore.contactName,
       contactEmail: reqStore.contactEmail,
       contactPhone: reqStore.contactPhone,
@@ -517,11 +540,13 @@ export function useConversation() {
 
       // Handle recommendations — AI returns specific service IDs
       const rs = useRequestStore.getState();
+      const catLwr = (rs.serviceCategory || '').toLowerCase();
+      const isWhOrCustomsOrPostal = catLwr.includes('warehouse') || catLwr.includes('fulfilment') || catLwr.includes('fulfillment') || catLwr.includes('store') || catLwr.includes('customs') || catLwr.includes('trade') || catLwr.includes('postal') || catLwr.includes('mail');
       const hasEnoughForRecs =
         !!rs.serviceCategory &&
         !!rs.originLocation &&
-        !!rs.destinationLocation &&
-        !!rs.urgency &&
+        (isWhOrCustomsOrPostal || !!rs.destinationLocation) &&
+        (isWhOrCustomsOrPostal || !!rs.urgency) &&
         !!rs.businessType &&
         !!rs.frequency;
 
@@ -720,18 +745,18 @@ export function useConversation() {
 
     await delay(randomDelay());
 
-    // Ask about current courier before contact details
-    const courierNode = getNode('current_courier');
-    const courierMsg = typeof courierNode.message === 'function'
-      ? courierNode.message(useRequestStore.getState() as RequestFields)
-      : courierNode.message;
+    // Go directly to contact details
+    const contactNode = getNode('contact_name');
+    const contactMsg = typeof contactNode.message === 'function'
+      ? contactNode.message(useRequestStore.getState() as RequestFields)
+      : contactNode.message;
 
     const cs2 = useConversationStore.getState();
     cs2.setTyping(false);
     const followId = cs2.addStreamingBotMessage();
-    await typewriterStream(followId, "Great choices. Before we proceed with your details, I have one quick question.\n\n" + courierMsg);
-    useConversationStore.getState().finalizeStreamingMessage(followId, courierNode.chips);
-    useConversationStore.getState().transitionTo('current_courier');
+    await typewriterStream(followId, "Great choices. Let me connect you with our team.\n\n" + contactMsg);
+    useConversationStore.getState().finalizeStreamingMessage(followId);
+    useConversationStore.getState().transitionTo('contact_name');
     useConversationStore.getState().setInputDisabled(false);
   }, []);
 

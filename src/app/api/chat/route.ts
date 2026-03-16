@@ -27,6 +27,7 @@ const ALLOWED_FIELDS = new Set<string>([
   'contactName', 'contactEmail', 'contactPhone', 'companyName',
   'supplierStatus', 'supplierCountry', 'goodsCategory',
   'incoterms', 'cargoVolume', 'customsRequired',
+  'storageType',
 ]);
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

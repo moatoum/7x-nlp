@@ -171,9 +171,20 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
               <DetailRow label="Subcategory" value={submission.serviceSubcategory} />
               <DetailRow label="Business Type" value={submission.businessType} />
               <DetailRow label="Urgency" value={submission.urgency} />
-              <DetailRow label="Current Courier" value={submission.currentCourier} />
+              {submission.storageType && <DetailRow label="Storage Type" value={submission.storageType} />}
             </div>
           </SectionCard>
+
+          {/* Warehousing Details */}
+          {submission.storageType && (
+            <SectionCard title="Warehousing Details" icon={Package}>
+              <div className="grid grid-cols-2 gap-4">
+                <DetailRow label="Storage Type" value={submission.storageType} />
+                <DetailRow label="Storage Volume" value={submission.cargoVolume} />
+                <DetailRow label="I/O Volume" value={submission.frequency} />
+              </div>
+            </SectionCard>
+          )}
 
           {/* Import Details */}
           {(submission.supplierStatus || submission.supplierCountry || submission.goodsCategory || submission.incoterms || submission.cargoVolume || submission.customsRequired) && (
