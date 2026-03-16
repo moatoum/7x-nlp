@@ -17,3 +17,25 @@ resources:
     memory: "256Mi"
   limits:
     memory: "512Mi"
+
+env:
+  - name: DATABASE_URL
+    value: "postgresql://7x_nls:prodTREpIUHeb%40uug8kx@psql-shared-prod-aen-db.postgres.database.azure.com:6432/7x_nls?sslmode=verify-ca"
+  - name: AZURE_AI_ENDPOINT
+    value: "https://7x-nsl-resource.services.ai.azure.com/api/projects/7x-nsl"
+  - name: AZURE_AI_KEY
+    value: "ASebiaJImrbDEQ9sFFvTKXLI1bJlS165Xf7Sl9p9q3AQ6S78Yh6RJQQJ99CCACF24PCXJ3w3AAAAACOGDBYs"
+  - name: AZURE_AI_DEPLOYMENT
+    value: "7x-NSL"
+  - name: AZURE_AI_API_VERSION
+    value: "2025-01-01-preview"
+  - name: RESEND_API_KEY
+    value: "re_hn64mAGa_J464ngAwGmzFkGvdzguCF5dr"
+  - name: ADMIN_USERNAME
+    value: "admin"
+  - name: ADMIN_PASSWORD
+    value: "CHANGE_ME"
+  - name: NXN_PASSWORD
+    value: "nxn"
+  - name: EMU_PASSWORD
+    value: "emu"

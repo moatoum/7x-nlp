@@ -76,8 +76,12 @@ spec:
               port: http
           {{- end }}
           env:
-          - name: ASPNETCORE_ENVIRONMENT
-            value: {{ .Values.environment }}
+          - name: NODE_ENV
+            value: "production"
+          {{- range .Values.env }}
+          - name: {{ .name }}
+            value: {{ .value | quote }}
+          {{- end }}
     
 
 
