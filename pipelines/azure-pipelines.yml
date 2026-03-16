@@ -20,4 +20,4 @@ variables:
 extends:
   template: template-main-k8s-cicd.yml@cicd-templates
   parameters:
-      single_dockerfile: 'false'
+      single_dockerfile: 'true'
