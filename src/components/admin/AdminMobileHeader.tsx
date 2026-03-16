@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, LayoutDashboard, FileText, ArrowLeft, LogOut } from 'lucide-react';
+import { Menu, X, LayoutDashboard, FileText, Users, ArrowLeft, LogOut } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAdminUiStore } from '@/store/adminUiStore';
 import { cn } from '@/lib/cn';
@@ -11,6 +11,7 @@ import { Logo } from '@/components/ui/Logo';
 const NAV_ITEMS = [
   { label: 'Overview', href: '/admin', icon: LayoutDashboard },
   { label: 'Submissions', href: '/admin/submissions', icon: FileText },
+  { label: 'Leads', href: '/admin/leads', icon: Users },
 ];
 
 export function AdminMobileHeader() {

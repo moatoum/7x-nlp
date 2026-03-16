@@ -171,7 +171,7 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
               <DetailRow label="Subcategory" value={submission.serviceSubcategory} />
               <DetailRow label="Business Type" value={submission.businessType} />
               <DetailRow label="Urgency" value={submission.urgency} />
-              {submission.storageType && <DetailRow label="Storage Type" value={submission.storageType} />}
+              {submission.currentCourier && <DetailRow label="Current Provider" value={submission.currentCourier} />}
             </div>
           </SectionCard>
 
@@ -187,14 +187,14 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
           )}
 
           {/* Import Details */}
-          {(submission.supplierStatus || submission.supplierCountry || submission.goodsCategory || submission.incoterms || submission.cargoVolume || submission.customsRequired) && (
+          {(submission.supplierStatus || submission.supplierCountry || submission.goodsCategory || submission.incoterms || submission.customsRequired) && (
             <SectionCard title="Import Details" icon={Package}>
               <div className="grid grid-cols-2 gap-4">
                 <DetailRow label="Supplier Status" value={submission.supplierStatus} />
                 <DetailRow label="Supplier Country" value={submission.supplierCountry} />
                 <DetailRow label="Goods Category" value={submission.goodsCategory} />
                 <DetailRow label="Incoterms" value={submission.incoterms} />
-                <DetailRow label="Cargo Volume" value={submission.cargoVolume} />
+                {!submission.storageType && <DetailRow label="Cargo Volume" value={submission.cargoVolume} />}
                 <DetailRow label="Customs Assistance" value={submission.customsRequired} />
               </div>
             </SectionCard>
@@ -205,7 +205,7 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
             <div className="grid grid-cols-2 gap-4">
               <DetailRow label="Origin" value={submission.originLocation} />
               <DetailRow label="Destination" value={submission.destinationLocation} />
-              <DetailRow label="Frequency" value={submission.frequency} />
+              {!submission.storageType && <DetailRow label="Frequency" value={submission.frequency} />}
             </div>
           </SectionCard>
 

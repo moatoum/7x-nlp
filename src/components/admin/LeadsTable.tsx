@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useLeadsStore, type Lead } from '@/store/leadsStore';
 import { cn } from '@/lib/cn';
 
+const LEAD_STATUSES = ['new', 'contacted', 'qualified', 'closed'] as const;
+
 const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-500',
   contacted: 'bg-yellow-500',
@@ -16,6 +18,7 @@ const PAGE_SIZE = 10;
 export function LeadsTable() {
   const leads = useLeadsStore((s) => s.leads);
   const loading = useLeadsStore((s) => s.loading);
+  const updateLeadStatus = useLeadsStore((s) => s.updateLeadStatus);
   const [page, setPage] = useState(0);
 
   if (loading) {
@@ -82,8 +85,16 @@ export function LeadsTable() {
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-2">
-                    <div className={cn('w-2 h-2 rounded-full', STATUS_COLORS[lead.status] || 'bg-gray-300')} />
-                    <span className="text-xs capitalize text-gray-600">{lead.status}</span>
+                    <div className={cn('w-2 h-2 rounded-full shrink-0', STATUS_COLORS[lead.status] || 'bg-gray-300')} />
+                    <select
+                      value={lead.status}
+                      onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
+                      className="text-xs capitalize text-gray-600 bg-transparent border-none outline-none cursor-pointer hover:text-gray-900 transition-colors appearance-none pr-4 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0_center]"
+                    >
+                      {LEAD_STATUSES.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
                   </div>
                 </td>
               </tr>
