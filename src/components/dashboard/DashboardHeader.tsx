@@ -2,9 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Cloud, Sun, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, Cloudy, ChevronDown } from 'lucide-react';
-import { Logo } from '@/components/ui/Logo';
+import { AlternatingLogo } from '@/components/ui/AlternatingLogo';
 
 interface WeatherData {
   temp: number;
@@ -101,16 +100,6 @@ function QuickLinks() {
           >
             About 7X
           </a>
-          <a
-            href="https://www.investinabudhabi.gov.ae"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setOpen(false)}
-            className="block px-4 py-2.5 text-[13px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-          >
-            About ADIO
-          </a>
-          <div className="mx-3 my-1 h-px bg-gray-100" />
           <Link
             href="/services"
             onClick={() => setOpen(false)}
@@ -120,48 +109,6 @@ function QuickLinks() {
           </Link>
         </div>
       )}
-    </div>
-  );
-}
-
-function AlternatingLogo() {
-  const [showAdio, setShowAdio] = useState(false);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShowAdio((v) => !v);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="relative h-8 w-[200px] flex items-center justify-center overflow-hidden">
-      {/* 7X Logo */}
-      <div
-        className={`flex items-center gap-2.5 transition-all duration-700 ease-in-out absolute ${
-          showAdio ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'
-        }`}
-      >
-        <div className="w-8 h-8 rounded-[10px] bg-black flex items-center justify-center">
-          <Logo className="w-[20px] h-[12px]" color="white" />
-        </div>
-      </div>
-
-      {/* ADIO Logo */}
-      <div
-        className={`flex items-center transition-all duration-700 ease-in-out absolute ${
-          showAdio ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
-      >
-        <Image
-          src="/adio.png"
-          alt="Abu Dhabi Investment Office"
-          width={140}
-          height={32}
-          className="h-7 w-auto object-contain"
-          priority
-        />
-      </div>
     </div>
   );
 }

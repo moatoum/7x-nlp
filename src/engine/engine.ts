@@ -9,7 +9,7 @@ const nodes: Record<string, ConversationNode> = {
   welcome: {
     id: 'welcome',
     type: 'question',
-    message: 'Welcome to 7X. I\'m here to help you find the right logistics solution.\n\nWhat are you looking to do?',
+    message: 'Welcome to NLS Platform. I\'m here to help you find the right logistics solution.\n\nWhat are you looking to do?',
     chips: [
       { id: 'ship_parcels', label: 'Ship packages or parcels', icon: 'Package' },
       { id: 'freight', label: 'Move large cargo or freight', icon: 'Container' },
@@ -423,6 +423,94 @@ const nodes: Record<string, ConversationNode> = {
     ],
   },
 
+  // ===== PRE-RECOMMENDATION FILL NODES =====
+  // These capture a single missing field and loop back to recommendation
+  _fill_destination: {
+    id: '_fill_destination',
+    type: 'question',
+    message: 'One more thing — where do your shipments need to go?',
+    chips: [
+      { id: 'domestic', label: 'Within the UAE' },
+      { id: 'gcc', label: 'GCC countries' },
+      { id: 'international', label: 'International' },
+      { id: 'mixed', label: 'Multiple destinations' },
+    ],
+    capturesField: 'destinationLocation',
+    edges: [
+      { condition: 'any', targetNodeId: 'recommendation', priority: 0 },
+    ],
+  },
+
+  _fill_urgency: {
+    id: '_fill_urgency',
+    type: 'question',
+    message: 'How urgent is this?',
+    chips: [
+      { id: 'immediate', label: 'Immediate / ASAP' },
+      { id: 'this_week', label: 'This week' },
+      { id: 'planning', label: 'Planning ahead' },
+      { id: 'exploring', label: 'Just exploring options' },
+    ],
+    capturesField: 'urgency',
+    edges: [
+      { condition: 'any', targetNodeId: 'recommendation', priority: 0 },
+    ],
+  },
+
+  _fill_business_type: {
+    id: '_fill_business_type',
+    type: 'question',
+    message: 'What industry is your business in?',
+    chips: [
+      { id: 'ecommerce', label: 'E-commerce / D2C' },
+      { id: 'retail', label: 'Retail' },
+      { id: 'healthcare', label: 'Healthcare / Pharma' },
+      { id: 'manufacturing', label: 'Manufacturing' },
+      { id: 'food', label: 'Food & Beverage' },
+      { id: 'government', label: 'Government' },
+      { id: 'other', label: 'Other' },
+    ],
+    allowFreeText: true,
+    capturesField: 'businessType',
+    edges: [
+      { condition: 'any', targetNodeId: 'recommendation', priority: 0 },
+    ],
+  },
+
+  _fill_volume: {
+    id: '_fill_volume',
+    type: 'question',
+    message: 'What\'s your expected monthly volume?',
+    chips: [
+      { id: 'under_100', label: 'Under 100 shipments' },
+      { id: '100_1000', label: '100 - 1,000' },
+      { id: '1000_10000', label: '1,000 - 10,000' },
+      { id: 'over_10000', label: '10,000+' },
+    ],
+    capturesField: 'frequency',
+    edges: [
+      { condition: 'any', targetNodeId: 'recommendation', priority: 0 },
+    ],
+  },
+
+  _fill_origin: {
+    id: '_fill_origin',
+    type: 'question',
+    message: 'Where are you based?',
+    chips: [
+      { id: 'dubai', label: 'Dubai' },
+      { id: 'abu_dhabi', label: 'Abu Dhabi' },
+      { id: 'sharjah', label: 'Sharjah' },
+      { id: 'other_uae', label: 'Other UAE' },
+      { id: 'outside_uae', label: 'Outside UAE' },
+    ],
+    allowFreeText: true,
+    capturesField: 'originLocation',
+    edges: [
+      { condition: 'any', targetNodeId: 'recommendation', priority: 0 },
+    ],
+  },
+
   // ===== RECOMMENDATION =====
   recommendation: {
     id: 'recommendation',
@@ -470,6 +558,18 @@ const nodes: Record<string, ConversationNode> = {
     allowFreeText: true,
     freeTextPlaceholder: 'you@company.com',
     capturesField: 'contactEmail',
+    edges: [
+      { condition: 'any', targetNodeId: 'contact_phone', priority: 0 },
+    ],
+  },
+
+  contact_phone: {
+    id: 'contact_phone',
+    type: 'capture',
+    message: 'What\'s the best phone number to reach you?',
+    allowFreeText: true,
+    freeTextPlaceholder: '+971 XX XXX XXXX',
+    capturesField: 'contactPhone',
     edges: [
       { condition: 'any', targetNodeId: 'contact_company', priority: 0 },
     ],

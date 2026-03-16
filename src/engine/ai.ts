@@ -7,7 +7,7 @@ import { SERVICE_CATALOG, CATEGORY_LABELS } from './catalog';
 
 const SERVICE_SUMMARY = SERVICE_CATALOG.map(
   (s) =>
-    `- ${s.name} (${CATEGORY_LABELS[s.category] || s.category}): ${s.description} [verticals: ${s.verticals.join(', ')}; capabilities: ${s.specialCapabilities.join(', ') || 'none'}; urgency: ${s.urgencyLevels.join(', ')}; regions: ${s.regions.join(', ')}]`
+    `- ID: "${s.id}" | ${s.name} (${CATEGORY_LABELS[s.category] || s.category}): ${s.description} [verticals: ${s.verticals.join(', ')}; capabilities: ${s.specialCapabilities.join(', ') || 'none'}; urgency: ${s.urgencyLevels.join(', ')}; regions: ${s.regions.join(', ')}]`
 ).join('\n');
 
 export function buildSystemPrompt(currentFields: Partial<RequestFields>): string {
@@ -20,7 +20,7 @@ export function buildSystemPrompt(currentFields: Partial<RequestFields>): string
     .filter(([, v]) => v === null || v === undefined || v === '' || (Array.isArray(v) && v.length === 0))
     .map(([k]) => k);
 
-  return `You are 7X Assistant, a smart logistics solutions advisor for 7X — a leading logistics platform in the UAE and GCC region.
+  return `You are NLS Assistant, a smart logistics solutions advisor for the National Logistics Support (NLS) Platform — a leading logistics platform in the UAE and GCC region.
 
 Your role is to have a natural conversation with users to understand their logistics needs and help them find the right service. You extract structured information from their messages to populate a service request form.
 
@@ -83,17 +83,19 @@ You MUST respond with valid JSON only. No markdown, no code blocks, just raw JSO
   ],
   "confidence": 0.0-1.0,
   "shouldShowRecommendations": false,
+  "recommendedServiceIds": [],
   "allFieldsComplete": false
 }
 
 ## LOGIC
 - Set "shouldShowRecommendations" to true ONLY after you have gathered ALL of these: serviceCategory, serviceSubcategory, originLocation, destinationLocation, urgency, businessType, AND frequency. Do NOT show recommendations early — you must thoroughly understand the request first. If any of these 7 fields is still missing, keep asking.
+- When "shouldShowRecommendations" is true, you MUST also populate "recommendedServiceIds" with an array of service IDs from the AVAILABLE SERVICES list above. Carefully analyze ALL available services and pick EVERY service that is genuinely relevant — up to 10 maximum. Use the exact ID strings (e.g. "dc-sameday", "ff-air", "ws-cold"). Think deeply about which services match: consider category, subcategory, business type, urgency, special requirements, origin/destination, verticals, capabilities, and any other relevant context. Do NOT limit yourself to just the obvious category — include cross-category services that would genuinely help the user (e.g. a shipping request might also benefit from warehousing or fulfillment services).
 - Set "allFieldsComplete" to true only when contactName, contactEmail, AND companyName are all captured.
 - For "confidence", estimate how confident you are in your field extractions (0.0-1.0).
 - Always provide "suggestedOptions" for the next question — these become clickable chips.
 - Prioritize capturing fields in this order: serviceCategory -> serviceSubcategory -> originLocation -> destinationLocation -> frequency -> urgency -> businessType -> specialRequirements -> contactName -> contactEmail -> companyName.
 - Do NOT skip fields. Ask about each missing field one at a time. Be thorough — this is a logistics request, details matter.
-- When you DO show recommendations, your message should introduce them (e.g. "Based on what you've told me, here are my top recommendations:"). Do NOT ask another question in the same message as recommendations.
+- When you DO show recommendations, your message should introduce them (e.g. "Based on what you've told me, here are the services I recommend for your needs. Please select the ones you'd like to include in your request:"). Do NOT ask another question in the same message as recommendations.
 - Do NOT mention quotes, pricing, or costs. Users are submitting logistics requests, not requesting quotes. Frame everything around "submitting your request" and "our team will review".
 
 ## EXTRACTION RULES
@@ -110,6 +112,7 @@ export interface AIResponse {
   suggestedOptions?: Array<{ id: string; label: string }>;
   confidence: number;
   shouldShowRecommendations: boolean;
+  recommendedServiceIds?: string[];
   allFieldsComplete: boolean;
 }
 
@@ -129,87 +132,19 @@ export function buildChatMessages(
     }));
 }
 
-// Quick-score services based on extracted fields (client-side fallback)
-export function scoreServicesFromFields(fields: Partial<RequestFields>): ServiceMatch[] {
-  const scored = SERVICE_CATALOG.map((service) => {
-    let score = 0;
-    const cat = fields.serviceCategory?.toLowerCase() || '';
-    const sub = fields.serviceSubcategory?.toLowerCase() || '';
-
-    // Category matching
-    if (cat) {
-      if (cat.includes('ship') || cat.includes('parcel') || cat.includes('courier')) {
-        if (service.category === 'domestic_courier' || service.category === 'international') score += 40;
-      }
-      if (cat.includes('freight') || cat.includes('cargo')) {
-        if (service.category === 'freight' || service.category === 'road_freight') score += 40;
-      }
-      if (cat.includes('warehouse') || cat.includes('storage') || cat.includes('store')) {
-        if (service.category === 'warehousing') score += 40;
-      }
-      if (cat.includes('fulfil')) {
-        if (service.category === 'fulfillment') score += 40;
-      }
-      if (cat.includes('return') || cat.includes('reverse')) {
-        if (service.category === 'reverse_logistics') score += 40;
-      }
-      if (cat.includes('customs') || cat.includes('trade')) {
-        if (service.category === 'trade_customs') score += 40;
-      }
-      if (cat.includes('postal') || cat.includes('mail')) {
-        if (service.category === 'postal') score += 40;
-      }
-    }
-
-    // Subcategory boost
-    if (sub && (service.subcategory.includes(sub) || service.name.toLowerCase().includes(sub))) {
-      score += 15;
-    }
-
-    // Business type / vertical match
-    if (fields.businessType) {
-      const bt = fields.businessType.toLowerCase();
-      if (bt.includes('e-commerce') || bt.includes('ecommerce')) {
-        if (service.verticals.includes('ecommerce')) score += 15;
-      }
-      if (bt.includes('food') || bt.includes('beverage')) {
-        if (service.verticals.includes('food')) score += 15;
-      }
-      if (bt.includes('pharma') || bt.includes('health')) {
-        if (service.verticals.includes('pharma')) score += 15;
-      }
-    }
-
-    // Special requirements
-    const specials = fields.specialRequirements || [];
-    for (const req of specials) {
-      const lower = req.toLowerCase();
-      if (lower.includes('temperature') && service.specialCapabilities.includes('temperature_controlled')) score += 10;
-      if (lower.includes('dangerous') && service.specialCapabilities.includes('dangerous_goods')) score += 10;
-      if (lower.includes('high value') && service.specialCapabilities.includes('high_value')) score += 10;
-    }
-
-    // Urgency
-    if (fields.urgency) {
-      const u = fields.urgency.toLowerCase();
-      if (u.includes('same day') && service.urgencyLevels.includes('same_day')) score += 10;
-      if (u.includes('next day') && service.urgencyLevels.includes('next_day')) score += 10;
-      if (u.includes('express') && service.urgencyLevels.includes('express')) score += 10;
-    }
-
-    return { service, score: Math.min(score, 100) };
-  });
-
-  return scored
-    .filter(({ score }) => score >= 30)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
-    .map(({ service, score }) => ({
-      id: service.id,
-      name: service.name,
-      category: CATEGORY_LABELS[service.category] || service.category,
-      confidence: score,
-      description: service.description,
-      vertical: service.verticals[0] || '',
-    }));
+/** Look up services by IDs returned by the AI and convert to ServiceMatch[] */
+export function lookupServicesByIds(ids: string[]): ServiceMatch[] {
+  return ids
+    .map((id) => {
+      const service = SERVICE_CATALOG.find((s) => s.id === id);
+      if (!service) return null;
+      return {
+        id: service.id,
+        name: service.name,
+        category: CATEGORY_LABELS[service.category] || service.category,
+        description: service.description,
+        vertical: service.verticals[0] || '',
+      };
+    })
+    .filter((s): s is ServiceMatch => s !== null);
 }

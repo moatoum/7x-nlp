@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt } from '@/engine/ai';
@@ -100,7 +103,21 @@ export async function POST(request: NextRequest) {
     // Validate currentFields is an object (or missing)
     const fields = (currentFields && typeof currentFields === 'object' ? currentFields : {}) as Partial<RequestFields>;
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    let apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      // Fallback: try reading .env.local directly
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const envPath = path.default.resolve(process.cwd(), '.env.local');
+        const envContent = fs.default.readFileSync(envPath, 'utf8');
+        const match = envContent.match(/^ANTHROPIC_API_KEY=(.+)$/m);
+        if (match) {
+          apiKey = match[1].trim();
+          process.env.ANTHROPIC_API_KEY = apiKey;
+        }
+      } catch {}
+    }
     if (!apiKey) {
       return NextResponse.json(
         { error: 'ANTHROPIC_API_KEY not configured' },
@@ -190,6 +207,17 @@ export async function POST(request: NextRequest) {
         }
       }
       parsed.extractedFields = sanitized;
+    }
+
+    // Sanitize recommendedServiceIds — must be an array of strings
+    if (parsed.recommendedServiceIds) {
+      if (!Array.isArray(parsed.recommendedServiceIds)) {
+        parsed.recommendedServiceIds = [];
+      } else {
+        parsed.recommendedServiceIds = parsed.recommendedServiceIds.filter(
+          (id: unknown) => typeof id === 'string' && id.length > 0
+        );
+      }
     }
 
     // Ensure message is a string

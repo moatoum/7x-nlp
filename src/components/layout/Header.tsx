@@ -1,6 +1,6 @@
 'use client';
 
-import { Logo } from '@/components/ui/Logo';
+import { AlternatingLogo } from '@/components/ui/AlternatingLogo';
 import { useRequestStore } from '@/store/requestStore';
 import { useUIStore } from '@/store/uiStore';
 import { ProgressBar } from '@/components/ui/ProgressBar';
@@ -13,14 +13,11 @@ export function Header() {
 
   return (
     <header className="h-[56px] border-b border-gray-100 bg-white/80 backdrop-blur-xl flex items-center justify-between px-6 flex-shrink-0 z-50">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-[10px] bg-black flex items-center justify-center">
-          <Logo className="w-[22px] h-[13px]" color="white" />
-        </div>
+      <div className="flex items-center gap-1.5">
+        <AlternatingLogo />
         <div className="hidden sm:flex items-center gap-2">
-          <span className="text-[15px] font-semibold text-gray-900 tracking-tight">7X</span>
           <span className="text-gray-200">|</span>
-          <span className="text-[13px] text-gray-400 font-medium">Logistics Solutions</span>
+          <span className="text-[13px] text-gray-400 font-medium">National Logistics Support</span>
         </div>
       </div>
 

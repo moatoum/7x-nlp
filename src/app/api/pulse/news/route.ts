@@ -1,0 +1,57 @@
+import { NextResponse } from 'next/server';
+import type { PulseNewsItem } from '@/lib/pulse-types';
+
+export const dynamic = 'force-dynamic';
+
+const API_KEY = 'ad52f814f074461b8d8285054f7f7d7c';
+
+// In-memory cache (5 min TTL)
+let cache: { data: PulseNewsItem[]; timestamp: number } | null = null;
+const CACHE_TTL = 5 * 60 * 1000;
+
+export async function GET() {
+  try {
+    // Return cached data if fresh
+    if (cache && Date.now() - cache.timestamp < CACHE_TTL) {
+      return NextResponse.json(
+        { articles: cache.data },
+        { headers: { 'Cache-Control': 'public, s-maxage=300' } }
+      );
+    }
+
+    const url = `https://newsapi.org/v2/everything?q=logistics+shipping+UAE&sortBy=publishedAt&pageSize=6&apiKey=${API_KEY}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+
+    if (!res.ok) {
+      throw new Error(`NewsAPI returned ${res.status}`);
+    }
+
+    const json = await res.json();
+    const rawArticles = json.articles || [];
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const articles: PulseNewsItem[] = rawArticles.map((a: any, i: number) => ({
+      id: `news-${i}-${Date.now()}`,
+      title: a.title || 'Untitled',
+      source: a.source?.name || 'Unknown',
+      url: a.url || '#',
+      publishedAt: a.publishedAt || new Date().toISOString(),
+      description: a.description || null,
+      imageUrl: a.urlToImage || null,
+    }));
+
+    // Update cache
+    cache = { data: articles, timestamp: Date.now() };
+
+    return NextResponse.json(
+      { articles },
+      { headers: { 'Cache-Control': 'public, s-maxage=300' } }
+    );
+  } catch (error) {
+    console.error('News API error:', error);
+    return NextResponse.json(
+      { articles: [], error: 'Failed to fetch news' },
+      { status: 200 }
+    );
+  }
+}

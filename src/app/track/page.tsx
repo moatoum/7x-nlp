@@ -16,12 +16,13 @@ import {
   Mail,
   MapPin,
   Clock,
+  MessageSquare,
 } from 'lucide-react';
 import { AuroraBackground } from '@/components/ui/AuroraBackground';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { useSubmissionsStore } from '@/store/submissionsStore';
 import { CATEGORY_LABELS } from '@/engine/catalog';
-import { formatDate } from '@/lib/formatters';
+import { formatDate, timeAgo } from '@/lib/formatters';
 import type { Submission } from '@/engine/types';
 
 /* ── Status Steps ── */
@@ -189,6 +190,34 @@ function TrackingResult({ submission }: { submission: Submission }) {
                     {svc.name}
                   </span>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* External notes / updates */}
+          {(submission.notes || []).filter((n) => n.visibility === 'external').length > 0 && (
+            <div className="pt-3 border-t border-gray-100/80">
+              <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-2.5">
+                Updates
+              </p>
+              <div className="space-y-2">
+                {[...(submission.notes || [])]
+                  .filter((n) => n.visibility === 'external')
+                  .sort((a, b) => b.createdAt - a.createdAt)
+                  .map((note) => (
+                    <div
+                      key={note.id}
+                      className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-50/50 border border-blue-100/50"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-blue-400 mt-0.5 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap">
+                          {note.content}
+                        </p>
+                        <p className="text-[11px] text-gray-400 mt-1">{timeAgo(note.createdAt)}</p>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           )}

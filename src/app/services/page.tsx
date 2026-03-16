@@ -1,6 +1,9 @@
+'use client';
+
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowLeft, Truck, Package, Globe, Ship, MapPin, Warehouse, ShoppingBag, RotateCcw, FileText, Mail } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { cn } from '@/lib/cn';
 
 interface ServiceItem {
   solution: string;
@@ -9,17 +12,15 @@ interface ServiceItem {
 }
 
 interface ServiceCategory {
+  id: string;
   name: string;
-  icon: React.ReactNode;
-  color: string;
   services: ServiceItem[];
 }
 
 const categories: ServiceCategory[] = [
   {
+    id: 'first-mile',
     name: 'First Mile Logistics',
-    icon: <MapPin className="w-5 h-5" />,
-    color: 'bg-blue-50 text-blue-600',
     services: [
       { solution: 'Scheduled Pickup', vertical: 'E-commerce', description: 'Regular pickup from online merchants and fulfillment centers' },
       { solution: 'Scheduled Pickup', vertical: 'Retail', description: 'Collection of shipments from retail stores and distribution centers' },
@@ -34,9 +35,8 @@ const categories: ServiceCategory[] = [
     ],
   },
   {
+    id: 'domestic-courier',
     name: 'Domestic Courier & Parcel',
-    icon: <Package className="w-5 h-5" />,
-    color: 'bg-emerald-50 text-emerald-600',
     services: [
       { solution: 'Same Day Delivery', vertical: 'Quick Commerce', description: 'Ultra fast delivery from urban micro hubs' },
       { solution: 'Same Day Delivery', vertical: 'Healthcare', description: 'Delivery of laboratory samples and medical supplies' },
@@ -51,9 +51,8 @@ const categories: ServiceCategory[] = [
     ],
   },
   {
+    id: 'international',
     name: 'International Parcel & Cross Border',
-    icon: <Globe className="w-5 h-5" />,
-    color: 'bg-violet-50 text-violet-600',
     services: [
       { solution: 'Global Express', vertical: 'E-commerce', description: 'Fast cross border shipping for online retailers' },
       { solution: 'Global Express', vertical: 'Luxury Goods', description: 'Secure international shipping of high value products' },
@@ -65,9 +64,8 @@ const categories: ServiceCategory[] = [
     ],
   },
   {
+    id: 'freight',
     name: 'Freight Forwarding',
-    icon: <Ship className="w-5 h-5" />,
-    color: 'bg-sky-50 text-sky-600',
     services: [
       { solution: 'Air Freight', vertical: 'Industrial', description: 'Transport of manufacturing cargo via air' },
       { solution: 'Air Freight Charter', vertical: 'Emergency Logistics', description: 'Dedicated aircraft for urgent cargo' },
@@ -81,9 +79,8 @@ const categories: ServiceCategory[] = [
     ],
   },
   {
+    id: 'road-freight',
     name: 'Road Freight & Trucking',
-    icon: <Truck className="w-5 h-5" />,
-    color: 'bg-orange-50 text-orange-600',
     services: [
       { solution: 'Full Truckload', vertical: 'Manufacturing', description: 'Dedicated trucks transporting industrial goods' },
       { solution: 'Less Than Truckload', vertical: 'SME', description: 'Shared truck capacity for smaller shipments' },
@@ -96,9 +93,8 @@ const categories: ServiceCategory[] = [
     ],
   },
   {
+    id: 'warehousing',
     name: 'Warehousing & Storage',
-    icon: <Warehouse className="w-5 h-5" />,
-    color: 'bg-amber-50 text-amber-600',
     services: [
       { solution: 'General Warehousing', vertical: 'Consumer Goods', description: 'Storage of retail and consumer inventory' },
       { solution: 'General Warehousing', vertical: 'Industrial', description: 'Storage of manufacturing inputs' },
@@ -112,9 +108,8 @@ const categories: ServiceCategory[] = [
     ],
   },
   {
+    id: 'fulfillment',
     name: 'Fulfillment Services',
-    icon: <ShoppingBag className="w-5 h-5" />,
-    color: 'bg-pink-50 text-pink-600',
     services: [
       { solution: 'Pick & Pack', vertical: 'E-commerce', description: 'Order picking and packing for online retail shipments' },
       { solution: 'Fashion Fulfillment', vertical: 'Apparel', description: 'Handling and distribution of fashion products' },
@@ -125,9 +120,8 @@ const categories: ServiceCategory[] = [
     ],
   },
   {
+    id: 'last-mile',
     name: 'Last Mile Delivery',
-    icon: <Package className="w-5 h-5" />,
-    color: 'bg-teal-50 text-teal-600',
     services: [
       { solution: 'Home Delivery', vertical: 'E-commerce', description: 'Parcel delivery to residential customers' },
       { solution: 'Home Delivery', vertical: 'Grocery', description: 'Delivery of groceries to households' },
@@ -141,9 +135,8 @@ const categories: ServiceCategory[] = [
     ],
   },
   {
+    id: 'reverse',
     name: 'Reverse Logistics',
-    icon: <RotateCcw className="w-5 h-5" />,
-    color: 'bg-rose-50 text-rose-600',
     services: [
       { solution: 'Customer Returns', vertical: 'E-commerce', description: 'Collection and processing of returned online orders' },
       { solution: 'Warranty Returns', vertical: 'Electronics', description: 'Return of defective devices to manufacturers' },
@@ -153,9 +146,8 @@ const categories: ServiceCategory[] = [
     ],
   },
   {
+    id: 'trade-customs',
     name: 'Trade & Customs Services',
-    icon: <FileText className="w-5 h-5" />,
-    color: 'bg-indigo-50 text-indigo-600',
     services: [
       { solution: 'Import Clearance', vertical: 'E-commerce', description: 'Customs clearance for cross border online orders' },
       { solution: 'Import Clearance', vertical: 'Industrial', description: 'Clearance of manufacturing imports' },
@@ -165,9 +157,8 @@ const categories: ServiceCategory[] = [
     ],
   },
   {
+    id: 'postal',
     name: 'Postal Services',
-    icon: <Mail className="w-5 h-5" />,
-    color: 'bg-cyan-50 text-cyan-600',
     services: [
       { solution: 'Letter Mail', vertical: 'Consumer', description: 'Delivery of personal letters' },
       { solution: 'Letter Mail', vertical: 'Business', description: 'Delivery of corporate correspondence' },
@@ -184,97 +175,181 @@ const categories: ServiceCategory[] = [
 const totalServices = categories.reduce((sum, cat) => sum + cat.services.length, 0);
 
 export default function ServicesPage() {
+  const [activeId, setActiveId] = useState(categories[0].id);
+  const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const isClickScrolling = useRef(false);
+
+  const setRef = useCallback((id: string, el: HTMLElement | null) => {
+    if (el) {
+      sectionRefs.current.set(id, el);
+    } else {
+      sectionRefs.current.delete(id);
+    }
+  }, []);
+
+  // Scroll-spy via IntersectionObserver
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isClickScrolling.current) return;
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveId(entry.target.id);
+            break;
+          }
+        }
+      },
+      { rootMargin: '-80px 0px -60% 0px', threshold: 0 }
+    );
+
+    sectionRefs.current.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollTo = (id: string) => {
+    setActiveId(id);
+    isClickScrolling.current = true;
+    const el = sectionRefs.current.get(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        isClickScrolling.current = false;
+      }, 800);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-5 md:px-8 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-[13px] text-gray-500 hover:text-gray-900 transition-colors">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 h-14 flex items-center justify-between">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-[13px] text-gray-500 hover:text-gray-900 transition-colors"
+          >
             <ArrowLeft className="w-4 h-4" />
             Back
           </Link>
-          <div className="flex items-center gap-4">
-            <Image src="/adio.png" alt="ADIO" width={100} height={24} className="h-5 w-auto opacity-40" />
-            <span className="w-px h-4 bg-gray-200" />
-            <span className="text-[13px] font-semibold text-gray-900 tracking-tight">7X</span>
-          </div>
+          <span className="text-[13px] font-semibold text-gray-900 tracking-tight">
+            7X
+          </span>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-5 md:px-8 pt-12 pb-8">
+      <section className="max-w-[1200px] mx-auto px-5 md:px-8 pt-12 pb-8">
         <h1 className="text-[28px] md:text-[36px] font-semibold text-gray-900 tracking-[-0.025em]">
           Available Services
         </h1>
         <p className="mt-2 text-[15px] text-gray-400 max-w-xl leading-relaxed">
-          Transportation and logistics products and solutions across {categories.length} categories covering {totalServices}+ service offerings.
+          {categories.length} categories covering {totalServices}+ logistics
+          solutions across the UAE and GCC.
         </p>
+      </section>
 
-        {/* Category quick nav */}
-        <div className="mt-6 flex flex-wrap gap-2">
+      {/* Mobile: Horizontal category scrollbar */}
+      <div className="lg:hidden sticky top-14 z-30 bg-white border-b border-gray-100">
+        <div className="flex items-center gap-1 px-5 py-2.5 overflow-x-auto no-scrollbar">
           {categories.map((cat) => (
-            <a
-              key={cat.name}
-              href={`#${cat.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-50 text-[12px] text-gray-500 font-medium hover:bg-gray-100 hover:text-gray-700 transition-colors"
+            <button
+              key={cat.id}
+              onClick={() => scrollTo(cat.id)}
+              className={cn(
+                'shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all whitespace-nowrap',
+                activeId === cat.id
+                  ? 'bg-gray-900 text-white'
+                  : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'
+              )}
             >
               {cat.name}
-              <span className="text-gray-300">{cat.services.length}</span>
-            </a>
+            </button>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* Categories */}
-      <section className="max-w-6xl mx-auto px-5 md:px-8 pb-20">
-        <div className="space-y-12">
-          {categories.map((cat) => (
-            <div
-              key={cat.name}
-              id={cat.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
-              className="scroll-mt-20"
-            >
-              {/* Category header */}
-              <div className="flex items-center gap-3 mb-5">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${cat.color}`}>
-                  {cat.icon}
-                </div>
-                <div>
-                  <h2 className="text-[18px] font-semibold text-gray-900">{cat.name}</h2>
-                  <p className="text-[12px] text-gray-400">{cat.services.length} solutions</p>
-                </div>
-              </div>
-
-              {/* Services grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {cat.services.map((svc, i) => (
-                  <div
-                    key={`${svc.solution}-${svc.vertical}-${i}`}
-                    className="group border border-gray-100 rounded-xl p-4 hover:border-gray-200 hover:shadow-sm transition-all"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h3 className="text-[14px] font-semibold text-gray-900 leading-snug">
-                        {svc.solution}
-                      </h3>
-                      <span className="shrink-0 px-2 py-0.5 rounded-md bg-gray-50 text-[11px] font-medium text-gray-400">
-                        {svc.vertical}
+      {/* Main content: Sidebar + Services */}
+      <div className="max-w-[1200px] mx-auto px-5 md:px-8 pb-20">
+        <div className="flex gap-12">
+          {/* Left sidebar — desktop only */}
+          <nav className="hidden lg:block w-[220px] shrink-0">
+            <div className="sticky top-20 py-4">
+              <ul className="space-y-0.5">
+                {categories.map((cat) => (
+                  <li key={cat.id}>
+                    <button
+                      onClick={() => scrollTo(cat.id)}
+                      className={cn(
+                        'w-full text-left px-3 py-2 rounded-lg text-[13px] transition-all flex items-center gap-2.5',
+                        activeId === cat.id
+                          ? 'text-gray-900 font-semibold bg-gray-50'
+                          : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50/50 font-medium'
+                      )}
+                    >
+                      {activeId === cat.id && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-900 shrink-0" />
+                      )}
+                      <span className={activeId !== cat.id ? 'ml-4' : ''}>
+                        {cat.name}
                       </span>
-                    </div>
-                    <p className="text-[13px] text-gray-500 leading-relaxed">
-                      {svc.description}
-                    </p>
-                  </div>
+                    </button>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
-          ))}
-        </div>
-      </section>
+          </nav>
 
-      {/* CTA */}
-      <section className="border-t border-gray-100 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-5 md:px-8 py-12 text-center">
-          <h3 className="text-[20px] font-semibold text-gray-900">Need a custom solution?</h3>
+          {/* Right content — services */}
+          <div className="flex-1 min-w-0 pt-2">
+            {categories.map((cat) => (
+              <section
+                key={cat.id}
+                id={cat.id}
+                ref={(el) => setRef(cat.id, el)}
+                className="scroll-mt-28 lg:scroll-mt-20 mb-14 last:mb-0"
+              >
+                {/* Category heading */}
+                <div className="flex items-baseline justify-between mb-4 pb-3 border-b border-gray-100">
+                  <h2 className="text-[18px] font-semibold text-gray-900 tracking-tight">
+                    {cat.name}
+                  </h2>
+                  <span className="text-[12px] text-gray-300 font-medium">
+                    {cat.services.length} solutions
+                  </span>
+                </div>
+
+                {/* Services list */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
+                  {cat.services.map((svc, i) => (
+                    <div
+                      key={`${svc.solution}-${svc.vertical}-${i}`}
+                      className="py-3.5 border-b border-gray-50 last:border-b-0"
+                    >
+                      <div className="flex items-center gap-2.5 mb-0.5">
+                        <h3 className="text-[14px] font-semibold text-gray-800 leading-snug">
+                          {svc.solution}
+                        </h3>
+                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-gray-100 text-[10px] font-medium text-gray-400">
+                          {svc.vertical}
+                        </span>
+                      </div>
+                      <p className="text-[13px] text-gray-400 leading-relaxed">
+                        {svc.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA footer */}
+      <section className="border-t border-gray-100 bg-gray-50/50">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-12 text-center">
+          <h3 className="text-[20px] font-semibold text-gray-900">
+            Need a custom solution?
+          </h3>
           <p className="mt-2 text-[14px] text-gray-400">
             Tell us what you need and we will match you with the right service.
           </p>

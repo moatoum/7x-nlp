@@ -114,6 +114,7 @@ export function generateSeedData(count: number = 32): Submission[] {
       conversationDuration: 120000 + Math.floor(Math.random() * 600000),
       nodesVisited: [],
       totalMessages: 8 + Math.floor(Math.random() * 12),
+      notes: [],
     });
   }
 

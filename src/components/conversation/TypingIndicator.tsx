@@ -1,13 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { AnimatedOrb } from '@/components/ui/AnimatedOrb';
 
 export function TypingIndicator() {
   return (
-    <div className="flex items-center gap-3 py-4" role="status" aria-label="7X Assistant is typing">
-      <div className="w-7 h-7 rounded-lg bg-black flex items-center justify-center flex-shrink-0">
-        <span className="text-white text-[10px] font-bold tracking-tight">7X</span>
-      </div>
+    <div className="flex items-center gap-3 py-4" role="status" aria-label="NLS Assistant is typing">
+      <AnimatedOrb size="sm" />
       <div className="flex items-center gap-1 px-4 py-3 bg-gray-50 rounded-2xl">
         {[0, 1, 2].map((i) => (
           <motion.span

@@ -11,7 +11,7 @@ import { TextInput } from './TextInput';
 
 export function ConversationPanel() {
   const { messages, isTyping, inputDisabled, started, currentNodeId } = useConversationStore();
-  const { startConversation, handleChipSelect, handleTextSubmit, handleMultiSelect } = useConversation();
+  const { startConversation, handleChipSelect, handleTextSubmit, handleMultiSelect, handleServiceConfirm } = useConversation();
 
   const scrollRef = useAutoScroll([messages.length, isTyping]);
 
@@ -34,6 +34,7 @@ export function ConversationPanel() {
                   message={msg}
                   onChipSelect={isLatest ? handleChipSelect : undefined}
                   onMultiSelect={isLatest ? handleMultiSelect : undefined}
+                  onServiceConfirm={isLatest ? handleServiceConfirm : undefined}
                   isLatest={isLatest}
                   isFirst={i === 0}
                 />
@@ -65,7 +66,7 @@ export function ConversationPanel() {
           />
           {currentNodeId !== 'submitted' && (
             <p className="text-[11px] text-gray-350 mt-2 text-center">
-              Powered by AI — you can type naturally or select from the options above
+              You can type naturally or select from the options above
             </p>
           )}
         </div>

@@ -1,41 +1,37 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { useSubmissionsStore } from '@/store/submissionsStore';
 import { useAdminUiStore } from '@/store/adminUiStore';
-import { generateSeedData } from '@/lib/seedData';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminMobileHeader } from '@/components/admin/AdminMobileHeader';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { initialized, initialize } = useSubmissionsStore();
   const isAuthenticated = useAdminUiStore((s) => s.isAuthenticated);
   const sidebarCollapsed = useAdminUiStore((s) => s.sidebarCollapsed);
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
 
   const isLoginPage = pathname === '/admin/login';
 
   useEffect(() => {
-    if (!initialized) {
-      initialize(generateSeedData(32));
-    }
-  }, [initialized, initialize]);
+    setMounted(true);
+  }, []);
 
   // Redirect to login if not authenticated (and not already on login page)
   useEffect(() => {
-    if (!isAuthenticated && !isLoginPage) {
+    if (mounted && !isAuthenticated && !isLoginPage) {
       window.location.href = '/admin/login';
     }
-  }, [isAuthenticated, isLoginPage]);
+  }, [mounted, isAuthenticated, isLoginPage]);
 
   // If on login page, just render children (no sidebar)
   if (isLoginPage) {
     return <>{children}</>;
   }
 
-  // If not authenticated, show blank screen while redirecting
-  if (!isAuthenticated) {
+  // Show blank screen until hydrated, or while redirecting to login
+  if (!mounted || !isAuthenticated) {
     return <div className="h-screen bg-white" />;
   }
 

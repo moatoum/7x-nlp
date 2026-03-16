@@ -10,6 +10,7 @@ import { formatDate, formatDuration } from '@/lib/formatters';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/cn';
 
+import { NotesSection } from '@/components/admin/NotesSection';
 import type { Submission } from '@/engine/types';
 
 interface SubmissionDetailProps {
@@ -265,16 +266,21 @@ export function SubmissionDetail({ id }: SubmissionDetailProps) {
                       <p className="text-[13px] text-gray-900 font-medium">{service.name}</p>
                       <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{service.description}</p>
                     </div>
-                    <div className="ml-3 shrink-0">
-                      <Badge variant="blue" className="text-[10px]">
-                        {Math.round(service.confidence * 100)}%
-                      </Badge>
-                    </div>
+                    {service.confidence != null && (
+                      <div className="ml-3 shrink-0">
+                        <Badge variant="blue" className="text-[10px]">
+                          {Math.round(service.confidence * 100)}%
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </SectionCard>
           )}
+
+          {/* Notes */}
+          <NotesSection submissionId={submission.id} notes={submission.notes || []} />
 
           {/* Timeline */}
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">

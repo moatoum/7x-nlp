@@ -6,9 +6,72 @@ import { useRequestStore } from '@/store/requestStore';
 import { useSubmissionsStore } from '@/store/submissionsStore';
 import { getNode, processUserInput } from '@/engine/engine';
 import { matchServices } from '@/engine/matcher';
-import { scoreServicesFromFields } from '@/engine/ai';
+import { lookupServicesByIds } from '@/engine/ai';
 import type { AIResponse } from '@/engine/ai';
-import type { ChipOption, RequestFields } from '@/engine/types';
+import type { ChipOption, RequestFields, ServiceMatch } from '@/engine/types';
+
+const MAX_CHAT_HISTORY = 30;
+
+/** Call AI API to get recommended service IDs, with rule-based fallback */
+async function fetchAIRecommendations(fields: RequestFields): Promise<ServiceMatch[]> {
+  try {
+    // Build minimal chat history context for the AI
+    const allMessages = useConversationStore.getState().messages;
+    const chatHistory = allMessages
+      .filter((m) => m.content.trim() !== '')
+      .slice(-MAX_CHAT_HISTORY)
+      .map((m) => ({
+        role: (m.role === 'bot' ? 'assistant' : 'user') as 'user' | 'assistant',
+        content: m.content,
+      }));
+
+    const currentFields: Partial<RequestFields> = {
+      serviceCategory: fields.serviceCategory,
+      serviceSubcategory: fields.serviceSubcategory,
+      businessType: fields.businessType,
+      originLocation: fields.originLocation,
+      destinationLocation: fields.destinationLocation,
+      frequency: fields.frequency,
+      urgency: fields.urgency,
+      specialRequirements: fields.specialRequirements,
+      additionalNotes: fields.additionalNotes,
+    };
+
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          ...chatHistory,
+          { role: 'user', content: 'Based on everything I told you, please recommend the most relevant services.' },
+        ],
+        currentFields,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+    const aiResponse: AIResponse = await response.json();
+    if (aiResponse.recommendedServiceIds && aiResponse.recommendedServiceIds.length > 0) {
+      const matches = lookupServicesByIds(aiResponse.recommendedServiceIds);
+      if (matches.length > 0) return matches;
+    }
+  } catch (error) {
+    console.error('AI recommendation failed, falling back to rule-based:', error);
+  }
+  // Fallback to rule-based
+  return matchServices(fields as RequestFields);
+}
+
+/** Check if all required fields are captured; return first missing fill-node ID or null */
+function findMissingFieldNode(rs: Partial<RequestFields>): string | null {
+  if (!rs.destinationLocation) return '_fill_destination';
+  if (!rs.urgency) return '_fill_urgency';
+  if (!rs.businessType) return '_fill_business_type';
+  if (!rs.frequency) return '_fill_volume';
+  if (!rs.originLocation) return '_fill_origin';
+  return null;
+}
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -49,6 +112,7 @@ function persistSubmission(refNumber: string) {
     conversationDuration: conv.startedAt ? Date.now() - conv.startedAt : 0,
     nodesVisited: conv.visitedNodes,
     totalMessages: conv.messages.length,
+    notes: [],
   });
 }
 
@@ -62,6 +126,7 @@ async function handleSubmission(): Promise<boolean> {
   const missingFields: string[] = [];
   if (!rs.contactName) missingFields.push('name');
   if (!rs.contactEmail) missingFields.push('email');
+  if (!rs.contactPhone) missingFields.push('phone number');
   if (!rs.companyName) missingFields.push('company name');
 
   if (missingFields.length > 0) {
@@ -69,7 +134,7 @@ async function handleSubmission(): Promise<boolean> {
     cs.addBotMessage(
       `Before I can submit, I still need your ${missingFields.join(', ')}. Could you provide that?`
     );
-    const firstMissing = !rs.contactName ? 'contact_name' : !rs.contactEmail ? 'contact_email' : 'contact_company';
+    const firstMissing = !rs.contactName ? 'contact_name' : !rs.contactEmail ? 'contact_email' : !rs.contactPhone ? 'contact_phone' : 'contact_company';
     cs.transitionTo(firstMissing);
     cs.setInputDisabled(false);
     return false;
@@ -90,18 +155,52 @@ async function handleSubmission(): Promise<boolean> {
   rs.setStage('submitted');
   cs.setTyping(false);
   cs.addBotMessage(
-    `Your request has been submitted successfully.\n\nReference: ${refNumber}\n\nOur logistics specialists will reach out within 2 business hours. Thank you for choosing 7X.`
+    `Your request has been submitted successfully.\n\nReference: ${refNumber}\n\nA confirmation email has been sent to ${rs.contactEmail}. Our logistics specialists will reach out within 2 business hours. Thank you for choosing 7X.`
   );
   cs.transitionTo('submitted');
   cs.setInputDisabled(true);
   persistSubmission(refNumber);
+
+  // Send confirmation email (fire and forget)
+  sendConfirmationEmail(refNumber, rs);
+
   return true;
+}
+
+async function sendConfirmationEmail(refNumber: string, rs: ReturnType<typeof useRequestStore.getState>) {
+  try {
+    await fetch('/api/send-confirmation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        referenceNumber: refNumber,
+        contactName: rs.contactName,
+        contactEmail: rs.contactEmail,
+        contactPhone: rs.contactPhone,
+        companyName: rs.companyName,
+        serviceCategory: rs.serviceCategory,
+        serviceSubcategory: rs.serviceSubcategory,
+        originLocation: rs.originLocation,
+        destinationLocation: rs.destinationLocation,
+        urgency: rs.urgency,
+        frequency: rs.frequency,
+        specialRequirements: rs.specialRequirements || [],
+        recommendedServices: (rs.recommendedServices || []).map((s) => ({
+          name: s.name,
+          category: s.category,
+        })),
+      }),
+    });
+  } catch (error) {
+    console.error('Failed to send confirmation email:', error);
+  }
 }
 
 // Determine a reasonable node ID based on what fields are filled
 function inferNodeFromFields(fields: Partial<RequestFields>): string {
-  if (fields.contactName && fields.contactEmail && fields.companyName) return 'review';
-  if (fields.companyName || fields.contactEmail) return 'contact_company';
+  if (fields.contactName && fields.contactEmail && fields.contactPhone && fields.companyName) return 'review';
+  if (fields.contactName && fields.contactEmail && fields.contactPhone) return 'contact_company';
+  if (fields.contactName && fields.contactEmail) return 'contact_phone';
   if (fields.contactName) return 'contact_email';
   // Only jump to recommendation when all core fields are gathered
   const hasCoreFields =
@@ -138,7 +237,7 @@ async function typewriterStream(
   }
 }
 
-const MAX_CHAT_HISTORY = 30; // Bound messages sent to AI
+// MAX_CHAT_HISTORY defined at top of file
 
 export function useConversation() {
   const startConversation = useCallback(async () => {
@@ -217,33 +316,40 @@ export function useConversation() {
 
     if (nextNode.type === 'recommendation') {
       const rs = useRequestStore.getState();
-      const matches = matchServices(rs as RequestFields);
-      rs.setRecommendedServices(matches);
+
+      // Guard: ensure all required fields are captured before recommending
+      const missingNode = findMissingFieldNode(rs);
+      if (missingNode) {
+        const fallbackNode = getNode(missingNode);
+        const fallbackMsg = typeof fallbackNode.message === 'function'
+          ? fallbackNode.message(rs as RequestFields)
+          : fallbackNode.message;
+        const cs = useConversationStore.getState();
+        cs.setTyping(false);
+        cs.addBotMessage(fallbackMsg, fallbackNode.chips, fallbackNode.multiSelect);
+        cs.transitionTo(missingNode);
+        cs.setInputDisabled(false);
+        return;
+      }
+
       rs.setStage('matched');
 
-      const recMsg = typeof nextNode.message === 'function'
-        ? nextNode.message(rs as RequestFields)
-        : nextNode.message;
-
+      // Show analyzing message while AI works
       const cs = useConversationStore.getState();
       cs.setTyping(false);
-      cs.addBotMessageWithCards(recMsg, matches);
-      cs.transitionTo(nextNodeId);
+      const analyzingId = cs.addStreamingBotMessage();
+      await typewriterStream(analyzingId, "I'm analyzing your request and suggesting relevant services... One moment.");
+      useConversationStore.getState().finalizeStreamingMessage(analyzingId);
 
-      await delay(800);
-      useConversationStore.getState().setTyping(true);
-      await delay(randomDelay());
+      // Fetch AI recommendations
+      const matches = await fetchAIRecommendations(rs as RequestFields);
 
-      const responseNode = getNode('recommendation_response');
-      const responseMsg = typeof responseNode.message === 'function'
-        ? responseNode.message(useRequestStore.getState() as RequestFields)
-        : responseNode.message;
+      const recMsg = 'Based on your requirements, here are the services I recommend:';
 
       const cs2 = useConversationStore.getState();
-      cs2.setTyping(false);
-      cs2.addBotMessage(responseMsg, responseNode.chips);
-      cs2.transitionTo('recommendation_response');
-      cs2.setInputDisabled(false);
+      cs2.addBotMessageWithCards(recMsg + '\n\nPlease select the services you need, then confirm.', matches);
+      cs2.transitionTo('recommendation');
+      cs2.setInputDisabled(true);
       return;
     }
 
@@ -355,11 +461,10 @@ export function useConversation() {
       // === STREAMING TYPEWRITER EFFECT ===
       const msgId = cs.addStreamingBotMessage();
 
-      // Handle recommendations — only show when we have enough context
+      // Handle recommendations — AI returns specific service IDs
       const rs = useRequestStore.getState();
       const hasEnoughForRecs =
         !!rs.serviceCategory &&
-        !!rs.serviceSubcategory &&
         !!rs.originLocation &&
         !!rs.destinationLocation &&
         !!rs.urgency &&
@@ -367,28 +472,28 @@ export function useConversation() {
         !!rs.frequency;
 
       if (aiResponse.shouldShowRecommendations && hasEnoughForRecs) {
-        let matches = scoreServicesFromFields(rs as RequestFields);
+        // Look up services by AI-returned IDs
+        let matches: ServiceMatch[] = [];
+        if (aiResponse.recommendedServiceIds && aiResponse.recommendedServiceIds.length > 0) {
+          matches = lookupServicesByIds(aiResponse.recommendedServiceIds);
+        }
+        // Fallback to rule-based if AI returned no valid IDs
         if (matches.length === 0) {
           matches = matchServices(rs as RequestFields);
         }
 
         if (matches.length > 0) {
-          rs.setRecommendedServices(matches);
           rs.setStage('matched');
-          await typewriterStream(msgId, aiResponse.message);
-          useConversationStore.getState().finalizeStreamingMessage(msgId, undefined, matches);
+          // Show analyzing message
+          await typewriterStream(msgId, "I'm analyzing your request and suggesting relevant services... One moment.");
+          useConversationStore.getState().finalizeStreamingMessage(msgId);
 
-          // Follow up: ask to proceed to contact details
-          await delay(1200);
+          // Then show the cards in a new message
+          await delay(600);
           const cs3 = useConversationStore.getState();
-          cs3.setTyping(true);
-          await delay(randomDelay());
-          const followId = cs3.addStreamingBotMessage();
-          cs3.setTyping(false);
-          await typewriterStream(followId, "To submit your request, I'll need a few contact details. What's your full name?");
-          useConversationStore.getState().finalizeStreamingMessage(followId, [
-            { id: 'proceed', label: 'Sure, let me share my details' },
-          ]);
+          cs3.addBotMessageWithCards('Based on your requirements, here are the services I recommend:\n\nPlease select the services you need, then confirm.', matches);
+          cs3.transitionTo('recommendation');
+          cs3.setInputDisabled(true);
         } else {
           await typewriterStream(msgId, aiResponse.message);
           useConversationStore.getState().finalizeStreamingMessage(msgId, suggestedChips);
@@ -413,7 +518,9 @@ export function useConversation() {
       // Sync the conversation node for consistency
       const newNodeId = inferNodeFromFields(useRequestStore.getState());
       useConversationStore.getState().transitionTo(newNodeId);
-      useConversationStore.getState().setInputDisabled(false);
+      if (!aiResponse.shouldShowRecommendations || !hasEnoughForRecs) {
+        useConversationStore.getState().setInputDisabled(false);
+      }
     } catch (error) {
       console.error('AI chat error:', error);
       // Fallback to rule-based engine
@@ -446,33 +553,37 @@ export function useConversation() {
 
       if (nextNode.type === 'recommendation') {
         const rs = useRequestStore.getState();
-        const matches = matchServices(rs as RequestFields);
-        rs.setRecommendedServices(matches);
-        rs.setStage('matched');
 
-        const recMsg = typeof nextNode.message === 'function'
-          ? nextNode.message(rs as RequestFields)
-          : nextNode.message;
+        const missingNode = findMissingFieldNode(rs);
+        if (missingNode) {
+          const fallbackNode = getNode(missingNode);
+          const fallbackMsg = typeof fallbackNode.message === 'function'
+            ? fallbackNode.message(rs as RequestFields)
+            : fallbackNode.message;
+          const cs = useConversationStore.getState();
+          cs.setTyping(false);
+          cs.addBotMessage(fallbackMsg, fallbackNode.chips, fallbackNode.multiSelect);
+          cs.transitionTo(missingNode);
+          cs.setInputDisabled(false);
+          return;
+        }
+
+        rs.setStage('matched');
 
         const cs = useConversationStore.getState();
         cs.setTyping(false);
-        cs.addBotMessageWithCards(recMsg, matches);
-        cs.transitionTo(nextNodeId);
+        const analyzingId = cs.addStreamingBotMessage();
+        await typewriterStream(analyzingId, "I'm analyzing your request and suggesting relevant services... One moment.");
+        useConversationStore.getState().finalizeStreamingMessage(analyzingId);
 
-        await delay(800);
-        useConversationStore.getState().setTyping(true);
-        await delay(randomDelay());
+        const matches = await fetchAIRecommendations(rs as RequestFields);
 
-        const responseNode = getNode('recommendation_response');
-        const responseMsg = typeof responseNode.message === 'function'
-          ? responseNode.message(useRequestStore.getState() as RequestFields)
-          : responseNode.message;
+        const recMsg = 'Based on your requirements, here are the services I recommend:';
 
         const cs2 = useConversationStore.getState();
-        cs2.setTyping(false);
-        cs2.addBotMessage(responseMsg, responseNode.chips);
-        cs2.transitionTo('recommendation_response');
-        cs2.setInputDisabled(false);
+        cs2.addBotMessageWithCards(recMsg + '\n\nPlease select the services you need, then confirm.', matches);
+        cs2.transitionTo('recommendation');
+        cs2.setInputDisabled(true);
         return;
       }
 
@@ -528,10 +639,40 @@ export function useConversation() {
     cs.setInputDisabled(false);
   }, []);
 
+  // ============================================================
+  // SERVICE SELECTION CONFIRMATION
+  // ============================================================
+  const handleServiceConfirm = useCallback(async (selectedServices: ServiceMatch[]) => {
+    const rs = useRequestStore.getState();
+    const cs = useConversationStore.getState();
+
+    // Store selected services
+    rs.setRecommendedServices(selectedServices);
+
+    // Show what user selected
+    cs.addUserMessage(
+      `Selected: ${selectedServices.map((s) => s.name).join(', ')}`
+    );
+    cs.setInputDisabled(true);
+    cs.setTyping(true);
+
+    await delay(randomDelay());
+
+    // Ask for contact details
+    const cs2 = useConversationStore.getState();
+    cs2.setTyping(false);
+    const followId = cs2.addStreamingBotMessage();
+    await typewriterStream(followId, "Great choices. To submit your request, I'll need a few contact details.\n\nWhat's your full name?");
+    useConversationStore.getState().finalizeStreamingMessage(followId);
+    useConversationStore.getState().transitionTo('contact_name');
+    useConversationStore.getState().setInputDisabled(false);
+  }, []);
+
   return {
     startConversation,
     handleChipSelect,
     handleTextSubmit,
     handleMultiSelect,
+    handleServiceConfirm,
   };
 }

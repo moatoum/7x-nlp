@@ -10,114 +10,104 @@ export interface NewsItem {
   image: string | null;
 }
 
-function extractSourceFromTitle(title: string): { cleanTitle: string; source: string } {
-  const match = title.match(/^(.*)\s-\s([^-]+)$/);
-  if (match) return { cleanTitle: match[1].trim(), source: match[2].trim() };
-  return { cleanTitle: title, source: '' };
-}
+/** Specific image URLs known to be generic/logo placeholders */
+const BLOCKED_IMAGE_URLS = [
+  'https://ml.globenewswire.com/Resource/Download/908fb457-7f8e-4a08-9081-5565e3dfb3d7',
+];
 
-function extractRealUrl(bingUrl: string): string {
-  try {
-    const urlParam = new URL(bingUrl).searchParams.get('url');
-    if (urlParam) return urlParam;
-  } catch { /* ignore */ }
-  return bingUrl;
-}
+/** Reject images that are likely site logos, favicons, or icons rather than article images */
+function isBadImage(url: string): boolean {
+  // Block specific known bad URLs
+  if (BLOCKED_IMAGE_URLS.includes(url)) return true;
 
-async function fetchOgImage(articleUrl: string): Promise<string | null> {
-  try {
-    const res = await fetch(articleUrl, {
-      redirect: 'follow',
-      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
-      signal: AbortSignal.timeout(5000),
-    });
-    const html = await res.text();
+  const lower = url.toLowerCase();
 
-    const ogMatch = html.match(
-      /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i
-    ) || html.match(
-      /<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i
-    );
-    if (ogMatch?.[1]) return ogMatch[1];
+  // Generic resource download URLs (GlobeNewsWire etc.)
+  if (lower.includes('/resource/download/')) return true;
 
-    const twMatch = html.match(
-      /<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i
-    ) || html.match(
-      /<meta[^>]*content=["']([^"']+)["'][^>]*name=["']twitter:image["']/i
-    );
-    if (twMatch?.[1]) return twMatch[1];
+  const logoPatterns = [
+    'logo',
+    'favicon',
+    'icon',
+    'brand',
+    'avatar',
+    'badge',
+    'sprite',
+    'placeholder',
+    'default-image',
+    'default_image',
+    'no-image',
+    'no_image',
+    'thumbnail-default',
+  ];
+  if (logoPatterns.some((p) => lower.includes(p))) return true;
 
-    return null;
-  } catch {
-    return null;
+  // Reject very small images (common dimensions for logos/icons)
+  const sizeMatch = lower.match(/(\d+)x(\d+)/);
+  if (sizeMatch) {
+    const w = parseInt(sizeMatch[1], 10);
+    const h = parseInt(sizeMatch[2], 10);
+    if (w < 200 || h < 120) return true;
   }
+
+  return false;
 }
 
 export async function GET() {
   try {
-    const query = encodeURIComponent('UAE logistics');
-    const url = `https://www.bing.com/news/search?q=${query}&format=rss&count=10&mkt=en-US&setlang=en`;
+    const apiKey = 'ad52f814f074461b8d8285054f7f7d7c';
 
-    const res = await fetch(url, {
-      cache: 'no-store',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'text/xml, application/rss+xml, application/xml',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    });
-
-    if (!res.ok) throw new Error(`RSS fetch failed: ${res.status}`);
-
-    const xml = await res.text();
-    const rawItems: { title: string; link: string; source: string; pubDate: string; image: string | null }[] = [];
-    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-    let match;
-
-    while ((match = itemRegex.exec(xml)) !== null && rawItems.length < 12) {
-      const itemXml = match[1];
-      const titleMatch = itemXml.match(/<title><!\[CDATA\[(.*?)\]\]>|<title>(.*?)<\/title>/);
-      const linkMatch = itemXml.match(/<link>(.*?)<\/link>/);
-      const pubDateMatch = itemXml.match(/<pubDate>(.*?)<\/pubDate>/);
-      const sourceMatch = itemXml.match(/<News:Source>(.*?)<\/News:Source>/i);
-      const imageMatch = itemXml.match(/<News:Image>(.*?)<\/News:Image>/i);
-
-      const rawTitle = titleMatch ? (titleMatch[1] || titleMatch[2] || '') : '';
-      const { cleanTitle, source: titleSource } = extractSourceFromTitle(rawTitle);
-      const rawLink = linkMatch ? linkMatch[1] : '';
-      const link = extractRealUrl(rawLink.replace(/&amp;/g, '&'));
-      const pubDate = pubDateMatch ? pubDateMatch[1] : '';
-      const source = sourceMatch ? sourceMatch[1] : titleSource;
-
-      // Bing thumbnail — add size params for a proper resolution
-      let image: string | null = null;
-      if (imageMatch?.[1]) {
-        const imgUrl = imageMatch[1].replace(/&amp;/g, '&');
-        image = `${imgUrl}&w=600&h=400&c=7`;
-      }
-
-      if (cleanTitle && link) {
-        rawItems.push({ title: cleanTitle, link, source, pubDate, image });
-      }
-    }
-
-    // For items missing images, try fetching og:image from the article
-    const itemsWithImages = await Promise.all(
-      rawItems.map(async (item) => {
-        if (item.image) return item;
-        const ogImage = await fetchOgImage(item.link);
-        return { ...item, image: ogImage };
-      })
+    // Broader query focused on UAE/Gulf logistics, delivery, shipping, freight
+    const query = encodeURIComponent(
+      '(UAE OR "United Arab Emirates" OR Dubai OR "Abu Dhabi" OR Sharjah OR Ajman OR "Ras Al Khaimah" OR Fujairah) AND (logistics OR shipping OR delivery OR freight OR cargo OR "supply chain" OR port OR warehouse)'
     );
 
-    // Only return items that have images
-    const itemsFiltered = itemsWithImages.filter((item) => item.image);
+    const url = `https://newsapi.org/v2/everything?q=${query}&sortBy=publishedAt&pageSize=50&language=en&apiKey=${apiKey}`;
 
-    return NextResponse.json({ items: itemsFiltered }, {
-      headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' },
-    });
+    const res = await fetch(url, { cache: 'no-store' });
+
+    if (!res.ok) throw new Error(`NewsAPI fetch failed: ${res.status}`);
+
+    const data = await res.json();
+
+    const filtered: NewsItem[] = (data.articles || [])
+      .filter((article: Record<string, unknown>) => {
+        if (!article.urlToImage) return false;
+        if (isBadImage(article.urlToImage as string)) return false;
+        if (!article.title || article.title === '[Removed]') return false;
+        if (!article.description || article.description === '[Removed]') return false;
+        return true;
+      })
+      .slice(0, 20)
+      .map((article: Record<string, unknown>) => ({
+        title: article.title as string,
+        link: article.url as string,
+        source: (article.source as Record<string, string>)?.name || '',
+        pubDate: article.publishedAt as string,
+        image: article.urlToImage as string,
+      }));
+
+    // Shuffle for variety on each refresh
+    for (let i = filtered.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+    }
+
+    const items = filtered;
+
+    return NextResponse.json(
+      { items },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+        },
+      }
+    );
   } catch (error) {
     console.error('News fetch error:', error);
-    return NextResponse.json({ items: [], error: 'Failed to fetch news' }, { status: 500 });
+    return NextResponse.json(
+      { items: [], error: 'Failed to fetch news' },
+      { status: 500 }
+    );
   }
 }

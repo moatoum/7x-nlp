@@ -42,9 +42,17 @@ export interface ServiceMatch {
   id: string;
   name: string;
   category: string;
-  confidence: number;
   description: string;
   vertical: string;
+  confidence?: number;
+}
+
+export interface Note {
+  id: string;
+  content: string;
+  visibility: 'internal' | 'external';
+  createdAt: number;
+  author: string;
 }
 
 export interface Service {
@@ -99,4 +107,5 @@ export interface Submission {
   conversationDuration: number;
   nodesVisited: string[];
   totalMessages: number;
+  notes: Note[];
 }

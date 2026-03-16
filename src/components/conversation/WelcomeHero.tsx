@@ -1,6 +1,7 @@
 'use client';
 
 import { motion, type Variants } from 'framer-motion';
+import { AnimatedOrb } from '@/components/ui/AnimatedOrb';
 
 const container: Variants = {
   hidden: {},
@@ -20,8 +21,8 @@ export function WelcomeHero() {
       animate="show"
       className="py-16 text-center"
     >
-      <motion.div variants={fadeUp} className="w-12 h-12 rounded-2xl bg-black flex items-center justify-center mx-auto mb-6">
-        <span className="text-white text-sm font-bold tracking-tight">7X</span>
+      <motion.div variants={fadeUp} className="flex justify-center mb-6">
+        <AnimatedOrb size="lg" />
       </motion.div>
       <motion.h1 variants={fadeUp} className="text-3xl font-semibold text-gray-900 tracking-tight">
         Logistics, simplified.

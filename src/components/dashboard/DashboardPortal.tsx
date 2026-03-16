@@ -75,7 +75,7 @@ export function DashboardPortal() {
       {/* Paragraph */}
       <motion.p
         variants={fadeUp}
-        className="mt-4 text-[15px] md:text-[17px] leading-relaxed text-gray-400 max-w-md"
+        className="mt-4 text-[15px] md:text-[17px] leading-relaxed text-gray-400 max-w-lg"
       >
         A single national access point for logistics support across the 7X ecosystem,
         guiding every request to the right team.

@@ -27,9 +27,7 @@ export function NewsFeed() {
     fetch('/api/news')
       .then((res) => res.json())
       .then((data) => {
-        // Only keep items with images
-        const withImages = (data.items || []).filter((item: NewsItem) => item.image);
-        setNews(withImages);
+        setNews(data.items || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -65,12 +63,9 @@ export function NewsFeed() {
         <div className="h-3 w-28 bg-gray-200 rounded animate-pulse mb-5" />
         <div className="flex gap-4 overflow-hidden">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="w-[280px] shrink-0 rounded-xl bg-white/40 backdrop-blur-sm border border-white/60 overflow-hidden">
-              <div className="h-[140px] bg-gray-100/50 animate-pulse" />
-              <div className="p-4">
-                <div className="h-4 w-3/4 bg-gray-100/50 rounded animate-pulse" />
-                <div className="h-3 w-1/3 bg-gray-50/50 rounded animate-pulse mt-3" />
-              </div>
+            <div key={i} className="w-[280px] shrink-0 rounded-xl bg-white/40 backdrop-blur-sm border border-white/60 overflow-hidden p-4">
+              <div className="h-4 w-3/4 bg-gray-100/50 rounded animate-pulse" />
+              <div className="h-3 w-1/3 bg-gray-50/50 rounded animate-pulse mt-3" />
             </div>
           ))}
         </div>
@@ -88,11 +83,11 @@ export function NewsFeed() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4, delay: 0.2 }}
-      className="py-6"
+      className="pt-14 pb-6"
     >
       <div className="px-6 md:px-8 mb-4">
         <h2 className="text-[12px] font-medium text-gray-400/70 uppercase tracking-[0.08em]">
-          Logistics News
+          UAE Logistics Pulse
         </h2>
       </div>
 
@@ -111,17 +106,6 @@ export function NewsFeed() {
               rel="noopener noreferrer"
               className="w-[280px] shrink-0 bg-white/40 backdrop-blur-sm rounded-xl border border-white/60 overflow-hidden hover:bg-white/60 hover:border-white/80 hover:shadow-lg hover:shadow-black/[0.04] transition-all group"
             >
-              {/* Thumbnail */}
-              <div className="h-[140px] bg-gray-50/30 overflow-hidden">
-                <img
-                  src={item.image!}
-                  alt=""
-                  className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                  loading="lazy"
-                />
-              </div>
-
-              {/* Content */}
               <div className="p-3.5 pb-4">
                 <h3 className="text-[13px] font-semibold text-gray-800 leading-[1.45] line-clamp-2 group-hover:text-gray-900 transition-colors">
                   {item.title}

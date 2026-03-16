@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Submission } from '@/engine/types';
+import type { Submission, Note } from '@/engine/types';
 
 interface SubmissionsState {
   submissions: Submission[];
@@ -10,6 +10,7 @@ interface SubmissionsState {
 
   addSubmission: (submission: Submission) => void;
   updateStatus: (id: string, status: Submission['status']) => void;
+  addNote: (submissionId: string, note: Note) => void;
   getByReference: (ref: string) => Submission | undefined;
   initialize: (seed: Submission[]) => void;
 }
@@ -32,6 +33,15 @@ export const useSubmissionsStore = create<SubmissionsState>()(
           ),
         })),
 
+      addNote: (submissionId, note) =>
+        set((state) => ({
+          submissions: state.submissions.map((s) =>
+            s.id === submissionId
+              ? { ...s, notes: [...(s.notes || []), note] }
+              : s
+          ),
+        })),
+
       getByReference: (ref) =>
         get().submissions.find(
           (s) => s.referenceNumber.toLowerCase() === ref.toLowerCase()
@@ -48,3 +58,22 @@ export const useSubmissionsStore = create<SubmissionsState>()(
     }
   )
 );
+
+// Sync submissions store across browser tabs
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === '7x-submissions' && e.newValue) {
+      try {
+        const parsed = JSON.parse(e.newValue);
+        if (parsed?.state?.submissions) {
+          useSubmissionsStore.setState({
+            submissions: parsed.state.submissions,
+            initialized: parsed.state.initialized ?? false,
+          });
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
+  });
+}
