@@ -1,8 +1,9 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env.azure' });
 
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import { AzureOpenAI } from 'openai';
 import { buildSystemPrompt } from '@/engine/ai';
 import type { RequestFields } from '@/engine/types';
 
@@ -34,6 +35,11 @@ const ALLOWED_FIELDS = new Set<string>([
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_MESSAGES = 40;
+
+// Read env vars (dotenv handles .env.local / .env.azure fallback at top of file)
+function getEnv(key: string): string | undefined {
+  return process.env[key] || undefined;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -103,49 +109,48 @@ export async function POST(request: NextRequest) {
     // Validate currentFields is an object (or missing)
     const fields = (currentFields && typeof currentFields === 'object' ? currentFields : {}) as Partial<RequestFields>;
 
-    let apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      // Fallback: try reading .env.local directly
-      try {
-        const fs = await import('fs');
-        const path = await import('path');
-        const envPath = path.default.resolve(process.cwd(), '.env.local');
-        const envContent = fs.default.readFileSync(envPath, 'utf8');
-        const match = envContent.match(/^ANTHROPIC_API_KEY=(.+)$/m);
-        if (match) {
-          apiKey = match[1].trim();
-          process.env.ANTHROPIC_API_KEY = apiKey;
-        }
-      } catch {}
-    }
-    if (!apiKey) {
+    // Load Azure AI Foundry credentials
+    const endpoint = getEnv('AZURE_AI_ENDPOINT');
+    const apiKey = getEnv('AZURE_AI_KEY');
+    const deployment = getEnv('AZURE_AI_DEPLOYMENT') || '7x-NSL';
+    const apiVersion = getEnv('AZURE_AI_API_VERSION') || '2025-01-01-preview';
+
+    if (!endpoint || !apiKey) {
       return NextResponse.json(
-        { error: 'ANTHROPIC_API_KEY not configured' },
+        { error: 'Azure AI credentials not configured' },
         { status: 500 }
       );
     }
 
-    const client = new Anthropic({ apiKey });
+    const client = new AzureOpenAI({
+      endpoint,
+      apiKey,
+      apiVersion,
+      deployment,
+    });
+
     const systemPrompt = buildSystemPrompt(fields);
 
-    // Build validated message history for Claude
-    const claudeMessages: Anthropic.MessageParam[] = recentMessages.map((m: { role: string; content: string }) => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.content,
-    }));
+    // Build message history for Azure AI Foundry (OpenAI-compatible format)
+    const chatMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: systemPrompt },
+      ...recentMessages.map((m: { role: string; content: string }) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
+    ];
 
     // Call with timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
 
-    let response: Anthropic.Message;
+    let response;
     try {
-      response = await client.messages.create(
+      response = await client.chat.completions.create(
         {
-          model: 'claude-sonnet-4-20250514',
+          model: deployment,
           max_tokens: 1024,
-          system: systemPrompt,
-          messages: claudeMessages,
+          messages: chatMessages,
         },
         { signal: controller.signal }
       );
@@ -154,8 +159,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract text content
-    const textContent = response.content.find((c) => c.type === 'text');
-    if (!textContent || textContent.type !== 'text') {
+    const textContent = response.choices?.[0]?.message?.content;
+    if (!textContent) {
       return NextResponse.json(
         { error: 'No text response from AI' },
         { status: 500 }
@@ -165,7 +170,7 @@ export async function POST(request: NextRequest) {
     // Parse the JSON response
     let parsed;
     try {
-      let jsonStr = textContent.text.trim();
+      let jsonStr = textContent.trim();
 
       // Strip markdown code blocks if present
       if (jsonStr.startsWith('```')) {
@@ -185,7 +190,7 @@ export async function POST(request: NextRequest) {
     } catch {
       // If parsing fails, return the raw text as a message with no extractions
       parsed = {
-        message: textContent.text,
+        message: textContent,
         extractedFields: {},
         suggestedOptions: [],
         confidence: 0.5,
@@ -229,7 +234,7 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error('Chat API error:', error);
 
-    // Differentiate Anthropic API errors
+    // Differentiate API errors
     if (error && typeof error === 'object' && 'status' in error) {
       const apiError = error as { status: number };
       if (apiError.status === 429) {
@@ -238,7 +243,7 @@ export async function POST(request: NextRequest) {
           { status: 429 }
         );
       }
-      if (apiError.status === 529 || apiError.status === 503) {
+      if (apiError.status === 503) {
         return NextResponse.json(
           { error: 'AI service is temporarily unavailable. Please try again shortly.' },
           { status: 503 }

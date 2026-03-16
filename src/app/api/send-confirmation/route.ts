@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env.azure' });
 
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
