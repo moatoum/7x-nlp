@@ -92,7 +92,7 @@ function QuickLinks() {
       {open && (
         <div className="absolute left-0 top-full mt-2 w-52 bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-100/50 py-1.5 z-50">
           <a
-            href="https://7x.ax"
+            href="https://7x.ae"
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setOpen(false)}

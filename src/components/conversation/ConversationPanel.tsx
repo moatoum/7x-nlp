@@ -45,13 +45,15 @@ export function ConversationPanel() {
 
           {isTyping && <TypingIndicator />}
 
-          {/* Bottom spacer for scroll comfort */}
-          <div className="h-4" />
+          {/* Bottom spacer — extra on mobile for fixed input bar */}
+          <div className="h-20 md:h-4" />
         </div>
       </div>
 
-      {/* Always-on text input for conversational AI experience */}
-      <div className="border-t border-gray-100/80 px-6 lg:px-12 xl:px-16 py-4 bg-white/80 backdrop-blur-sm">
+      {/* Text input — fixed to bottom on mobile, normal flow on md+ */}
+      <div
+        className="border-t border-gray-100/80 bg-white px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] fixed bottom-0 left-0 right-0 z-30 md:relative md:bottom-auto md:left-auto md:right-auto md:z-auto md:py-4 md:pb-4 lg:px-12 xl:px-16"
+      >
         <div className="max-w-[640px] mx-auto">
           <TextInput
             placeholder={
@@ -59,13 +61,13 @@ export function ConversationPanel() {
                 ? 'Conversation complete'
                 : inputDisabled
                   ? 'Thinking...'
-                  : 'Type your message or select an option above...'
+                  : 'Type your message or select an option..'
             }
             onSubmit={handleTextSubmit}
             disabled={inputDisabled || currentNodeId === 'submitted'}
           />
           {currentNodeId !== 'submitted' && (
-            <p className="text-[11px] text-gray-350 mt-2 text-center">
+            <p className="text-[11px] text-gray-350 mt-2 text-center hidden md:block">
               You can type naturally or select from the options above
             </p>
           )}

@@ -18,6 +18,7 @@ const ibmPlexArabic = IBM_Plex_Sans_Arabic({
 export const metadata: Metadata = {
   title: "7X — Logistics Solutions",
   description: "AI-guided logistics service intake by 7X",
+  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
 };
 
 export default function RootLayout({
