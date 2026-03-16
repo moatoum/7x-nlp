@@ -34,6 +34,6 @@ env:
   - name: ADMIN_PASSWORD
     value: "CHANGE_ME"
   - name: NXN_PASSWORD
-    value: "nxn"
-  - name: EMU_PASSWORD
-    value: "emu"
+    value: "bDJ1bmaKwSOdqjcB"
+  - name: EMX_PASSWORD
+    value: "knI2UBml0vWD0vA6"

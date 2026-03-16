@@ -8,7 +8,7 @@ interface AdminAccount {
 
 const ACCOUNTS: AdminAccount[] = [
   { username: 'nxn', password: process.env.NXN_PASSWORD || 'bDJ1bmaKwSOdqjcB', role: 'admin' },
-  { username: 'emu', password: process.env.EMU_PASSWORD || 'knI2UBml0vWD0vA6', role: 'viewer' },
+  { username: 'emx', password: process.env.EMX_PASSWORD || 'knI2UBml0vWD0vA6', role: 'viewer' },
   // Legacy fallback: keep old single-account support
   ...(process.env.ADMIN_USERNAME
     ? [{ username: process.env.ADMIN_USERNAME, password: process.env.ADMIN_PASSWORD || 'admin', role: 'admin' as const }]
