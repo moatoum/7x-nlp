@@ -839,11 +839,11 @@ const nodes: Record<string, ConversationNode> = {
       { id: 'restart', label: 'Start over' },
     ],
     edges: [
-      { condition: 'chip', value: 'proceed', targetNodeId: 'contact_name', priority: 10 },
+      { condition: 'chip', value: 'proceed', targetNodeId: 'current_provider', priority: 10 },
       { condition: 'chip', value: 'refine', targetNodeId: 'refine_recommendation', priority: 10 },
       { condition: 'chip', value: 'different', targetNodeId: 'unsure_guide', priority: 10 },
       { condition: 'chip', value: 'restart', targetNodeId: 'welcome', priority: 10 },
-      { condition: 'any', targetNodeId: 'contact_name', priority: 0 },
+      { condition: 'any', targetNodeId: 'current_provider', priority: 0 },
     ],
   },
 
@@ -856,6 +856,19 @@ const nodes: Record<string, ConversationNode> = {
     capturesField: 'additionalNotes',
     edges: [
       { condition: 'any', targetNodeId: 'recommendation', priority: 0 },
+    ],
+  },
+
+  // ===== CURRENT PROVIDER =====
+  current_provider: {
+    id: 'current_provider',
+    type: 'capture',
+    message: 'Who is your current transportation and logistics provider?',
+    allowFreeText: true,
+    freeTextPlaceholder: 'Type your current provider name...',
+    capturesField: 'currentCourier',
+    edges: [
+      { condition: 'any', targetNodeId: 'contact_name', priority: 0 },
     ],
   },
 

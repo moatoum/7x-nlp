@@ -173,10 +173,23 @@ const NEVER_AUTO_SKIP = new Set([
   'entity_type', 'welcome', 'individual_redirect', 'refine_recommendation',
 ]);
 
+/** Check if current_provider should be skipped for this service category */
+function shouldSkipProvider(rs: Partial<RequestFields>): boolean {
+  const cat = (rs.serviceCategory || '').toLowerCase();
+  return cat.includes('warehouse') || cat.includes('fulfilment') || cat.includes('fulfillment') ||
+         cat.includes('store') || cat.includes('customs') || cat.includes('trade') ||
+         cat.includes('import') || cat.includes('postal') || cat.includes('mail');
+}
+
 /** If the target node's capturesField is already filled, follow the 'any' edge to skip it.
  *  Also skips the 'volume' node for one-time shipments. */
 function resolveNodeSkip(nodeId: string, rs: Partial<RequestFields>, depth = 0): string {
   if (depth > 8 || NEVER_AUTO_SKIP.has(nodeId)) return nodeId;
+
+  // Skip current_provider for categories where it's not relevant
+  if (nodeId === 'current_provider' && shouldSkipProvider(rs)) {
+    return resolveNodeSkip('contact_name', rs, depth + 1);
+  }
 
   // One-time shipments skip the monthly volume question
   if (nodeId === 'volume') {
@@ -511,6 +524,10 @@ export function useConversation() {
       nextNodeId = findNextContactNode(useRequestStore.getState());
     } else {
       nextNodeId = resolveNodeSkip(nextNodeId, useRequestStore.getState());
+      // If skip resolved to a contact node, use findNextContactNode to find the right one
+      if (['contact_name', 'contact_email', 'contact_phone', 'contact_company', 'additional_info'].includes(nextNodeId)) {
+        nextNodeId = findNextContactNode(useRequestStore.getState());
+      }
     }
 
     if (nextNodeId === 'submitted') {
@@ -623,20 +640,88 @@ export function useConversation() {
       reqStore.setStage('gathering');
     }
 
-    // Special case: additional_info capture — save user's text as-is and go to review
-    if (convStore.currentNodeId === 'additional_info') {
-      useRequestStore.getState().updateField('additionalNotes', text);
-      useRequestStore.getState().setStage('review');
-      const cs = useConversationStore.getState();
-      cs.setTyping(false);
-      const msgId = cs.addStreamingBotMessage();
-      await typewriterStream(msgId, 'Got it, thank you. Your request is ready to submit. Please review the summary panel and submit when you\'re satisfied.');
-      useConversationStore.getState().finalizeStreamingMessage(msgId, [
-        { id: 'submit', label: 'Submit Request' },
-        { id: 'edit', label: 'I want to change something' },
-      ]);
-      useConversationStore.getState().transitionTo('review');
-      useConversationStore.getState().setInputDisabled(false);
+    // Direct capture nodes — bypass AI entirely, use fixed English messages.
+    // This prevents the AI from switching languages based on user's name/email.
+    const DIRECT_CAPTURE_NODES = new Set([
+      'contact_name', 'contact_email', 'contact_phone', 'contact_company',
+      'current_provider', 'additional_info',
+    ]);
+
+    if (DIRECT_CAPTURE_NODES.has(convStore.currentNodeId)) {
+      await delay(randomDelay());
+      const nodeId = convStore.currentNodeId;
+
+      // Validate input for contact fields
+      if (nodeId === 'contact_email' && !EMAIL_REGEX.test(text.trim())) {
+        const cs = useConversationStore.getState();
+        cs.setTyping(false);
+        cs.addBotMessage("That doesn't look like a valid email address. Could you provide a valid email?");
+        cs.setInputDisabled(false);
+        return;
+      }
+      if (nodeId === 'contact_phone' && !isValidPhone(text.trim())) {
+        const cs = useConversationStore.getState();
+        cs.setTyping(false);
+        cs.addBotMessage("That doesn't look like a valid phone number. Please provide a number with at least 7 digits.");
+        cs.setInputDisabled(false);
+        return;
+      }
+      if (nodeId === 'contact_name') {
+        const trimmed = text.trim();
+        if (trimmed.length < 2 || !/[a-zA-Z\u0600-\u06FF\u0900-\u097F]/.test(trimmed)) {
+          const cs = useConversationStore.getState();
+          cs.setTyping(false);
+          cs.addBotMessage('I need your full name to proceed. Could you provide it?');
+          cs.setInputDisabled(false);
+          return;
+        }
+      }
+      if (nodeId === 'contact_company' && text.trim().length < 2) {
+        const cs = useConversationStore.getState();
+        cs.setTyping(false);
+        cs.addBotMessage('Could you provide your full company name?');
+        cs.setInputDisabled(false);
+        return;
+      }
+
+      // Save the field
+      const currentNode = getNode(nodeId);
+      if (currentNode.capturesField) {
+        useRequestStore.getState().updateField(currentNode.capturesField as keyof RequestFields, text.trim());
+      }
+
+      // Determine next step
+      const nextNodeId = (nodeId === 'additional_info')
+        ? 'review'
+        : findNextContactNode(useRequestStore.getState());
+
+      // Show next node
+      if (nextNodeId === 'review') {
+        useRequestStore.getState().setStage('review');
+        const cs = useConversationStore.getState();
+        cs.setTyping(false);
+        const msgId = cs.addStreamingBotMessage();
+        const prefix = nodeId === 'additional_info' ? 'Got it, thank you. ' : '';
+        await typewriterStream(msgId, prefix + 'Your request is ready to submit. Please review the summary panel and submit when you\'re satisfied.');
+        useConversationStore.getState().finalizeStreamingMessage(msgId, [
+          { id: 'submit', label: 'Submit Request' },
+          { id: 'edit', label: 'I want to change something' },
+        ]);
+        useConversationStore.getState().transitionTo('review');
+        useConversationStore.getState().setInputDisabled(false);
+      } else {
+        const nextNode = getNode(nextNodeId);
+        const msg = typeof nextNode.message === 'function'
+          ? nextNode.message(useRequestStore.getState() as RequestFields)
+          : nextNode.message;
+        const cs = useConversationStore.getState();
+        cs.setTyping(false);
+        const msgId = cs.addStreamingBotMessage();
+        await typewriterStream(msgId, msg);
+        useConversationStore.getState().finalizeStreamingMessage(msgId);
+        useConversationStore.getState().transitionTo(nextNodeId);
+        useConversationStore.getState().setInputDisabled(false);
+      }
       return;
     }
 
@@ -862,6 +947,10 @@ export function useConversation() {
         nextNodeId = findNextContactNode(useRequestStore.getState());
       } else {
         nextNodeId = resolveNodeSkip(nextNodeId, useRequestStore.getState());
+        // If skip resolved to a contact node, use findNextContactNode
+        if (['contact_name', 'contact_email', 'contact_phone', 'contact_company', 'additional_info'].includes(nextNodeId)) {
+          nextNodeId = findNextContactNode(useRequestStore.getState());
+        }
       }
 
       if (nextNodeId === 'submitted') {
@@ -987,10 +1076,14 @@ export function useConversation() {
 
     await delay(randomDelay());
 
-    // Go directly to first unfilled contact field (skip already captured)
-    const nextContactNodeId = findNextContactNode(useRequestStore.getState());
+    // Check if we should ask about current provider first
+    const rsNow = useRequestStore.getState();
+    const askProvider = !rsNow.currentCourier && !shouldSkipProvider(rsNow);
 
-    if (nextContactNodeId === 'review') {
+    // Determine first step: provider question or contact capture
+    const firstStepNodeId = askProvider ? 'current_provider' : findNextContactNode(rsNow);
+
+    if (firstStepNodeId === 'review') {
       // All contact fields + additional info captured — go straight to review
       useRequestStore.getState().setStage('review');
       const cs2 = useConversationStore.getState();
@@ -1004,21 +1097,21 @@ export function useConversation() {
       useConversationStore.getState().transitionTo('review');
       useConversationStore.getState().setInputDisabled(false);
     } else {
-      const contactNode = getNode(nextContactNodeId);
-      const contactMsg = typeof contactNode.message === 'function'
-        ? contactNode.message(useRequestStore.getState() as RequestFields)
-        : contactNode.message;
+      const stepNode = getNode(firstStepNodeId);
+      const stepMsg = typeof stepNode.message === 'function'
+        ? stepNode.message(useRequestStore.getState() as RequestFields)
+        : stepNode.message;
 
       const cs2 = useConversationStore.getState();
       cs2.setTyping(false);
       const followId = cs2.addStreamingBotMessage();
-      // Use appropriate prefix based on whether we're entering contact capture or additional info
-      const prefix = ['contact_name', 'contact_email', 'contact_phone', 'contact_company'].includes(nextContactNodeId)
+      // Use appropriate prefix based on whether we're entering contact/provider capture or additional info
+      const prefix = ['contact_name', 'contact_email', 'contact_phone', 'contact_company', 'current_provider'].includes(firstStepNodeId)
         ? "Great choices. Just a few details to finalize your request.\n\n"
         : "Great choices.\n\n";
-      await typewriterStream(followId, prefix + contactMsg);
+      await typewriterStream(followId, prefix + stepMsg);
       useConversationStore.getState().finalizeStreamingMessage(followId);
-      useConversationStore.getState().transitionTo(nextContactNodeId);
+      useConversationStore.getState().transitionTo(firstStepNodeId);
       useConversationStore.getState().setInputDisabled(false);
     }
   }, []);
