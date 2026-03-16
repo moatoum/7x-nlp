@@ -77,3 +77,20 @@ model RecommendedService {
 
   @@map("recommended_services")
 }
+
+model Lead {
+  id               String   @id @default(uuid())
+  referenceNumber  String   @unique @map("reference_number")
+  status           String   @default("new")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  contactName      String   @map("contact_name")
+  businessEmail    String   @map("business_email")
+  phone            String
+  businessWebsite  String?  @map("business_website")
+  uaeRegistered    Boolean  @map("uae_registered")
+
+  notes            String?
+
+  @@map("leads")
+}

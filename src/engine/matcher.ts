@@ -119,13 +119,31 @@ export function matchServices(request: RequestFields): ServiceMatch[] {
       if (overlap.length > 0) score += 5;
     }
 
+    // Import flow cross-category boost: imports need freight + customs + warehousing
+    const isImportFlow = (request.serviceCategory || '').toLowerCase().includes('import');
+    if (isImportFlow) {
+      if (service.category === 'freight') score += 25;
+      if (service.id === 'ws-bonded') score += 30;
+      if (request.cargoVolume?.toLowerCase().includes('container') &&
+          service.category === 'freight' && service.subcategory.includes('sea')) {
+        score += 15;
+      }
+      if (request.urgency?.toLowerCase().includes('immediate') && service.id === 'ff-air') {
+        score += 15;
+      }
+    }
+
     return { service, score: Math.min(score, 100) };
   });
+
+  // Import flows return more results since they span multiple categories
+  const isImport = (request.serviceCategory || '').toLowerCase().includes('import');
+  const maxResults = isImport ? 5 : 3;
 
   return scored
     .filter(({ score }) => score >= 30)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
+    .slice(0, maxResults)
     .map(({ service, score }) => ({
       id: service.id,
       name: service.name,

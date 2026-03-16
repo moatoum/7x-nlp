@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, ArrowLeft, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, ArrowLeft, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Logo } from '@/components/ui/Logo';
 import { useAdminUiStore } from '@/store/adminUiStore';
@@ -11,6 +11,7 @@ import { useAdminUiStore } from '@/store/adminUiStore';
 const NAV_ITEMS = [
   { label: 'Overview', href: '/admin', icon: LayoutDashboard },
   { label: 'Submissions', href: '/admin/submissions', icon: FileText },
+  { label: 'Leads', href: '/admin/leads', icon: Users },
 ];
 
 export function AdminSidebar() {

@@ -1,15 +1,32 @@
 'use client';
 
+import { useCallback } from 'react';
 import { AlternatingLogo } from '@/components/ui/AlternatingLogo';
 import { useRequestStore } from '@/store/requestStore';
+import { useConversationStore } from '@/store/conversationStore';
 import { useUIStore } from '@/store/uiStore';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { PanelRight } from 'lucide-react';
+import { PanelRight, RotateCcw } from 'lucide-react';
 
 export function Header() {
   const { completionPercent, stage } = useRequestStore();
+  const started = useConversationStore((s) => s.started);
   const { toggleDrawer } = useUIStore();
   const showProgress = stage !== 'empty' && stage !== 'submitted';
+  const showRestart = started && stage !== 'submitted';
+
+  const handleRestart = useCallback(() => {
+    if (!window.confirm('Start a new conversation? Your current progress will be lost.')) return;
+    useConversationStore.getState().reset();
+    useRequestStore.getState().reset();
+    // Clear session storage
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('7x-conversation');
+      sessionStorage.removeItem('7x-request');
+    }
+    // Reload to cleanly restart
+    window.location.reload();
+  }, []);
 
   return (
     <header className="h-[56px] border-b border-gray-100 bg-white/80 backdrop-blur-xl flex items-center justify-between px-6 flex-shrink-0 z-50">
@@ -30,6 +47,16 @@ export function Header() {
             </div>
             <span className="text-xs text-gray-500 font-semibold tabular-nums">{completionPercent}%</span>
           </div>
+        )}
+
+        {showRestart && (
+          <button
+            onClick={handleRestart}
+            title="Restart conversation"
+            className="w-9 h-9 rounded-[10px] bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors"
+          >
+            <RotateCcw className="w-4 h-4 text-gray-500" />
+          </button>
         )}
 
         <button

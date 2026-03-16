@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { Cloud, Sun, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, Cloudy, ChevronDown } from 'lucide-react';
+import { Cloud, Sun, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, Cloudy, ChevronDown, UserPlus } from 'lucide-react';
 import { AlternatingLogo } from '@/components/ui/AlternatingLogo';
 
 interface WeatherData {
@@ -83,14 +83,23 @@ function QuickLinks() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 text-[13px] font-medium text-gray-500 hover:text-gray-900 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 hover:text-gray-900 transition-colors border border-gray-200/60"
       >
         Quick Links
         <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 w-52 bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-100/50 py-1.5 z-50">
+        <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 py-1.5 z-50">
+          <Link
+            href="/connect"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-gray-900 font-medium hover:bg-blue-50 hover:text-blue-700 transition-colors"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            Connect to an Expert
+          </Link>
+          <div className="mx-3 my-1 border-t border-gray-100" />
           <a
             href="https://7x.ae"
             target="_blank"

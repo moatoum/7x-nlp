@@ -24,6 +24,7 @@ const ALLOWED_FIELDS = new Set<string>([
   'serviceCategory', 'serviceSubcategory', 'businessType',
   'originLocation', 'destinationLocation', 'frequency',
   'urgency', 'specialRequirements', 'additionalNotes',
+  'currentCourier',
   'contactName', 'contactEmail', 'contactPhone', 'companyName',
   'supplierStatus', 'supplierCountry', 'goodsCategory',
   'incoterms', 'cargoVolume', 'customsRequired',
@@ -236,6 +237,13 @@ export async function POST(request: NextRequest) {
           // Validate email format
           if (key === 'contactEmail' && typeof value === 'string' && !EMAIL_REGEX.test(value)) {
             continue; // skip invalid email
+          }
+          // Validate phone format
+          if (key === 'contactPhone' && typeof value === 'string') {
+            const digitsOnly = value.replace(/\D/g, '');
+            if (digitsOnly.length < 7 || /^(\d)\1+$/.test(digitsOnly)) {
+              continue; // skip invalid phone
+            }
           }
           sanitized[key] = value;
         }

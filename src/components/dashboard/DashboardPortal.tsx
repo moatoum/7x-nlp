@@ -42,7 +42,7 @@ export function DashboardPortal() {
           href="/services"
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gray-100/80 text-[12px] font-medium text-gray-500 hover:bg-gray-200/80 hover:text-gray-700 transition-colors backdrop-blur-sm"
         >
-          86+ logistics solutions available
+          44+ logistics solutions available
           <ArrowRight className="w-3 h-3" />
         </Link>
       </motion.div>
@@ -81,7 +81,7 @@ export function DashboardPortal() {
         guiding every request to the right team.
       </motion.p>
 
-      {/* Two Buttons */}
+      {/* Buttons */}
       <motion.div variants={fadeUp} className="mt-8 flex flex-col sm:flex-row gap-3">
         <Link
           href="/intake"

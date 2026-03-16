@@ -146,6 +146,63 @@ async function persistSubmission(refNumber: string) {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Validate phone: 7+ digits, not all same digit */
+function isValidPhone(phone: string): boolean {
+  const digitsOnly = phone.replace(/\D/g, '');
+  if (digitsOnly.length < 7) return false;
+  if (/^(\d)\1+$/.test(digitsOnly)) return false;
+  return true;
+}
+
+/** Return the first unfilled contact capture node, or 'review' if all filled */
+function findNextContactNode(rs: Partial<RequestFields>): string {
+  if (!rs.contactName) return 'contact_name';
+  if (!rs.contactEmail) return 'contact_email';
+  if (!rs.contactPhone) return 'contact_phone';
+  if (!rs.companyName) return 'contact_company';
+  return 'review';
+}
+
+const NEVER_AUTO_SKIP = new Set([
+  'contact_name', 'contact_email', 'contact_phone', 'contact_company',
+  'review', 'recommendation', 'recommendation_response', 'submitted',
+  'entity_type', 'welcome', 'individual_redirect', 'refine_recommendation',
+]);
+
+/** If the target node's capturesField is already filled, follow the 'any' edge to skip it.
+ *  Also skips the 'volume' node for one-time shipments. */
+function resolveNodeSkip(nodeId: string, rs: Partial<RequestFields>, depth = 0): string {
+  if (depth > 8 || NEVER_AUTO_SKIP.has(nodeId)) return nodeId;
+
+  // One-time shipments skip the monthly volume question
+  if (nodeId === 'volume') {
+    const freq = (rs.frequency || '').toLowerCase();
+    if (freq.includes('one-time') || freq.includes('one time')) {
+      return 'origin_location';
+    }
+  }
+
+  try {
+    const node = getNode(nodeId);
+    if (!node.capturesField) return nodeId;
+
+    const currentValue = rs[node.capturesField as keyof RequestFields];
+    const isFilled = currentValue !== null && currentValue !== undefined &&
+                     currentValue !== '' && !(Array.isArray(currentValue) && currentValue.length === 0);
+
+    if (!isFilled) return nodeId;
+
+    // Field already captured — follow the 'any' edge to skip
+    const anyEdge = node.edges?.find((e: { condition: string }) => e.condition === 'any');
+    if (anyEdge) {
+      return resolveNodeSkip(anyEdge.targetNodeId, rs, depth + 1);
+    }
+  } catch {
+    // Node not found — return as-is
+  }
+  return nodeId;
+}
+
 // Validate required fields and submit, or redirect to missing field
 async function handleSubmission(): Promise<boolean> {
   const rs = useRequestStore.getState();
@@ -173,7 +230,19 @@ async function handleSubmission(): Promise<boolean> {
     cs.addBotMessage(
       `The email "${rs.contactEmail}" doesn't look valid. Could you provide a valid email?`
     );
+    useRequestStore.getState().updateField('contactEmail', null);
     cs.transitionTo('contact_email');
+    cs.setInputDisabled(false);
+    return false;
+  }
+
+  if (rs.contactPhone && !isValidPhone(rs.contactPhone)) {
+    cs.setTyping(false);
+    cs.addBotMessage(
+      `The phone number "${rs.contactPhone}" doesn't look valid. Please provide a valid phone number (at least 7 digits).`
+    );
+    useRequestStore.getState().updateField('contactPhone', null);
+    cs.transitionTo('contact_phone');
     cs.setInputDisabled(false);
     return false;
   }
@@ -188,6 +257,12 @@ async function handleSubmission(): Promise<boolean> {
   cs.transitionTo('submitted');
   cs.setInputDisabled(true);
   persistSubmission(refNumber);
+
+  // Clear session storage since submission is complete
+  if (typeof window !== 'undefined') {
+    sessionStorage.removeItem('7x-conversation');
+    sessionStorage.removeItem('7x-request');
+  }
 
   // Send confirmation email (fire and forget)
   sendConfirmationEmail(refNumber, rs);
@@ -302,6 +377,24 @@ async function typewriterStream(
 export function useConversation() {
   const startConversation = useCallback(async () => {
     const conv = useConversationStore.getState();
+
+    // Check if session was restored from sessionStorage
+    if (conv.started && conv.messages.length > 0) {
+      if (conv.isSessionExpired()) {
+        conv.reset();
+        useRequestStore.getState().reset();
+      } else {
+        // Session restored — show welcome back and let user continue
+        conv.setTyping(false);
+        conv.setInputDisabled(false);
+        conv.addBotMessage('Welcome back! I\'ve restored your previous conversation. You can continue where you left off or start fresh.', [
+          { id: 'continue_session', label: 'Continue' },
+          { id: 'restart', label: 'Start fresh' },
+        ]);
+        return;
+      }
+    }
+
     if (conv.started) return;
     conv.setStarted(true);
 
@@ -325,6 +418,15 @@ export function useConversation() {
   const handleChipSelect = useCallback(async (chipId: string, chipLabel: string) => {
     const convStore = useConversationStore.getState();
     const reqStore = useRequestStore.getState();
+
+    // Handle "Continue" from session restore — just enable input, no action needed
+    if (chipId === 'continue_session') {
+      convStore.addUserMessage(chipLabel);
+      convStore.setInputDisabled(false);
+      convStore.setTyping(false);
+      return;
+    }
+
     const currentNode = getNode(convStore.currentNodeId);
     const chip: ChipOption = { id: chipId, label: chipLabel };
 
@@ -336,7 +438,15 @@ export function useConversation() {
       reqStore.setStage('gathering');
     }
 
-    const { nextNodeId, fieldUpdate } = processUserInput(chip, currentNode, reqStore as RequestFields);
+    // Waslah.ae redirect — open in new tab instead of looping
+    if (chipId === 'go_waslah') {
+      window.open('https://waslah.ae', '_blank', 'noopener,noreferrer');
+      convStore.setTyping(false);
+      convStore.setInputDisabled(false);
+      return;
+    }
+
+    const { nextNodeId: rawNextNodeId, fieldUpdate } = processUserInput(chip, currentNode, reqStore as RequestFields);
 
     if (fieldUpdate) {
       for (const [field, value] of Object.entries(fieldUpdate)) {
@@ -345,6 +455,14 @@ export function useConversation() {
     }
 
     await delay(randomDelay());
+
+    // Resolve skips: contact fields, volume for one-time, already-captured fields
+    let nextNodeId = rawNextNodeId;
+    if (['contact_name', 'contact_email', 'contact_phone', 'contact_company'].includes(nextNodeId)) {
+      nextNodeId = findNextContactNode(useRequestStore.getState());
+    } else {
+      nextNodeId = resolveNodeSkip(nextNodeId, useRequestStore.getState());
+    }
 
     if (nextNodeId === 'submitted') {
       await handleSubmission();
@@ -423,6 +541,11 @@ export function useConversation() {
 
     if (nextNodeId === 'review') {
       useRequestStore.getState().setStage('review');
+    }
+
+    // When editing from review, keep all data and let user type changes
+    if (nextNodeId === 'edit_request') {
+      useRequestStore.getState().setStage('gathering');
     }
 
     const msg = typeof nextNode.message === 'function'
@@ -526,6 +649,20 @@ export function useConversation() {
         }
       }
 
+      // Validate extracted email/phone — clear if invalid so AI re-asks just that field
+      if (aiResponse.extractedFields?.contactEmail) {
+        const email = aiResponse.extractedFields.contactEmail as string;
+        if (!EMAIL_REGEX.test(email)) {
+          useRequestStore.getState().updateField('contactEmail', null);
+        }
+      }
+      if (aiResponse.extractedFields?.contactPhone) {
+        const phone = aiResponse.extractedFields.contactPhone as string;
+        if (!isValidPhone(phone)) {
+          useRequestStore.getState().updateField('contactPhone', null);
+        }
+      }
+
       // Build suggested chips from AI response
       const suggestedChips: ChipOption[] | undefined = aiResponse.suggestedOptions?.map((opt) => ({
         id: opt.id,
@@ -615,12 +752,20 @@ export function useConversation() {
       const reqStore = useRequestStore.getState();
       const currentNode = getNode(convStore.currentNodeId);
 
-      const { nextNodeId, fieldUpdate } = processUserInput(text, currentNode, reqStore as RequestFields);
+      const { nextNodeId: rawFallbackId, fieldUpdate } = processUserInput(text, currentNode, reqStore as RequestFields);
 
       if (fieldUpdate) {
         for (const [field, value] of Object.entries(fieldUpdate)) {
           useRequestStore.getState().updateField(field as keyof RequestFields, value as string | string[] | null);
         }
+      }
+
+      // Apply field-skip and contact-skip logic
+      let nextNodeId = rawFallbackId;
+      if (['contact_name', 'contact_email', 'contact_phone', 'contact_company'].includes(nextNodeId)) {
+        nextNodeId = findNextContactNode(useRequestStore.getState());
+      } else {
+        nextNodeId = resolveNodeSkip(nextNodeId, useRequestStore.getState());
       }
 
       if (nextNodeId === 'submitted') {
@@ -711,8 +856,9 @@ export function useConversation() {
 
     await delay(randomDelay());
 
-    const anyEdge = currentNode.edges.find((e) => e.condition === 'any');
-    const nextNodeId = anyEdge?.targetNodeId || 'business_type';
+    const anyEdge = currentNode.edges.find((e: { condition: string }) => e.condition === 'any');
+    const rawNextId = anyEdge?.targetNodeId || 'business_type';
+    const nextNodeId = resolveNodeSkip(rawNextId, useRequestStore.getState());
     const nextNode = getNode(nextNodeId);
 
     const msg = typeof nextNode.message === 'function'
@@ -745,19 +891,36 @@ export function useConversation() {
 
     await delay(randomDelay());
 
-    // Go directly to contact details
-    const contactNode = getNode('contact_name');
-    const contactMsg = typeof contactNode.message === 'function'
-      ? contactNode.message(useRequestStore.getState() as RequestFields)
-      : contactNode.message;
+    // Go directly to first unfilled contact field (skip already captured)
+    const nextContactNodeId = findNextContactNode(useRequestStore.getState());
 
-    const cs2 = useConversationStore.getState();
-    cs2.setTyping(false);
-    const followId = cs2.addStreamingBotMessage();
-    await typewriterStream(followId, "Great choices. Let me connect you with our team.\n\n" + contactMsg);
-    useConversationStore.getState().finalizeStreamingMessage(followId);
-    useConversationStore.getState().transitionTo('contact_name');
-    useConversationStore.getState().setInputDisabled(false);
+    if (nextContactNodeId === 'review') {
+      // All contact fields already captured — go straight to review
+      useRequestStore.getState().setStage('review');
+      const cs2 = useConversationStore.getState();
+      cs2.setTyping(false);
+      const followId = cs2.addStreamingBotMessage();
+      await typewriterStream(followId, "Great choices. Your request is ready for review. Please check the summary panel and submit when you're satisfied.");
+      useConversationStore.getState().finalizeStreamingMessage(followId, [
+        { id: 'submit', label: 'Submit Request' },
+        { id: 'edit', label: 'I want to change something' },
+      ]);
+      useConversationStore.getState().transitionTo('review');
+      useConversationStore.getState().setInputDisabled(false);
+    } else {
+      const contactNode = getNode(nextContactNodeId);
+      const contactMsg = typeof contactNode.message === 'function'
+        ? contactNode.message(useRequestStore.getState() as RequestFields)
+        : contactNode.message;
+
+      const cs2 = useConversationStore.getState();
+      cs2.setTyping(false);
+      const followId = cs2.addStreamingBotMessage();
+      await typewriterStream(followId, "Great choices. Let me connect you with our team.\n\n" + contactMsg);
+      useConversationStore.getState().finalizeStreamingMessage(followId);
+      useConversationStore.getState().transitionTo(nextContactNodeId);
+      useConversationStore.getState().setInputDisabled(false);
+    }
   }, []);
 
   return {

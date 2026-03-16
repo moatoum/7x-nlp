@@ -2,15 +2,17 @@
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { FileText, Clock, CheckCircle, AlertCircle, Users } from 'lucide-react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useSubmissionsStore } from '@/store/submissionsStore';
+import { useLeadsStore } from '@/store/leadsStore';
 import { formatDuration, formatNumber } from '@/lib/formatters';
 import { StatCard } from './StatCard';
 
 export function StatsOverview() {
   const { total, avgDuration } = useAnalytics();
   const submissions = useSubmissionsStore((s) => s.submissions);
+  const leads = useLeadsStore((s) => s.leads);
 
   const stats = useMemo(() => {
     const pending = submissions.filter((s) => s.status === 'submitted' || s.status === 'in_review').length;
@@ -25,15 +27,17 @@ export function StatsOverview() {
 
     const weekPct = lastWeek > 0 ? Math.round(((thisWeek - lastWeek) / lastWeek) * 100) : 0;
 
-    return { pending, approved, thisWeek, weekTrend, weekPct };
-  }, [submissions]);
+    const activeLeads = leads.filter((l) => l.status === 'new' || l.status === 'contacted').length;
+
+    return { pending, approved, thisWeek, weekTrend, weekPct, activeLeads };
+  }, [submissions, leads]);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+      className="grid grid-cols-2 lg:grid-cols-5 gap-4"
     >
       <StatCard
         label="Total Requests"
@@ -57,6 +61,13 @@ export function StatsOverview() {
         icon={CheckCircle}
         accentColor="#10b981"
         subtitle={`${total > 0 ? Math.round((stats.approved / total) * 100) : 0}% approval rate`}
+      />
+      <StatCard
+        label="Active Leads"
+        value={formatNumber(stats.activeLeads)}
+        icon={Users}
+        accentColor="#3b82f6"
+        subtitle={`${leads.length} total`}
       />
       <StatCard
         label="Avg Response Time"

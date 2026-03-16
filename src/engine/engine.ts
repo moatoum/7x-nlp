@@ -834,14 +834,28 @@ const nodes: Record<string, ConversationNode> = {
     message: 'Do these look right for your needs?',
     chips: [
       { id: 'proceed', label: 'Yes, let\'s proceed' },
+      { id: 'refine', label: 'Refine these results' },
       { id: 'different', label: 'I need something different' },
       { id: 'restart', label: 'Start over' },
     ],
     edges: [
       { condition: 'chip', value: 'proceed', targetNodeId: 'contact_name', priority: 10 },
+      { condition: 'chip', value: 'refine', targetNodeId: 'refine_recommendation', priority: 10 },
       { condition: 'chip', value: 'different', targetNodeId: 'unsure_guide', priority: 10 },
       { condition: 'chip', value: 'restart', targetNodeId: 'welcome', priority: 10 },
       { condition: 'any', targetNodeId: 'contact_name', priority: 0 },
+    ],
+  },
+
+  refine_recommendation: {
+    id: 'refine_recommendation',
+    type: 'question',
+    message: 'I\'d like to find better options for you. Could you tell me what wasn\'t quite right? For example:\n- The services didn\'t match your specific need\n- You need a different type of service\n- Your requirements have changed',
+    allowFreeText: true,
+    freeTextPlaceholder: 'Tell me what you need differently...',
+    capturesField: 'additionalNotes',
+    edges: [
+      { condition: 'any', targetNodeId: 'recommendation', priority: 0 },
     ],
   },
 
@@ -905,8 +919,19 @@ const nodes: Record<string, ConversationNode> = {
     ],
     edges: [
       { condition: 'chip', value: 'submit', targetNodeId: 'submitted', priority: 10 },
-      { condition: 'chip', value: 'edit', targetNodeId: 'welcome', priority: 10 },
+      { condition: 'chip', value: 'edit', targetNodeId: 'edit_request', priority: 10 },
       { condition: 'any', targetNodeId: 'submitted', priority: 0 },
+    ],
+  },
+
+  edit_request: {
+    id: 'edit_request',
+    type: 'capture',
+    message: 'No problem — what would you like to change? Just type your update and I\'ll adjust it.',
+    allowFreeText: true,
+    freeTextPlaceholder: 'Describe what you want to change...',
+    edges: [
+      { condition: 'any', targetNodeId: 'review', priority: 0 },
     ],
   },
 
