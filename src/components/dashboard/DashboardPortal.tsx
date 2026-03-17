@@ -77,7 +77,7 @@ export function DashboardPortal() {
         variants={fadeUp}
         className="mt-4 text-[15px] md:text-[17px] leading-relaxed text-gray-400 max-w-lg"
       >
-        Link is 7X&apos;s single national access point &mdash; connecting every logistics
+        LINK is 7X&apos;s single national access point &mdash; connecting every logistics
         request to the right team, solution, and partner across the ecosystem.
       </motion.p>
 

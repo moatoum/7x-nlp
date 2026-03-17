@@ -536,11 +536,17 @@ export function useConversation() {
       reqStore.setStage('gathering');
     }
 
-    // Waslah.ae redirect — open in new tab instead of looping
-    if (chipId === 'go_waslah') {
-      window.open('https://waslah.ae', '_blank', 'noopener,noreferrer');
+    // NXN redirect — open in new tab
+    if (chipId === 'go_nxn') {
+      window.open('https://nxn.ae', '_blank', 'noopener,noreferrer');
       convStore.setTyping(false);
       convStore.setInputDisabled(false);
+      return;
+    }
+
+    // Expert callback — redirect to /connect
+    if (chipId === 'request_callback') {
+      window.location.href = '/connect';
       return;
     }
 

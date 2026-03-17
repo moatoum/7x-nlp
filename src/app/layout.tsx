@@ -18,7 +18,7 @@ const ibmPlexArabic = IBM_Plex_Sans_Arabic({
 export const metadata: Metadata = {
   title: "LINK — by 7X",
   description:
-    "Link is 7X's single national access point — connecting every logistics request to the right team, solution, and partner across the ecosystem.",
+    "LINK is 7X's single national access point — connecting every logistics request to the right team, solution, and partner across the ecosystem.",
   viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
   icons: {
     icon: "/favicon.png",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "LINK — by 7X",
     description:
-      "Link is 7X's single national access point — connecting every logistics request to the right team, solution, and partner across the ecosystem.",
+      "LINK is 7X's single national access point — connecting every logistics request to the right team, solution, and partner across the ecosystem.",
     siteName: "LINK by 7X",
     type: "website",
     images: [
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "LINK — by 7X",
     description:
-      "Link is 7X's single national access point — connecting every logistics request to the right team, solution, and partner across the ecosystem.",
+      "LINK is 7X's single national access point — connecting every logistics request to the right team, solution, and partner across the ecosystem.",
     images: ["/favicon.png"],
   },
 };

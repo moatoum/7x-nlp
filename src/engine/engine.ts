@@ -27,14 +27,14 @@ const nodes: Record<string, ConversationNode> = {
   individual_redirect: {
     id: 'individual_redirect',
     type: 'info',
-    message: 'This platform is designed for businesses and government entities. For individual shipping needs, please visit waslah.ae where you can find services tailored for you.',
+    message: 'This platform is designed for businesses and government entities. For individual shipping needs, you can reach out to NXN support team on +971600569696 – Monday to Saturday 8:00 AM – 6:00 PM, or send your request to support@nxn.ae to get a reply within 24 hours.',
     chips: [
       { id: 'actually_business', label: "I'm actually a business" },
-      { id: 'go_waslah', label: 'Go to waslah.ae' },
+      { id: 'go_nxn', label: 'Go to nxn.ae' },
     ],
     edges: [
       { condition: 'chip', value: 'actually_business', targetNodeId: 'welcome', priority: 10 },
-      { condition: 'chip', value: 'go_waslah', targetNodeId: 'individual_redirect', priority: 10 },
+      { condition: 'chip', value: 'go_nxn', targetNodeId: 'individual_redirect', priority: 10 },
       { condition: 'any', targetNodeId: 'individual_redirect', priority: 0 },
     ],
   },
@@ -528,8 +528,23 @@ const nodes: Record<string, ConversationNode> = {
     }),
     edges: [
       { condition: 'chip', value: 'yes', targetNodeId: 'import_supplier_country', priority: 10 },
-      { condition: 'chip', value: 'exploring', targetNodeId: 'import_supplier_country', priority: 10 },
+      { condition: 'chip', value: 'exploring', targetNodeId: 'import_exploring_redirect', priority: 10 },
       { condition: 'any', targetNodeId: 'import_supplier_country', priority: 0 },
+    ],
+  },
+
+  import_exploring_redirect: {
+    id: 'import_exploring_redirect',
+    type: 'info',
+    message: 'No worries — one of our experts can help you find the right supplier and guide you through the import process. Request a callback and we\'ll get back to you shortly.',
+    chips: [
+      { id: 'request_callback', label: 'Request a callback' },
+      { id: 'have_supplier', label: 'Actually, I have a supplier' },
+    ],
+    edges: [
+      { condition: 'chip', value: 'request_callback', targetNodeId: 'import_exploring_redirect', priority: 10 },
+      { condition: 'chip', value: 'have_supplier', targetNodeId: 'import_supplier_country', priority: 10 },
+      { condition: 'any', targetNodeId: 'import_exploring_redirect', priority: 0 },
     ],
   },
 

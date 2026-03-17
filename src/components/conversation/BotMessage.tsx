@@ -61,7 +61,7 @@ export function BotMessage({ message, onChipSelect, onMultiSelect, onServiceConf
             <AnimatedOrb size="md" />
             <div>
               <p className="text-[13px] font-semibold text-gray-900">LINK Assistant</p>
-              <p className="text-[11px] text-gray-400">Logistics Solutions Advisor</p>
+              <p className="text-[11px] text-gray-400">Trade and Transport Advisor</p>
             </div>
           </div>
           <div className={`text-[17px] leading-relaxed text-gray-900 whitespace-pre-line font-medium ${langClass}`}>
