@@ -20,9 +20,9 @@ resources:
 
 env:
   - name: DATABASE_URL
-    value: "postgresql://7x_nls:prodTREpIUHeb%40uug8kx@psql-shared-prod-aen-db.postgres.database.azure.com:6432/7x_nls?sslmode=require&pgbouncer=true"
+    value: "postgresql://7x_nls:prodTREpIUHeb%40uug8kx@psql-shared-prod-aen-db.postgres.database.azure.com:6432/7x_nls?sslmode=require&pgbouncer=true&schema=main"
   - name: DIRECT_URL
-    value: "postgresql://7x_nls:prodTREpIUHeb%40uug8kx@psql-shared-prod-aen-db.postgres.database.azure.com:5432/7x_nls?sslmode=require"
+    value: "postgresql://7x_nls:prodTREpIUHeb%40uug8kx@psql-shared-prod-aen-db.postgres.database.azure.com:5432/7x_nls?sslmode=require&schema=main"
   - name: AZURE_AI_ENDPOINT
     value: "https://altha-mmdafubs-eastus2.services.ai.azure.com/anthropic/v1/messages"
   - name: AZURE_AI_KEY
