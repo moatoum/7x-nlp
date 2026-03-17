@@ -310,10 +310,10 @@ async function handleSubmission(): Promise<boolean> {
       `Your request has been submitted successfully.\n\nReference: ${refNumber}\n\nA confirmation email has been sent to ${rs.contactEmail}. Our logistics specialists will reach out within 2 business hours. Thank you for choosing 7X.`
     );
   } catch (err) {
-    console.error('Submission persistence failed:', err);
-    // Still show success to user — the data is in the store and we'll retry
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error('Submission persistence failed:', errMsg, err);
     cs.addBotMessage(
-      `Your request is ready to submit.\n\nReference: ${refNumber}\n\nA confirmation email will be sent to ${rs.contactEmail}. Our logistics specialists will reach out within 2 business hours. Thank you for choosing 7X.`
+      `⚠️ There was a problem saving your request: ${errMsg}\n\nReference: ${refNumber}\n\nPlease try again or contact us directly. Your information has been noted.`
     );
   }
 
