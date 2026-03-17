@@ -18,7 +18,7 @@ const fadeUp: Variants = {
 export function DashboardPortal() {
   const [titleNumber, setTitleNumber] = useState(0);
   const titles = useMemo(
-    () => ['Shipping.', 'Delivery.', 'Logistics.', 'Warehousing.', 'Returns.'],
+    () => ['Logistics.', 'Experts.', 'Solutions.', 'Network.', 'Answer.'],
     []
   );
 
@@ -39,10 +39,10 @@ export function DashboardPortal() {
       {/* Badge */}
       <motion.div variants={fadeUp}>
         <Link
-          href="/services"
+          href="/connect"
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gray-100/80 text-[12px] font-medium text-gray-500 hover:bg-gray-200/80 hover:text-gray-700 transition-colors backdrop-blur-sm"
         >
-          44+ logistics solutions available
+          Get linked with a logistics expert
           <ArrowRight className="w-3 h-3" />
         </Link>
       </motion.div>
@@ -50,7 +50,7 @@ export function DashboardPortal() {
       {/* Heading with rotating word */}
       <motion.div variants={fadeUp} className="mt-6">
         <h1 className="text-[36px] md:text-[56px] tracking-[-0.03em] text-gray-900 leading-[1.1]">
-          <span className="font-light">Tell us what you need.</span>
+          <span className="font-light">One </span><span className="font-semibold">LINK</span><span className="font-light"> to your</span>
           <span className="relative flex w-full justify-center overflow-hidden md:pb-3 md:pt-1 h-[50px] md:h-[72px]">
             &nbsp;
             {titles.map((title, index) => (
@@ -77,8 +77,8 @@ export function DashboardPortal() {
         variants={fadeUp}
         className="mt-4 text-[15px] md:text-[17px] leading-relaxed text-gray-400 max-w-lg"
       >
-        A single national access point for logistics support across the 7X ecosystem,
-        guiding every request to the right team.
+        Link is 7X&apos;s single national access point &mdash; connecting every logistics
+        request to the right team, solution, and partner across the ecosystem.
       </motion.p>
 
       {/* Buttons */}

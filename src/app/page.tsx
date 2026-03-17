@@ -13,7 +13,7 @@ export default function DashboardPage() {
       <div className="pb-2">
         <footer className="pb-5 pt-1 text-center">
           <p className="text-[11px] text-gray-300/60 tracking-wide">
-            &copy; 2026 7X &mdash; Emirates Post Group
+            &copy; 2026 LINK &mdash; Powered by 7X, Emirates Post Group
           </p>
         </footer>
       </div>

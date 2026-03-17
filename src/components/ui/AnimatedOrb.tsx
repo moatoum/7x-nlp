@@ -176,7 +176,7 @@ const FRAG = /* glsl */ `
 `;
 
 /**
- * Animated orb — NLS Assistant avatar.
+ * Animated orb — LINK Assistant avatar.
  * WebGL shader-based orb with organic plasma noise animation.
  */
 export function AnimatedOrb({ size = 'md', className }: AnimatedOrbProps) {

@@ -21,7 +21,7 @@ export function TypingIndicator() {
   }, []);
 
   return (
-    <div className="flex items-center gap-3 py-4" role="status" aria-label="NLS Assistant is typing">
+    <div className="flex items-center gap-3 py-4" role="status" aria-label="LINK Assistant is typing">
       <AnimatedOrb size="sm" />
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-1 px-4 py-3">

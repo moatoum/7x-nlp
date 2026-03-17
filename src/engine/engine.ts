@@ -9,7 +9,7 @@ const nodes: Record<string, ConversationNode> = {
   entity_type: {
     id: 'entity_type',
     type: 'question',
-    message: 'Welcome to NLS Platform. Before we begin, are you...',
+    message: 'Welcome to LINK. Before we begin, are you...',
     chips: [
       { id: 'business', label: 'A business' },
       { id: 'government', label: 'A governmental entity' },
@@ -43,7 +43,7 @@ const nodes: Record<string, ConversationNode> = {
   welcome: {
     id: 'welcome',
     type: 'question',
-    message: 'Welcome to NLS Platform. I\'m here to help you find the right logistics solution.\n\nWhat are you looking to do?',
+    message: 'Welcome to LINK. I\'m here to help you find the right logistics solution.\n\nWhat are you looking to do?',
     chips: [
       { id: 'ship_parcels', label: 'Ship packages or parcels', icon: 'Package' },
       { id: 'freight', label: 'Move large cargo or freight', icon: 'Container' },

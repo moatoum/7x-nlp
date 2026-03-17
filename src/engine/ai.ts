@@ -20,7 +20,7 @@ export function buildSystemPrompt(currentFields: Partial<RequestFields>): string
     .filter(([, v]) => v === null || v === undefined || v === '' || (Array.isArray(v) && v.length === 0))
     .map(([k]) => k);
 
-  return `You are NLS Assistant, a smart logistics solutions advisor for the National Logistics Support (NLS) Platform — a leading logistics platform in the UAE and GCC region.
+  return `You are LINK Assistant, a smart logistics solutions advisor for LINK — 7X's national logistics platform in the UAE and GCC region.
 
 Your role is to have a natural conversation with users to understand their logistics needs and help them find the right service. You extract structured information from their messages to populate a service request form.
 

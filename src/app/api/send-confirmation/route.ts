@@ -67,7 +67,7 @@ function buildEmailHtml(data: ConfirmationPayload): string {
     <div style="text-align:center;margin-bottom:32px;">
       <div style="display:inline-block;width:36px;height:36px;background:#000;border-radius:10px;margin-bottom:12px;"></div>
       <h1 style="margin:0;font-size:20px;font-weight:600;color:#111827;">Request Submitted</h1>
-      <p style="margin:6px 0 0;font-size:14px;color:#6b7280;">National Logistics Support Platform</p>
+      <p style="margin:6px 0 0;font-size:14px;color:#6b7280;">LINK &mdash; by 7X</p>
     </div>
 
     <!-- Card -->
@@ -121,7 +121,7 @@ function buildEmailHtml(data: ConfirmationPayload): string {
     <!-- Footer -->
     <div style="text-align:center;margin-top:24px;">
       <p style="margin:0;font-size:11px;color:#9ca3af;">
-        &copy; 2026 7X — Emirates Post Group
+        &copy; 2026 LINK — Powered by 7X, Emirates Post Group
       </p>
     </div>
   </div>
@@ -145,7 +145,7 @@ export async function POST(request: Request) {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     const { error } = await resend.emails.send({
-      from: 'NLS Platform <noreply@updates.7x.ax>',
+      from: 'LINK <noreply@updates.7x.ax>',
       to: data.contactEmail,
       subject: `Request ${data.referenceNumber} — Submitted Successfully`,
       html: buildEmailHtml(data),

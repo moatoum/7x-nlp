@@ -34,7 +34,7 @@ export function Header() {
         <AlternatingLogo />
         <div className="hidden sm:flex items-center gap-2">
           <span className="text-gray-200">|</span>
-          <span className="text-[13px] text-gray-400 font-medium">National Logistics Support</span>
+          <span className="text-[13px] text-gray-400 font-medium">LINK</span>
         </div>
       </div>
 

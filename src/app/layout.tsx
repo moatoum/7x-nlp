@@ -16,34 +16,34 @@ const ibmPlexArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "7X - National Logistics Support Platform",
+  title: "LINK — by 7X",
   description:
-    "A single national access point for logistics support across the 7X ecosystem, guiding every request to the right team.",
+    "Link is 7X's single national access point — connecting every logistics request to the right team, solution, and partner across the ecosystem.",
   viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
   icons: {
     icon: "/favicon.png",
     apple: "/favicon.png",
   },
   openGraph: {
-    title: "7X - National Logistics Support Platform",
+    title: "LINK — by 7X",
     description:
-      "A single national access point for logistics support across the 7X ecosystem, guiding every request to the right team.",
-    siteName: "7X NLS",
+      "Link is 7X's single national access point — connecting every logistics request to the right team, solution, and partner across the ecosystem.",
+    siteName: "LINK by 7X",
     type: "website",
     images: [
       {
         url: "/favicon.png",
         width: 512,
         height: 512,
-        alt: "7X Logo",
+        alt: "LINK by 7X",
       },
     ],
   },
   twitter: {
     card: "summary",
-    title: "7X - National Logistics Support Platform",
+    title: "LINK — by 7X",
     description:
-      "A single national access point for logistics support across the 7X ecosystem, guiding every request to the right team.",
+      "Link is 7X's single national access point — connecting every logistics request to the right team, solution, and partner across the ecosystem.",
     images: ["/favicon.png"],
   },
 };
