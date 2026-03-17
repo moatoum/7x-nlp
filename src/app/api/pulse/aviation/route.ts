@@ -11,6 +11,10 @@ const ACCESS_KEY = process.env.AVIATIONSTACK_ACCESS_KEY || '';
 
 export async function GET() {
   try {
+    if (!ACCESS_KEY) {
+      return NextResponse.json({ flights: [] }, { headers: { 'Cache-Control': 'public, s-maxage=300' } });
+    }
+
     // Return cached data if fresh
     if (cache && Date.now() - cache.timestamp < CACHE_TTL) {
       return NextResponse.json(

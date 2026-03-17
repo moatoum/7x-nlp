@@ -11,6 +11,10 @@ const CACHE_TTL = 5 * 60 * 1000;
 
 export async function GET() {
   try {
+    if (!API_KEY) {
+      return NextResponse.json({ articles: [] }, { headers: { 'Cache-Control': 'public, s-maxage=300' } });
+    }
+
     // Return cached data if fresh
     if (cache && Date.now() - cache.timestamp < CACHE_TTL) {
       return NextResponse.json(
