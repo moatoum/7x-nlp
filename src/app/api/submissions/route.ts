@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { toClientSubmission } from '@/lib/mappers';
+import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
+
+const submitLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 }); // 10 per minute
+
+// ── Input validation helpers ──
+const MAX_STR = 255;
+const MAX_TEXT = 2000;
+const MAX_ARRAY = 10;
+const MAX_SERVICES = 20;
+
+function str(val: unknown, max = MAX_STR): string | null {
+  if (val == null) return null;
+  if (typeof val !== 'string') return null;
+  return val.slice(0, max) || null;
+}
+
+function strArr(val: unknown, maxItems = MAX_ARRAY): string[] {
+  if (!Array.isArray(val)) return [];
+  return val.filter((v): v is string => typeof v === 'string').slice(0, maxItems).map((s) => s.slice(0, MAX_STR));
+}
 
 // GET /api/submissions — List all
 export async function GET() {
@@ -11,25 +31,28 @@ export async function GET() {
     });
     return NextResponse.json(submissions.map(toClientSubmission));
   } catch (error: unknown) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    console.error('GET /api/submissions error:', errMsg, error);
-    return NextResponse.json({ error: `Failed to fetch submissions: ${errMsg}` }, { status: 500 });
+    console.error('GET /api/submissions error:', error);
+    return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 });
   }
 }
 
 // POST /api/submissions — Create new
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit
+    const ip = getClientIp(request.headers);
+    if (!submitLimiter(ip)) {
+      return NextResponse.json({ error: 'Too many requests. Please wait before submitting again.' }, { status: 429 });
+    }
+
     const body = await request.json();
 
-    // Validate only the absolute minimum — referenceNumber is the only hard requirement
-    if (!body.referenceNumber || typeof body.referenceNumber !== 'string') {
+    if (!body.referenceNumber || typeof body.referenceNumber !== 'string' || body.referenceNumber.length > 50) {
       return NextResponse.json({ error: 'Reference number is required' }, { status: 400 });
     }
 
-    // Log what we received for debugging
+    // Log non-PII fields only
     console.log('POST /api/submissions — ref:', body.referenceNumber,
-      'name:', body.contactName, 'email:', body.contactEmail,
       'category:', body.serviceCategory);
 
     // Check for duplicate reference number
@@ -41,44 +64,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Duplicate reference number' }, { status: 409 });
     }
 
+    // Validate and cap recommended services array
+    const rawServices = Array.isArray(body.recommendedServices) ? body.recommendedServices.slice(0, MAX_SERVICES) : [];
+
     const submission = await prisma.submission.create({
       data: {
         referenceNumber: body.referenceNumber,
-        status: body.status || 'submitted',
+        status: str(body.status) || 'submitted',
         createdAt: body.createdAt ? new Date(body.createdAt) : new Date(),
-        entityType: body.entityType ?? null,
-        serviceCategory: body.serviceCategory ?? null,
-        serviceSubcategory: body.serviceSubcategory ?? null,
-        businessType: body.businessType ?? null,
-        originLocation: body.originLocation ?? null,
-        destinationLocation: body.destinationLocation ?? null,
-        frequency: body.frequency ?? null,
-        urgency: body.urgency ?? null,
-        specialRequirements: body.specialRequirements || [],
-        additionalNotes: body.additionalNotes ?? null,
-        currentCourier: body.currentCourier ?? null,
-        supplierStatus: body.supplierStatus ?? null,
-        supplierCountry: body.supplierCountry ?? null,
-        goodsCategory: body.goodsCategory ?? null,
-        incoterms: body.incoterms ?? null,
-        cargoVolume: body.cargoVolume ?? null,
-        customsRequired: body.customsRequired ?? null,
-        storageType: body.storageType ?? null,
-        contactName: body.contactName ?? null,
-        contactEmail: body.contactEmail ?? null,
-        contactPhone: body.contactPhone ?? null,
-        companyName: body.companyName ?? null,
-        conversationDuration: body.conversationDuration || 0,
-        nodesVisited: body.nodesVisited || [],
-        totalMessages: body.totalMessages || 0,
+        entityType: str(body.entityType),
+        serviceCategory: str(body.serviceCategory),
+        serviceSubcategory: str(body.serviceSubcategory),
+        businessType: str(body.businessType),
+        originLocation: str(body.originLocation),
+        destinationLocation: str(body.destinationLocation),
+        frequency: str(body.frequency),
+        urgency: str(body.urgency),
+        specialRequirements: strArr(body.specialRequirements),
+        additionalNotes: str(body.additionalNotes, MAX_TEXT),
+        currentCourier: str(body.currentCourier),
+        supplierStatus: str(body.supplierStatus),
+        supplierCountry: str(body.supplierCountry),
+        goodsCategory: str(body.goodsCategory),
+        incoterms: str(body.incoterms),
+        cargoVolume: str(body.cargoVolume),
+        customsRequired: str(body.customsRequired),
+        storageType: str(body.storageType),
+        contactName: str(body.contactName),
+        contactEmail: str(body.contactEmail),
+        contactPhone: str(body.contactPhone, 30),
+        companyName: str(body.companyName),
+        conversationDuration: typeof body.conversationDuration === 'number' ? Math.min(body.conversationDuration, 86400) : 0,
+        nodesVisited: strArr(body.nodesVisited, 50),
+        totalMessages: typeof body.totalMessages === 'number' ? Math.min(body.totalMessages, 1000) : 0,
         recommendedServices: {
-          create: (body.recommendedServices || []).map((s: { id: string; name: string; category: string; description: string; vertical: string; confidence?: number }) => ({
-            serviceId: s.id,
-            name: s.name,
-            category: s.category,
-            description: s.description,
-            vertical: s.vertical,
-            confidence: s.confidence ?? null,
+          create: rawServices.map((s: { id: string; name: string; category: string; description: string; vertical: string; confidence?: number }) => ({
+            serviceId: String(s.id).slice(0, MAX_STR),
+            name: String(s.name).slice(0, MAX_STR),
+            category: String(s.category).slice(0, MAX_STR),
+            description: String(s.description).slice(0, 500),
+            vertical: String(s.vertical).slice(0, MAX_STR),
+            confidence: typeof s.confidence === 'number' ? s.confidence : null,
           })),
         },
       },
@@ -87,8 +113,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(toClientSubmission(submission), { status: 201 });
   } catch (error: unknown) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    console.error('POST /api/submissions error:', errMsg, error);
-    return NextResponse.json({ error: `Failed to create submission: ${errMsg}` }, { status: 500 });
+    console.error('POST /api/submissions error:', error);
+    return NextResponse.json({ error: 'Failed to create submission' }, { status: 500 });
   }
 }

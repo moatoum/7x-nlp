@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const leadLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 }); // 10 per minute
+
+// Field length limits
+const MAX_NAME = 255;
+const MAX_EMAIL = 255;
+const MAX_PHONE = 30;
+const MAX_WEBSITE = 500;
 
 function generateLeadRef() {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -22,36 +30,54 @@ export async function GET() {
       }))
     );
   } catch (error: unknown) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    console.error('GET /api/leads error:', errMsg, error);
-    return NextResponse.json({ error: `Failed to fetch leads: ${errMsg}` }, { status: 500 });
+    console.error('GET /api/leads error:', error);
+    return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
   }
 }
 
 // POST /api/leads — Create a new lead (public form)
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit
+    const ip = getClientIp(request.headers);
+    if (!leadLimiter(ip)) {
+      return NextResponse.json({ error: 'Too many requests. Please wait before submitting again.' }, { status: 429 });
+    }
+
     const body = await request.json();
 
-    // Validation
-    if (!body.contactName?.trim()) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    // Validation with length limits
+    const name = typeof body.contactName === 'string' ? body.contactName.trim() : '';
+    if (!name || name.length > MAX_NAME) {
+      return NextResponse.json({ error: 'Name is required (max 255 chars)' }, { status: 400 });
     }
-    if (!body.businessEmail?.trim() || !EMAIL_REGEX.test(body.businessEmail)) {
+
+    const email = typeof body.businessEmail === 'string' ? body.businessEmail.trim() : '';
+    if (!email || email.length > MAX_EMAIL || !EMAIL_REGEX.test(email)) {
       return NextResponse.json({ error: 'Valid business email is required' }, { status: 400 });
     }
-    const digitsOnly = (body.phone || '').replace(/\D/g, '');
+
+    const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
+    if (phone.length > MAX_PHONE) {
+      return NextResponse.json({ error: 'Phone number is too long' }, { status: 400 });
+    }
+    const digitsOnly = phone.replace(/\D/g, '');
     if (digitsOnly.length < 7 || /^(\d)\1+$/.test(digitsOnly)) {
       return NextResponse.json({ error: 'Valid phone number is required' }, { status: 400 });
+    }
+
+    const website = typeof body.businessWebsite === 'string' ? body.businessWebsite.trim() : '';
+    if (website && website.length > MAX_WEBSITE) {
+      return NextResponse.json({ error: 'Website URL is too long' }, { status: 400 });
     }
 
     const lead = await prisma.lead.create({
       data: {
         referenceNumber: generateLeadRef(),
-        contactName: body.contactName.trim(),
-        businessEmail: body.businessEmail.trim(),
-        phone: body.phone.trim(),
-        businessWebsite: body.businessWebsite?.trim() || null,
+        contactName: name,
+        businessEmail: email,
+        phone: phone,
+        businessWebsite: website || null,
         uaeRegistered: body.uaeRegistered === true,
       },
     });
@@ -61,8 +87,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error: unknown) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    console.error('POST /api/leads error:', errMsg, error);
-    return NextResponse.json({ error: `Failed to create lead: ${errMsg}` }, { status: 500 });
+    console.error('POST /api/leads error:', error);
+    return NextResponse.json({ error: 'Failed to create lead' }, { status: 500 });
   }
 }

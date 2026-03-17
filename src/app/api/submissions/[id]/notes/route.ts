@@ -12,9 +12,12 @@ export async function POST(
   try {
     const body = await request.json();
 
-    // Validate content is non-empty
+    // Validate content is non-empty and within size limit
     if (!body.content || typeof body.content !== 'string' || body.content.trim().length === 0) {
       return NextResponse.json({ error: 'Note content is required' }, { status: 400 });
+    }
+    if (body.content.trim().length > 2000) {
+      return NextResponse.json({ error: 'Note content must be under 2000 characters' }, { status: 400 });
     }
 
     // Validate visibility
@@ -34,9 +37,9 @@ export async function POST(
 
     const note = await prisma.note.create({
       data: {
-        content: body.content.trim(),
+        content: body.content.trim().slice(0, 2000),
         visibility,
-        author: body.author || 'Admin',
+        author: typeof body.author === 'string' ? body.author.slice(0, 100) : 'Admin',
         submissionId: params.id,
       },
     });

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 let cache: { data: VesselInfo[]; timestamp: number } | null = null;
 const CACHE_TTL = 5 * 60 * 1000;
 
-const API_KEY = 'efddf545-daa6-4b87-a6e3-84f450fe6f7c';
+const API_KEY = process.env.DATALASTIC_API_KEY || '';
 
 export async function GET() {
   try {

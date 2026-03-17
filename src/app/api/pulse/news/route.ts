@@ -3,7 +3,7 @@ import type { PulseNewsItem } from '@/lib/pulse-types';
 
 export const dynamic = 'force-dynamic';
 
-const API_KEY = 'ad52f814f074461b8d8285054f7f7d7c';
+const API_KEY = process.env.NEWSAPI_KEY || '';
 
 // In-memory cache (5 min TTL)
 let cache: { data: PulseNewsItem[]; timestamp: number } | null = null;

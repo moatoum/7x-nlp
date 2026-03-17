@@ -48,6 +48,9 @@ export async function PATCH(
       if (body.notes !== null && typeof body.notes !== 'string') {
         return NextResponse.json({ error: 'Notes must be a string or null' }, { status: 400 });
       }
+      if (typeof body.notes === 'string' && body.notes.length > 2000) {
+        return NextResponse.json({ error: 'Notes must be under 2000 characters' }, { status: 400 });
+      }
       data.notes = body.notes;
     }
 

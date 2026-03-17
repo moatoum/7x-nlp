@@ -1,7 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
+
+const emailLimiter = createRateLimiter({ limit: 5, windowMs: 60_000 }); // 5 emails per minute per IP
 
 interface ConfirmationPayload {
   referenceNumber: string;
@@ -26,9 +29,19 @@ interface ConfirmationPayload {
   recommendedServices: Array<{ name: string; category: string }>;
 }
 
+/** Escape HTML special characters to prevent XSS in email templates */
+function esc(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function buildEmailHtml(data: ConfirmationPayload): string {
   const services = data.recommendedServices
-    .map((s) => `<li style="padding:4px 0;color:#374151;">${s.name} <span style="color:#9ca3af;font-size:12px;">(${s.category})</span></li>`)
+    .map((s) => `<li style="padding:4px 0;color:#374151;">${esc(s.name)} <span style="color:#9ca3af;font-size:12px;">(${esc(s.category)})</span></li>`)
     .join('');
 
   const detailRows: Array<[string, string]> = [];
@@ -50,8 +63,8 @@ function buildEmailHtml(data: ConfirmationPayload): string {
   const details = detailRows
     .map(([label, value]) => `
       <tr>
-        <td style="padding:8px 12px;color:#6b7280;font-size:13px;white-space:nowrap;vertical-align:top;">${label}</td>
-        <td style="padding:8px 12px;color:#111827;font-size:13px;font-weight:500;">${value}</td>
+        <td style="padding:8px 12px;color:#6b7280;font-size:13px;white-space:nowrap;vertical-align:top;">${esc(label)}</td>
+        <td style="padding:8px 12px;color:#111827;font-size:13px;font-weight:500;">${esc(value)}</td>
       </tr>
     `)
     .join('');
@@ -76,7 +89,7 @@ function buildEmailHtml(data: ConfirmationPayload): string {
       <!-- Greeting -->
       <div style="padding:24px 24px 16px;">
         <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">
-          Hi ${data.contactName},
+          Hi ${esc(data.contactName)},
         </p>
         <p style="margin:12px 0 0;font-size:14px;color:#374151;line-height:1.6;">
           Your logistics request has been submitted successfully. Our team will review your requirements and reach out within <strong>2 business hours</strong>.
@@ -86,7 +99,7 @@ function buildEmailHtml(data: ConfirmationPayload): string {
       <!-- Reference -->
       <div style="margin:0 24px;padding:16px;background:#f3f4f6;border-radius:8px;text-align:center;">
         <p style="margin:0;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Tracking Reference</p>
-        <p style="margin:6px 0 0;font-size:20px;font-weight:700;color:#111827;font-family:monospace;">${data.referenceNumber}</p>
+        <p style="margin:6px 0 0;font-size:20px;font-weight:700;color:#111827;font-family:monospace;">${esc(data.referenceNumber)}</p>
       </div>
 
       <!-- Request Details -->
@@ -113,7 +126,7 @@ function buildEmailHtml(data: ConfirmationPayload): string {
       <!-- Contact Info -->
       <div style="padding:16px 24px 20px;">
         <p style="margin:0;font-size:12px;color:#9ca3af;">
-          ${data.contactEmail}${data.contactPhone ? ` · ${data.contactPhone}` : ''}${data.companyName ? ` · ${data.companyName}` : ''}
+          ${esc(data.contactEmail)}${data.contactPhone ? ` · ${esc(data.contactPhone)}` : ''}${data.companyName ? ` · ${esc(data.companyName)}` : ''}
         </p>
       </div>
     </div>
@@ -129,8 +142,14 @@ function buildEmailHtml(data: ConfirmationPayload): string {
 </html>`;
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Rate limit
+    const ip = getClientIp(request.headers);
+    if (!emailLimiter(ip)) {
+      return NextResponse.json({ error: 'Too many requests. Please wait before sending again.' }, { status: 429 });
+    }
+
     const data: ConfirmationPayload = await request.json();
 
     if (!data.contactEmail || !data.referenceNumber) {

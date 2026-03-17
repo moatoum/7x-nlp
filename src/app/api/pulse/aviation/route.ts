@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 let cache: { data: FlightInfo[]; timestamp: number } | null = null;
 const CACHE_TTL = 5 * 60 * 1000;
 
-const ACCESS_KEY = '52193aec566fd83e9f25d53e2568ac57';
+const ACCESS_KEY = process.env.AVIATIONSTACK_ACCESS_KEY || '';
 
 export async function GET() {
   try {
