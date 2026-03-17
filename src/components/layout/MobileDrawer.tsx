@@ -27,13 +27,13 @@ export function MobileDrawer() {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white rounded-t-2xl shadow-drawer max-h-[85vh] flex flex-col"
+            className="fixed bottom-0 inset-x-0 z-50 lg:hidden bg-white rounded-t-2xl shadow-drawer max-h-[85vh] flex flex-col"
           >
             <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
               <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto" />
               <button
                 onClick={() => setDrawerOpen(false)}
-                className="absolute right-4 top-3 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"
+                className="absolute end-4 top-3 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"
               >
                 <X className="w-4 h-4 text-gray-500" />
               </button>

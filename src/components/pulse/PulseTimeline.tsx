@@ -4,6 +4,7 @@ import { motion, type Variants } from 'framer-motion';
 import { Radio } from 'lucide-react';
 import { PulseEventCard } from './PulseEventCard';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '@/i18n/LocaleProvider';
 import type { PulseEvent } from '@/lib/pulse-types';
 
 interface PulseTimelineProps {
@@ -31,7 +32,7 @@ const SEVERITY_DOT: Record<string, string> = {
 function SkeletonCard() {
   return (
     <div className="animate-pulse">
-      <div className="bg-white rounded-xl border border-gray-100 p-4 border-l-[3px] border-l-gray-200">
+      <div className="bg-white rounded-xl border border-gray-100 p-4 border-s-[3px] border-s-gray-200">
         <div className="flex items-center gap-2 mb-3">
           <div className="h-4 w-16 bg-gray-100 rounded-md" />
           <div className="flex-1" />
@@ -50,15 +51,17 @@ function SkeletonCard() {
 }
 
 export function PulseTimeline({ events, loading }: PulseTimelineProps) {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
-      <div className="relative pl-6">
+      <div className="relative ps-6">
         {/* Timeline line */}
-        <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-100" />
+        <div className="absolute start-[7px] top-2 bottom-2 w-px bg-gray-100" />
         <div className="space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="relative">
-              <div className="absolute -left-6 top-5 w-[9px] h-[9px] rounded-full bg-gray-200 ring-4 ring-[#fafafa]" />
+              <div className="absolute -start-6 top-5 w-[9px] h-[9px] rounded-full bg-gray-200 ring-4 ring-[#fafafa]" />
               <SkeletonCard />
             </div>
           ))}
@@ -73,16 +76,16 @@ export function PulseTimeline({ events, loading }: PulseTimelineProps) {
         <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
           <Radio className="w-6 h-6 text-gray-300" />
         </div>
-        <p className="text-[14px] font-medium text-gray-400">No events to display</p>
-        <p className="text-[12px] text-gray-300 mt-1">Try a different filter or refresh</p>
+        <p className="text-[14px] font-medium text-gray-400">{t('pulse.noEvents')}</p>
+        <p className="text-[12px] text-gray-300 mt-1">{t('pulse.tryDifferent')}</p>
       </div>
     );
   }
 
   return (
-    <div className="relative pl-6">
+    <div className="relative ps-6">
       {/* Timeline line */}
-      <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200/60" />
+      <div className="absolute start-[7px] top-2 bottom-2 w-px bg-gray-200/60" />
 
       <motion.div
         variants={container}
@@ -95,7 +98,7 @@ export function PulseTimeline({ events, loading }: PulseTimelineProps) {
             {/* Timeline dot */}
             <div
               className={cn(
-                'absolute -left-6 top-5 w-[9px] h-[9px] rounded-full ring-4 ring-[#fafafa]',
+                'absolute -start-6 top-5 w-[9px] h-[9px] rounded-full ring-4 ring-[#fafafa]',
                 SEVERITY_DOT[event.severity] || SEVERITY_DOT.neutral
               )}
             />

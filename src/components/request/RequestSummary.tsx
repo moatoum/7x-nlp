@@ -6,24 +6,18 @@ import { useRequestStore } from '@/store/requestStore';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { SummaryField } from './SummaryField';
 import { RecommendedServices } from './RecommendedServices';
+import { useTranslation } from '@/i18n/LocaleProvider';
 import type { RequestFields } from '@/engine/types';
 
-// Step labels for progress milestones
-const STEPS = [
-  { key: 'service', label: 'Service', fields: ['serviceCategory', 'serviceSubcategory'] },
-  { key: 'details', label: 'Details', fields: ['urgency', 'originLocation', 'destinationLocation', 'frequency'] },
-  { key: 'business', label: 'Business', fields: ['businessType'] },
-  { key: 'contact', label: 'Contact', fields: ['contactName', 'contactEmail', 'companyName'] },
-];
-
-function isStepComplete(step: typeof STEPS[number], state: RequestFields): boolean {
-  return step.fields.some((f) => {
+function isStepComplete(fields: string[], state: RequestFields): boolean {
+  return fields.some((f) => {
     const v = state[f as keyof RequestFields];
     return v !== null && v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0);
   });
 }
 
 export function RequestSummary() {
+  const { t } = useTranslation();
   const store = useRequestStore();
   const {
     entityType,
@@ -51,6 +45,13 @@ export function RequestSummary() {
     highlightedFields,
     updateField,
   } = store;
+
+  const STEPS = [
+    { key: 'service', label: t('request.stepService'), fields: ['serviceCategory', 'serviceSubcategory'] },
+    { key: 'details', label: t('request.stepDetails'), fields: ['urgency', 'originLocation', 'destinationLocation', 'frequency'] },
+    { key: 'business', label: t('request.stepBusiness'), fields: ['businessType'] },
+    { key: 'contact', label: t('request.stepContact'), fields: ['contactName', 'contactEmail', 'companyName'] },
+  ];
 
   const isHL = useCallback(
     (field: string) => highlightedFields.has(field),
@@ -82,7 +83,7 @@ export function RequestSummary() {
       {/* Progress with Step Milestones */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Progress</span>
+          <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">{t('request.progressLabel')}</span>
           <span className="text-[11px] font-medium text-gray-500">{completionPercent}%</span>
         </div>
         <ProgressBar percent={completionPercent} />
@@ -90,7 +91,7 @@ export function RequestSummary() {
         {/* Step indicators */}
         <div className="flex items-center justify-between mt-3">
           {STEPS.map((step, i) => {
-            const complete = isStepComplete(step, store as unknown as RequestFields);
+            const complete = isStepComplete(step.fields, store as unknown as RequestFields);
             return (
               <div key={step.key} className="flex items-center gap-1.5">
                 <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${
@@ -102,7 +103,7 @@ export function RequestSummary() {
                   {step.label}
                 </span>
                 {i < STEPS.length - 1 && (
-                  <div className={`w-4 h-px ml-1 ${complete ? 'bg-brand-blue/30' : 'bg-gray-150'}`} />
+                  <div className={`w-4 h-px ms-1 ${complete ? 'bg-brand-blue/30' : 'bg-gray-150'}`} />
                 )}
               </div>
             );
@@ -110,78 +111,52 @@ export function RequestSummary() {
         </div>
       </div>
 
-      {/* Entity Type */}
       {hasEntityType && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
-        >
-          <h4 className="text-xs font-semibold text-gray-900 mb-2">Entity</h4>
-          <SummaryField label="Type" value={entityType} isHighlighted={isHL('entityType')} fieldKey="entityType" onEdit={handleEdit} />
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl border border-gray-100 p-4 group/field">
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">{t('request.sectionEntity')}</h4>
+          <SummaryField label={t('request.labelType')} value={entityType} isHighlighted={isHL('entityType')} fieldKey="entityType" onEdit={handleEdit} />
         </motion.div>
       )}
 
-      {/* Service Type */}
       {hasServiceInfo && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
-        >
-          <h4 className="text-xs font-semibold text-gray-900 mb-2">Service</h4>
-          <SummaryField label="Category" value={serviceCategory} isHighlighted={isHL('serviceCategory')} fieldKey="serviceCategory" onEdit={handleEdit} />
-          <SummaryField label="Type" value={serviceSubcategory} isHighlighted={isHL('serviceSubcategory')} fieldKey="serviceSubcategory" onEdit={handleEdit} />
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl border border-gray-100 p-4 group/field">
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">{t('request.sectionService')}</h4>
+          <SummaryField label={t('request.labelCategory')} value={serviceCategory} isHighlighted={isHL('serviceCategory')} fieldKey="serviceCategory" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelType')} value={serviceSubcategory} isHighlighted={isHL('serviceSubcategory')} fieldKey="serviceSubcategory" onEdit={handleEdit} />
         </motion.div>
       )}
 
-      {/* Import Details */}
       {hasImportDetails && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
-        >
-          <h4 className="text-xs font-semibold text-gray-900 mb-2">Import Details</h4>
-          <SummaryField label="Supplier" value={supplierStatus} isHighlighted={isHL('supplierStatus')} fieldKey="supplierStatus" onEdit={handleEdit} />
-          <SummaryField label="Supplier Country" value={supplierCountry} isHighlighted={isHL('supplierCountry')} fieldKey="supplierCountry" onEdit={handleEdit} />
-          <SummaryField label="Goods" value={goodsCategory} isHighlighted={isHL('goodsCategory')} fieldKey="goodsCategory" onEdit={handleEdit} />
-          <SummaryField label="Incoterms" value={incoterms} isHighlighted={isHL('incoterms')} fieldKey="incoterms" onEdit={handleEdit} />
-          <SummaryField label="Volume" value={cargoVolume} isHighlighted={isHL('cargoVolume')} fieldKey="cargoVolume" onEdit={handleEdit} />
-          <SummaryField label="Customs Help" value={customsRequired} isHighlighted={isHL('customsRequired')} fieldKey="customsRequired" onEdit={handleEdit} />
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl border border-gray-100 p-4 group/field">
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">{t('request.sectionImport')}</h4>
+          <SummaryField label={t('request.labelSupplier')} value={supplierStatus} isHighlighted={isHL('supplierStatus')} fieldKey="supplierStatus" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelSupplierCountry')} value={supplierCountry} isHighlighted={isHL('supplierCountry')} fieldKey="supplierCountry" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelGoods')} value={goodsCategory} isHighlighted={isHL('goodsCategory')} fieldKey="goodsCategory" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelIncoterms')} value={incoterms} isHighlighted={isHL('incoterms')} fieldKey="incoterms" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelVolume')} value={cargoVolume} isHighlighted={isHL('cargoVolume')} fieldKey="cargoVolume" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelCustomsHelp')} value={customsRequired} isHighlighted={isHL('customsRequired')} fieldKey="customsRequired" onEdit={handleEdit} />
         </motion.div>
       )}
 
-      {/* Warehousing Details */}
       {hasWarehouseDetails && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
-        >
-          <h4 className="text-xs font-semibold text-gray-900 mb-2">Warehousing</h4>
-          <SummaryField label="Storage Type" value={storageType} isHighlighted={isHL('storageType')} fieldKey="storageType" onEdit={handleEdit} />
-          <SummaryField label="Storage Volume" value={cargoVolume} isHighlighted={isHL('cargoVolume')} fieldKey="cargoVolume" onEdit={handleEdit} />
-          <SummaryField label="I/O Volume" value={frequency} isHighlighted={isHL('frequency')} fieldKey="frequency" onEdit={handleEdit} />
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl border border-gray-100 p-4 group/field">
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">{t('request.sectionWarehousing')}</h4>
+          <SummaryField label={t('request.labelStorageType')} value={storageType} isHighlighted={isHL('storageType')} fieldKey="storageType" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelStorageVolume')} value={cargoVolume} isHighlighted={isHL('cargoVolume')} fieldKey="cargoVolume" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelIOVolume')} value={frequency} isHighlighted={isHL('frequency')} fieldKey="frequency" onEdit={handleEdit} />
         </motion.div>
       )}
 
-      {/* Details */}
       {hasDetails && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
-        >
-          <h4 className="text-xs font-semibold text-gray-900 mb-2">Details</h4>
-          <SummaryField label="Urgency" value={urgency} isHighlighted={isHL('urgency')} fieldKey="urgency" onEdit={handleEdit} />
-          <SummaryField label="Origin" value={originLocation} isHighlighted={isHL('originLocation')} fieldKey="originLocation" onEdit={handleEdit} />
-          <SummaryField label="Destination" value={destinationLocation} isHighlighted={isHL('destinationLocation')} fieldKey="destinationLocation" onEdit={handleEdit} />
-          <SummaryField label="Volume / Frequency" value={frequency} isHighlighted={isHL('frequency')} fieldKey="frequency" onEdit={handleEdit} />
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl border border-gray-100 p-4 group/field">
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">{t('request.sectionDetails')}</h4>
+          <SummaryField label={t('request.labelUrgency')} value={urgency} isHighlighted={isHL('urgency')} fieldKey="urgency" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelOrigin')} value={originLocation} isHighlighted={isHL('originLocation')} fieldKey="originLocation" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelDestination')} value={destinationLocation} isHighlighted={isHL('destinationLocation')} fieldKey="destinationLocation" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelVolumeFrequency')} value={frequency} isHighlighted={isHL('frequency')} fieldKey="frequency" onEdit={handleEdit} />
         </motion.div>
       )}
 
-      {/* Special Requirements */}
       {specialRequirements.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -190,7 +165,7 @@ export function RequestSummary() {
             isHL('specialRequirements') ? 'ring-1 ring-brand-blue/20 bg-brand-blue/[0.02]' : ''
           }`}
         >
-          <h4 className="text-xs font-semibold text-gray-900 mb-2">Special Requirements</h4>
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">{t('request.sectionSpecialReq')}</h4>
           <div className="flex flex-wrap gap-1.5">
             {specialRequirements.map((req) => (
               <span key={req} className="inline-flex items-center px-2.5 py-1 rounded-lg bg-brand-blue/5 text-brand-blue text-xs font-medium">
@@ -201,45 +176,29 @@ export function RequestSummary() {
         </motion.div>
       )}
 
-      {/* Business */}
       {hasBusiness && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
-        >
-          <h4 className="text-xs font-semibold text-gray-900 mb-2">Business</h4>
-          <SummaryField label="Industry" value={businessType} isHighlighted={isHL('businessType')} fieldKey="businessType" onEdit={handleEdit} />
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl border border-gray-100 p-4 group/field">
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">{t('request.sectionBusiness')}</h4>
+          <SummaryField label={t('request.labelIndustry')} value={businessType} isHighlighted={isHL('businessType')} fieldKey="businessType" onEdit={handleEdit} />
         </motion.div>
       )}
 
-      {/* Recommended Services */}
       {recommendedServices.length > 0 && (
         <RecommendedServices services={recommendedServices} />
       )}
 
-      {/* Contact */}
       {hasContact && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl border border-gray-100 p-4 group/field"
-        >
-          <h4 className="text-xs font-semibold text-gray-900 mb-2">Contact</h4>
-          <SummaryField label="Name" value={contactName} isHighlighted={isHL('contactName')} fieldKey="contactName" onEdit={handleEdit} />
-          <SummaryField label="Email" value={contactEmail} isHighlighted={isHL('contactEmail')} fieldKey="contactEmail" onEdit={handleEdit} />
-          <SummaryField label="Company" value={companyName} isHighlighted={isHL('companyName')} fieldKey="companyName" onEdit={handleEdit} />
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl border border-gray-100 p-4 group/field">
+          <h4 className="text-xs font-semibold text-gray-900 mb-2">{t('request.sectionContact')}</h4>
+          <SummaryField label={t('request.labelName')} value={contactName} isHighlighted={isHL('contactName')} fieldKey="contactName" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelEmail')} value={contactEmail} isHighlighted={isHL('contactEmail')} fieldKey="contactEmail" onEdit={handleEdit} />
+          <SummaryField label={t('request.labelCompany')} value={companyName} isHighlighted={isHL('companyName')} fieldKey="companyName" onEdit={handleEdit} />
         </motion.div>
       )}
 
-      {/* Review indicator */}
       {stage === 'review' && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-2"
-        >
-          <p className="text-xs text-gray-500">Use the chat to submit your request</p>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-center py-2">
+          <p className="text-xs text-gray-500">{t('request.useChat')}</p>
         </motion.div>
       )}
     </motion.div>

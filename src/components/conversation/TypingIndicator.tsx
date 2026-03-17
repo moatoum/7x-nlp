@@ -3,25 +3,22 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedOrb } from '@/components/ui/AnimatedOrb';
-
-const THINKING_MESSAGES = [
-  'Analyzing your request...',
-  'Finding the best solutions...',
-  'Reviewing available services...',
-];
+import { useTranslation } from '@/i18n/LocaleProvider';
 
 export function TypingIndicator() {
+  const { t, tArray } = useTranslation();
+  const messages = tArray('typing.messages');
   const [msgIndex, setMsgIndex] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setMsgIndex((prev) => (prev + 1) % THINKING_MESSAGES.length);
+      setMsgIndex((prev) => (prev + 1) % messages.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [messages.length]);
 
   return (
-    <div className="flex items-center gap-3 py-4" role="status" aria-label="LINK Assistant is typing">
+    <div className="flex items-center gap-3 py-4" role="status" aria-label={t('typing.ariaLabel')}>
       <AnimatedOrb size="sm" />
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-1 px-4 py-3">
@@ -46,9 +43,9 @@ export function TypingIndicator() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="text-[11px] text-gray-400 pl-1"
+            className="text-[11px] text-gray-400 ps-1"
           >
-            {THINKING_MESSAGES[msgIndex]}
+            {messages[msgIndex]}
           </motion.span>
         </AnimatePresence>
       </div>

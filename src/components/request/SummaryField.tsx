@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, Check, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '@/i18n/LocaleProvider';
 
 interface SummaryFieldProps {
   label: string;
@@ -14,6 +15,7 @@ interface SummaryFieldProps {
 }
 
 export function SummaryField({ label, value, isHighlighted, fieldKey, onEdit }: SummaryFieldProps) {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -121,9 +123,9 @@ export function SummaryField({ label, value, isHighlighted, fieldKey, onEdit }: 
                 initial={{ opacity: 1 }}
                 animate={{ opacity: 0 }}
                 transition={{ duration: 1.5, delay: 0.5 }}
-                className="ml-2 text-[10px] text-brand-blue font-medium"
+                className="ms-2 text-[10px] text-brand-blue font-medium"
               >
-                updated
+                {t('request.updated')}
               </motion.span>
             )}
           </motion.div>

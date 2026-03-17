@@ -2,6 +2,7 @@
 
 import { ExternalLink, Plane, Ship, Newspaper, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '@/i18n/LocaleProvider';
 import type { PulseEvent } from '@/lib/pulse-types';
 
 interface PulseEventCardProps {
@@ -11,22 +12,22 @@ interface PulseEventCardProps {
 const SEVERITY_STYLES = {
   critical: {
     dot: 'bg-red-500',
-    accent: 'border-l-red-500',
+    accent: 'border-s-red-500',
     dotBg: 'bg-red-50',
   },
   warning: {
     dot: 'bg-amber-500',
-    accent: 'border-l-amber-400',
+    accent: 'border-s-amber-400',
     dotBg: 'bg-amber-50',
   },
   info: {
     dot: 'bg-blue-500',
-    accent: 'border-l-blue-400',
+    accent: 'border-s-blue-400',
     dotBg: 'bg-blue-50',
   },
   neutral: {
     dot: 'bg-gray-300',
-    accent: 'border-l-gray-200',
+    accent: 'border-s-gray-200',
     dotBg: 'bg-gray-50',
   },
 };
@@ -38,6 +39,7 @@ const CATEGORY_STYLES: Record<string, { bg: string; text: string; icon: typeof P
 };
 
 export function PulseEventCard({ event }: PulseEventCardProps) {
+  const { t } = useTranslation();
   const severity = SEVERITY_STYLES[event.severity];
   const category = CATEGORY_STYLES[event.category] || CATEGORY_STYLES['Industry News'];
   const isDisruption = event.severity === 'critical' || event.severity === 'warning';
@@ -54,7 +56,7 @@ export function PulseEventCard({ event }: PulseEventCardProps) {
       className={cn(
         'block bg-white rounded-xl border border-gray-100 p-4 transition-all',
         'hover:shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:border-gray-150',
-        'border-l-[3px]',
+        'border-s-[3px]',
         severity.accent,
         event.url && 'cursor-pointer group'
       )}
@@ -68,7 +70,7 @@ export function PulseEventCard({ event }: PulseEventCardProps) {
             isDisruption ? '' : category.text,
           )}>
             <CategoryIcon className="w-3 h-3" />
-            {isDisruption ? 'Disruption' : event.category}
+            {isDisruption ? t('pulse.disruption') : event.category}
           </span>
         </div>
         <div className="flex items-center gap-2">

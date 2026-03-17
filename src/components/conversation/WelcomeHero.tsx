@@ -2,6 +2,7 @@
 
 import { motion, type Variants } from 'framer-motion';
 import { AnimatedOrb } from '@/components/ui/AnimatedOrb';
+import { useTranslation } from '@/i18n/LocaleProvider';
 
 const container: Variants = {
   hidden: {},
@@ -14,6 +15,8 @@ const fadeUp: Variants = {
 };
 
 export function WelcomeHero() {
+  const { t } = useTranslation();
+
   return (
     <motion.div
       variants={container}
@@ -25,10 +28,10 @@ export function WelcomeHero() {
         <AnimatedOrb size="lg" />
       </motion.div>
       <motion.h1 variants={fadeUp} className="text-3xl font-semibold text-gray-900 tracking-tight">
-        Logistics, simplified.
+        {t('welcome.title')}
       </motion.h1>
       <motion.p variants={fadeUp} className="text-gray-500 mt-3 text-base max-w-md mx-auto">
-        Tell us what you need and we&apos;ll guide you to the right solution.
+        {t('welcome.subtitle')}
       </motion.p>
     </motion.div>
   );

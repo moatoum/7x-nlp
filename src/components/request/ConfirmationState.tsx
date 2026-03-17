@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Copy, Check, ArrowRight } from 'lucide-react';
 import { useRequestStore } from '@/store/requestStore';
 import { useConversationStore } from '@/store/conversationStore';
 import { Button } from '@/components/ui/Button';
+import { LocaleLink } from '@/components/ui/LocaleLink';
+import { useTranslation } from '@/i18n/LocaleProvider';
 
 export function ConfirmationState() {
+  const { t } = useTranslation();
   const { referenceNumber } = useRequestStore();
   const resetConv = useConversationStore((s) => s.reset);
   const resetReq = useRequestStore((s) => s.reset);
@@ -26,7 +28,6 @@ export function ConfirmationState() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for older browsers
       const el = document.createElement('textarea');
       el.value = referenceNumber;
       document.body.appendChild(el);
@@ -54,9 +55,9 @@ export function ConfirmationState() {
         <CheckCircle2 className="w-7 h-7 text-emerald-600" />
       </motion.div>
 
-      <h3 className="text-lg font-semibold text-gray-900">Request Submitted</h3>
+      <h3 className="text-lg font-semibold text-gray-900">{t('confirmation.submitted')}</h3>
       <p className="text-sm text-gray-500 mt-1.5 leading-relaxed max-w-[280px]">
-        Our logistics team will review your request and reach out shortly.
+        {t('confirmation.reviewMessage')}
       </p>
 
       {referenceNumber && (
@@ -68,7 +69,7 @@ export function ConfirmationState() {
         >
           <div className="px-5 py-3.5 bg-gray-50 rounded-xl border border-gray-100">
             <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
-              Your Tracking Code
+              {t('confirmation.trackingCode')}
             </p>
             <div className="flex items-center gap-2.5 mt-1">
               <p className="text-[17px] font-semibold text-gray-900 font-mono tracking-wide">
@@ -77,7 +78,7 @@ export function ConfirmationState() {
               <button
                 onClick={handleCopy}
                 className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                title="Copy tracking code"
+                title={t('confirmation.copyTitle')}
               >
                 {copied ? (
                   <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -89,7 +90,7 @@ export function ConfirmationState() {
           </div>
 
           <p className="text-[11px] text-gray-400 mt-2.5">
-            Save this code to check your request status anytime
+            {t('confirmation.saveCode')}
           </p>
         </motion.div>
       )}
@@ -101,16 +102,16 @@ export function ConfirmationState() {
         className="mt-6 flex flex-col gap-2.5 w-full max-w-[220px]"
       >
         {referenceNumber && (
-          <Link
+          <LocaleLink
             href={`/track?ref=${encodeURIComponent(referenceNumber)}`}
             className="inline-flex items-center justify-center gap-2 h-[40px] px-5 rounded-full bg-black text-white text-[13px] font-medium hover:bg-gray-900 transition-all"
           >
-            Track Your Request
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+            {t('confirmation.trackRequest')}
+            <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+          </LocaleLink>
         )}
         <Button variant="secondary" size="sm" onClick={handleNewRequest}>
-          New Request
+          {t('confirmation.newRequest')}
         </Button>
       </motion.div>
     </motion.div>

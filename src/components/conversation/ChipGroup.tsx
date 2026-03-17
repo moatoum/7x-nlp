@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import type { ChipOption } from '@/engine/types';
 import { cn, isArabic } from '@/lib/cn';
+import { useTranslation } from '@/i18n/LocaleProvider';
 
 interface ChipGroupProps {
   chips: ChipOption[];
@@ -23,6 +24,7 @@ const item: Variants = {
 };
 
 export function ChipGroup({ chips, multiSelect, onSelect, onMultiSelect }: ChipGroupProps) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
 
@@ -63,7 +65,7 @@ export function ChipGroup({ chips, multiSelect, onSelect, onMultiSelect }: ChipG
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-3">
-      <div className={cn('flex flex-wrap gap-2', hasArabicChips && 'justify-end')}>
+      <div className={cn('flex flex-wrap gap-2')}>
         {chips.map((chip) => {
           const chipIsArabic = isArabic(chip.label);
           return (
@@ -96,7 +98,7 @@ export function ChipGroup({ chips, multiSelect, onSelect, onMultiSelect }: ChipG
             hasArabicChips && 'font-arabic'
           )}
         >
-          {hasArabicChips ? 'متابعة' : 'Continue'}
+          {t('conversation.continue')}
         </motion.button>
       )}
     </motion.div>

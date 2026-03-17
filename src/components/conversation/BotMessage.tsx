@@ -7,6 +7,7 @@ import { ChipGroup } from './ChipGroup';
 import { ServiceCardInline } from './ServiceCardInline';
 import { AnimatedOrb } from '@/components/ui/AnimatedOrb';
 import { isArabic } from '@/lib/cn';
+import { useTranslation } from '@/i18n/LocaleProvider';
 
 interface BotMessageProps {
   message: Message;
@@ -18,8 +19,9 @@ interface BotMessageProps {
 }
 
 export function BotMessage({ message, onChipSelect, onMultiSelect, onServiceConfirm, isLatest, isFirst }: BotMessageProps) {
+  const { t, dir } = useTranslation();
   const isStreaming = message.isStreaming;
-  const rtl = isArabic(message.content);
+  const rtl = dir === 'rtl' || isArabic(message.content);
   const langClass = rtl ? 'font-arabic dir-rtl' : '';
   const hasSelectableCards = !!message.serviceCards?.length && !!onServiceConfirm && isLatest && !isStreaming;
 
@@ -60,8 +62,8 @@ export function BotMessage({ message, onChipSelect, onMultiSelect, onServiceConf
           <div className="flex items-center gap-3 mb-5">
             <AnimatedOrb size="md" />
             <div>
-              <p className="text-[13px] font-semibold text-gray-900">LINK Assistant</p>
-              <p className="text-[11px] text-gray-400">Trade and Transport Advisor</p>
+              <p className="text-[13px] font-semibold text-gray-900">{t('conversation.linkAssistant')}</p>
+              <p className="text-[11px] text-gray-400">{t('conversation.tradeAdvisor')}</p>
             </div>
           </div>
           <div className={`text-[17px] leading-relaxed text-gray-900 whitespace-pre-line font-medium ${langClass}`}>
@@ -76,13 +78,13 @@ export function BotMessage({ message, onChipSelect, onMultiSelect, onServiceConf
       )}
 
       {!isFirst && (
-        <div className={`flex gap-3 ${rtl ? 'flex-row-reverse' : ''}`}>
+        <div className="flex gap-3">
           <AnimatedOrb size="sm" className="mt-0.5" />
           <div className="flex-1 min-w-0">
             <div className={`text-[15px] leading-relaxed text-gray-800 whitespace-pre-line ${langClass}`}>
               {message.content}
               {isStreaming && (
-                <span className="inline-block w-[2px] h-[18px] bg-brand-blue ml-0.5 align-text-bottom animate-pulse" />
+                <span className="inline-block w-[2px] h-[18px] bg-brand-blue ms-0.5 align-text-bottom animate-pulse" />
               )}
             </div>
           </div>
@@ -90,8 +92,8 @@ export function BotMessage({ message, onChipSelect, onMultiSelect, onServiceConf
       )}
 
       {message.serviceCards && message.serviceCards.length > 0 && !isStreaming && (
-        <div className={`mt-3 ${!isFirst ? 'ml-10' : ''}`}>
-          <div className={`space-y-1.5 ${message.serviceCards.length > 5 ? 'max-h-[320px] overflow-y-auto pr-1' : ''}`}>
+        <div className={`mt-3 ${!isFirst ? 'ms-10' : ''}`}>
+          <div className={`space-y-1.5 ${message.serviceCards.length > 5 ? 'max-h-[320px] overflow-y-auto pe-1' : ''}`}>
             {message.serviceCards.map((card, i) => (
               <ServiceCardInline
                 key={card.id}
@@ -116,7 +118,7 @@ export function BotMessage({ message, onChipSelect, onMultiSelect, onServiceConf
                 disabled={selectedIds.size === 0}
                 className="h-[36px] px-5 rounded-full bg-black text-white text-[13px] font-medium hover:bg-gray-900 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                Confirm Selection ({selectedIds.size})
+                {t('conversation.confirmSelection', { count: selectedIds.size })}
               </button>
             </motion.div>
           )}
@@ -124,7 +126,7 @@ export function BotMessage({ message, onChipSelect, onMultiSelect, onServiceConf
       )}
 
       {message.chips && isLatest && onChipSelect && !isStreaming && (
-        <div className={`mt-4 ${!isFirst ? 'ml-10' : ''}`}>
+        <div className={`mt-4 ${!isFirst ? 'ms-10' : ''}`}>
           <ChipGroup
             chips={message.chips}
             multiSelect={message.multiSelect}

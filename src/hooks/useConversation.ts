@@ -5,10 +5,12 @@ import { useConversationStore } from '@/store/conversationStore';
 import { useRequestStore } from '@/store/requestStore';
 import { useSubmissionsStore } from '@/store/submissionsStore';
 import { getNode, processUserInput } from '@/engine/engine';
+import { getLocalizedNode } from '@/engine/localized-engine';
 import { matchServices } from '@/engine/matcher';
 import { lookupServicesByIds } from '@/engine/ai';
 import type { AIResponse } from '@/engine/ai';
 import type { ChipOption, RequestFields, ServiceMatch } from '@/engine/types';
+import { t } from '@/i18n/translate';
 
 const MAX_CHAT_HISTORY = 30;
 
@@ -294,7 +296,7 @@ async function handleSubmission(): Promise<boolean> {
   if (missingFields.length > 0) {
     cs.setTyping(false);
     cs.addBotMessage(
-      `Before I can submit, I still need your ${missingFields.join(', ')}. Could you provide that?`
+      t('hook.missingFields', { fields: missingFields.join(', ') })
     );
     const firstMissing = !rs.contactName ? 'contact_name' : !rs.contactEmail ? 'contact_email' : !rs.contactPhone ? 'contact_phone' : 'contact_company';
     cs.transitionTo(firstMissing);
@@ -304,9 +306,7 @@ async function handleSubmission(): Promise<boolean> {
 
   if (rs.contactEmail && !EMAIL_REGEX.test(rs.contactEmail)) {
     cs.setTyping(false);
-    cs.addBotMessage(
-      `The email "${rs.contactEmail}" doesn't look valid. Could you provide a valid email?`
-    );
+    cs.addBotMessage(t('hook.invalidEmailFormat', { email: rs.contactEmail }));
     useRequestStore.getState().updateField('contactEmail', null);
     cs.transitionTo('contact_email');
     cs.setInputDisabled(false);
@@ -315,9 +315,7 @@ async function handleSubmission(): Promise<boolean> {
 
   if (rs.contactPhone && !isValidPhone(rs.contactPhone)) {
     cs.setTyping(false);
-    cs.addBotMessage(
-      `The phone number "${rs.contactPhone}" doesn't look valid. Please provide a valid phone number (at least 7 digits).`
-    );
+    cs.addBotMessage(t('hook.invalidPhoneFormat', { phone: rs.contactPhone }));
     useRequestStore.getState().updateField('contactPhone', null);
     cs.transitionTo('contact_phone');
     cs.setInputDisabled(false);
@@ -327,7 +325,7 @@ async function handleSubmission(): Promise<boolean> {
   // Validate contact name is a real name (letters, 2+ chars)
   if (rs.contactName && (rs.contactName.trim().length < 2 || !/[a-zA-Z\u0600-\u06FF\u0900-\u097F]/.test(rs.contactName))) {
     cs.setTyping(false);
-    cs.addBotMessage('I need your real name to proceed. Could you provide your full name?');
+    cs.addBotMessage(t('hook.invalidNameSubmit'));
     useRequestStore.getState().updateField('contactName', null);
     cs.transitionTo('contact_name');
     cs.setInputDisabled(false);
@@ -337,7 +335,7 @@ async function handleSubmission(): Promise<boolean> {
   // Validate company name (2+ chars)
   if (rs.companyName && rs.companyName.trim().length < 2) {
     cs.setTyping(false);
-    cs.addBotMessage('Could you provide your full company name?');
+    cs.addBotMessage(t('hook.invalidCompanySubmit'));
     useRequestStore.getState().updateField('companyName', null);
     cs.transitionTo('contact_company');
     cs.setInputDisabled(false);
@@ -352,15 +350,11 @@ async function handleSubmission(): Promise<boolean> {
   // Persist to database first, then show success message
   try {
     await persistSubmission(refNumber);
-    cs.addBotMessage(
-      `Your request has been submitted successfully.\n\nReference: ${refNumber}\n\nA confirmation email has been sent to ${rs.contactEmail}. Our logistics specialists will reach out within 24 hours. Thank you for choosing 7X.`
-    );
+    cs.addBotMessage(t('hook.submissionSuccess', { ref: refNumber, email: rs.contactEmail || '' }));
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error('Submission persistence failed:', errMsg, err);
-    cs.addBotMessage(
-      `⚠️ There was a problem saving your request: ${errMsg}\n\nReference: ${refNumber}\n\nPlease try again or contact us directly. Your information has been noted.`
-    );
+    cs.addBotMessage(t('hook.submissionError', { error: errMsg, ref: refNumber }));
   }
 
   cs.transitionTo('submitted');
@@ -504,25 +498,13 @@ export function useConversation() {
 
     const conv = useConversationStore.getState();
 
-    // Check if session was restored from sessionStorage
+    // Always start fresh — clear any previous session
     if (conv.started && conv.messages.length > 0) {
-      if (conv.isSessionExpired()) {
-        conv.reset();
-        useRequestStore.getState().reset();
-        if (typeof window !== 'undefined') {
-          sessionStorage.removeItem('7x-conversation');
-          sessionStorage.removeItem('7x-request');
-        }
-        // Fall through to fresh start below (re-read state after reset)
-      } else {
-        // Session restored — show welcome back and let user continue
-        conv.setTyping(false);
-        conv.setInputDisabled(false);
-        conv.addBotMessage('Welcome back! I\'ve restored your previous conversation. You can continue where you left off or start fresh.', [
-          { id: 'continue_session', label: 'Continue' },
-          { id: 'restart', label: 'Start fresh' },
-        ]);
-        return;
+      conv.reset();
+      useRequestStore.getState().reset();
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('7x-conversation');
+        sessionStorage.removeItem('7x-request');
       }
     }
 
@@ -536,7 +518,7 @@ export function useConversation() {
     await delay(600);
 
     const req = useRequestStore.getState();
-    const entityNode = getNode('entity_type');
+    const entityNode = getLocalizedNode('entity_type');
     const msg = typeof entityNode.message === 'function'
       ? entityNode.message(req as RequestFields)
       : entityNode.message;
@@ -594,7 +576,8 @@ export function useConversation() {
 
     // Expert callback — redirect to /connect
     if (chipId === 'request_callback') {
-      window.location.href = '/connect';
+      const { getCurrentLocale } = await import('@/i18n/config');
+      window.location.href = `/${getCurrentLocale()}/connect`;
       return;
     }
 
@@ -614,7 +597,7 @@ export function useConversation() {
     if (FREETEXT_PROMPT_PAIRS.has(`${convStore.currentNodeId}:${chipId}`)) {
       await delay(randomDelay());
       convStore.setTyping(false);
-      convStore.addBotMessage("No problem — just tell me what you need and I'll guide you from there.");
+      convStore.addBotMessage(t('hook.freetextFallback'));
       convStore.setInputDisabled(false);
       return;
     }
@@ -654,7 +637,7 @@ export function useConversation() {
       await delay(300);
 
       const rs = useRequestStore.getState();
-      const welcomeNode = getNode('welcome');
+      const welcomeNode = getLocalizedNode('welcome');
       const msg = typeof welcomeNode.message === 'function'
         ? welcomeNode.message(rs as RequestFields)
         : welcomeNode.message;
@@ -667,7 +650,7 @@ export function useConversation() {
       return;
     }
 
-    const nextNode = getNode(nextNodeId);
+    const nextNode = getLocalizedNode(nextNodeId);
 
     // Apply onEnter field auto-sets (e.g., import flow sets serviceCategory + destinationLocation)
     if (nextNode.onEnter) {
@@ -683,7 +666,7 @@ export function useConversation() {
       // Guard: ensure all required fields are captured before recommending
       const missingNode = findMissingFieldNode(rs);
       if (missingNode) {
-        const fallbackNode = getNode(missingNode);
+        const fallbackNode = getLocalizedNode(missingNode);
         const fallbackMsg = typeof fallbackNode.message === 'function'
           ? fallbackNode.message(rs as RequestFields)
           : fallbackNode.message;
@@ -701,16 +684,14 @@ export function useConversation() {
       const cs = useConversationStore.getState();
       cs.setTyping(false);
       const analyzingId = cs.addStreamingBotMessage();
-      await typewriterStream(analyzingId, "I'm analyzing your request and suggesting relevant services... One moment.");
+      await typewriterStream(analyzingId, t('hook.analyzing'));
       useConversationStore.getState().finalizeStreamingMessage(analyzingId);
 
       // Fetch AI recommendations
       const matches = await fetchAIRecommendations(rs as RequestFields);
 
-      const recMsg = 'Based on your requirements, here are the services I recommend:';
-
       const cs2 = useConversationStore.getState();
-      cs2.addBotMessageWithCards(recMsg + '\n\nPlease select the services you need, then confirm.', matches);
+      cs2.addBotMessageWithCards(t('hook.recommendationIntro'), matches);
       cs2.transitionTo('recommendation');
       cs2.setInputDisabled(true);
       return;
@@ -745,14 +726,14 @@ export function useConversation() {
 
     // ── Bug-3 fix: block free text on chip-only nodes (entity_type, etc.) ──
     if (CHIP_ONLY_NODES.has(convStore.currentNodeId)) {
-      const node = getNode(convStore.currentNodeId);
+      const node = getLocalizedNode(convStore.currentNodeId);
       convStore.addUserMessage(text);
       convStore.setInputDisabled(true);
       convStore.setTyping(true);
       await delay(randomDelay());
       convStore.setTyping(false);
       convStore.addBotMessage(
-        'Please select one of the options above to continue.',
+        t('hook.selectOption'),
         node.chips,
         node.multiSelect,
       );
@@ -783,14 +764,14 @@ export function useConversation() {
       if (nodeId === 'contact_email' && !EMAIL_REGEX.test(text.trim())) {
         const cs = useConversationStore.getState();
         cs.setTyping(false);
-        cs.addBotMessage("That doesn't look like a valid email address. Could you provide a valid email?");
+        cs.addBotMessage(t('hook.invalidEmail'));
         cs.setInputDisabled(false);
         return;
       }
       if (nodeId === 'contact_phone' && !isValidPhone(text.trim())) {
         const cs = useConversationStore.getState();
         cs.setTyping(false);
-        cs.addBotMessage("That doesn't look like a valid phone number. Please provide a number with at least 7 digits.");
+        cs.addBotMessage(t('hook.invalidPhone'));
         cs.setInputDisabled(false);
         return;
       }
@@ -799,7 +780,7 @@ export function useConversation() {
         if (trimmed.length < 2 || !/[a-zA-Z\u0600-\u06FF\u0900-\u097F]/.test(trimmed)) {
           const cs = useConversationStore.getState();
           cs.setTyping(false);
-          cs.addBotMessage('I need your full name to proceed. Could you provide it?');
+          cs.addBotMessage(t('hook.invalidName'));
           cs.setInputDisabled(false);
           return;
         }
@@ -807,7 +788,7 @@ export function useConversation() {
       if (nodeId === 'contact_company' && text.trim().length < 2) {
         const cs = useConversationStore.getState();
         cs.setTyping(false);
-        cs.addBotMessage('Could you provide your full company name?');
+        cs.addBotMessage(t('hook.invalidCompany'));
         cs.setInputDisabled(false);
         return;
       }
@@ -829,16 +810,16 @@ export function useConversation() {
         const cs = useConversationStore.getState();
         cs.setTyping(false);
         const msgId = cs.addStreamingBotMessage();
-        const prefix = nodeId === 'additional_info' ? 'Got it, thank you. ' : '';
-        await typewriterStream(msgId, prefix + 'Your request is ready to submit. Please review the summary panel and submit when you\'re satisfied.');
+        const reviewMsg = nodeId === 'additional_info' ? t('hook.gotItReview') : t('hook.reviewReady');
+        await typewriterStream(msgId, reviewMsg);
         useConversationStore.getState().finalizeStreamingMessage(msgId, [
-          { id: 'submit', label: 'Submit Request' },
-          { id: 'edit', label: 'I want to change something' },
+          { id: 'submit', label: t('hook.submitLabel') },
+          { id: 'edit', label: t('hook.editLabel') },
         ]);
         useConversationStore.getState().transitionTo('review');
         useConversationStore.getState().setInputDisabled(false);
       } else {
-        const nextNode = getNode(nextNodeId);
+        const nextNode = getLocalizedNode(nextNodeId);
         const msg = typeof nextNode.message === 'function'
           ? nextNode.message(useRequestStore.getState() as RequestFields)
           : nextNode.message;
@@ -904,7 +885,7 @@ export function useConversation() {
         if (response.status === 429) {
           const cs = useConversationStore.getState();
           cs.setTyping(false);
-          cs.addBotMessage("I'm receiving a lot of requests right now. Please wait a moment and try again.");
+          cs.addBotMessage(t('hook.rateLimited'));
           cs.setInputDisabled(false);
           return;
         }
@@ -915,7 +896,7 @@ export function useConversation() {
 
       // Guard against empty AI message
       if (!aiResponse.message || aiResponse.message.trim() === '') {
-        aiResponse.message = "Could you tell me more about what you're looking for?";
+        aiResponse.message = t('hook.aiFallback');
       }
 
       // Apply extracted fields to the request store (triggers highlight)
@@ -996,13 +977,13 @@ export function useConversation() {
         if (matches.length > 0) {
           rs.setStage('matched');
           // Show analyzing message
-          await typewriterStream(msgId, "I'm analyzing your request and suggesting relevant services... One moment.");
+          await typewriterStream(msgId, t('hook.analyzing'));
           useConversationStore.getState().finalizeStreamingMessage(msgId);
 
           // Then show the cards in a new message
           await delay(600);
           const cs3 = useConversationStore.getState();
-          cs3.addBotMessageWithCards('Based on your requirements, here are the services I recommend:\n\nPlease select the services you need, then confirm.', matches);
+          cs3.addBotMessageWithCards(t('hook.recommendationIntro'), matches);
           cs3.transitionTo('recommendation');
           cs3.setInputDisabled(true);
         } else {
@@ -1017,17 +998,17 @@ export function useConversation() {
         if (nextContactNode === 'review') {
           // Everything captured — go to review
           useRequestStore.getState().setStage('review');
-          await typewriterStream(msgId, 'Your request is ready to submit. Please review the summary panel and submit when you\'re satisfied.');
+          await typewriterStream(msgId, t('hook.reviewReady'));
           useConversationStore.getState().finalizeStreamingMessage(msgId, [
-            { id: 'submit', label: 'Submit Request' },
-            { id: 'edit', label: 'I want to change something' },
+            { id: 'submit', label: t('hook.submitLabel') },
+            { id: 'edit', label: t('hook.editLabel') },
           ]);
           const cs2 = useConversationStore.getState();
           cs2.transitionTo('review');
           cs2.setInputDisabled(false);
         } else {
           // Still need contact fields or additional_info
-          const contactNode = getNode(nextContactNode);
+          const contactNode = getLocalizedNode(nextContactNode);
           const contactMsg = typeof contactNode.message === 'function'
             ? contactNode.message(rs2 as RequestFields)
             : contactNode.message;
@@ -1088,7 +1069,7 @@ export function useConversation() {
         return;
       }
 
-      const nextNode = getNode(nextNodeId);
+      const nextNode = getLocalizedNode(nextNodeId);
 
       // Apply onEnter field auto-sets in fallback path too
       if (nextNode.onEnter) {
@@ -1103,7 +1084,7 @@ export function useConversation() {
 
         const missingNode = findMissingFieldNode(rs);
         if (missingNode) {
-          const fallbackNode = getNode(missingNode);
+          const fallbackNode = getLocalizedNode(missingNode);
           const fallbackMsg = typeof fallbackNode.message === 'function'
             ? fallbackNode.message(rs as RequestFields)
             : fallbackNode.message;
@@ -1120,15 +1101,13 @@ export function useConversation() {
         const cs = useConversationStore.getState();
         cs.setTyping(false);
         const analyzingId = cs.addStreamingBotMessage();
-        await typewriterStream(analyzingId, "I'm analyzing your request and suggesting relevant services... One moment.");
+        await typewriterStream(analyzingId, t('hook.analyzing'));
         useConversationStore.getState().finalizeStreamingMessage(analyzingId);
 
         const matches = await fetchAIRecommendations(rs as RequestFields);
 
-        const recMsg = 'Based on your requirements, here are the services I recommend:';
-
         const cs2 = useConversationStore.getState();
-        cs2.addBotMessageWithCards(recMsg + '\n\nPlease select the services you need, then confirm.', matches);
+        cs2.addBotMessageWithCards(t('hook.recommendationIntro'), matches);
         cs2.transitionTo('recommendation');
         cs2.setInputDisabled(true);
         return;
@@ -1151,7 +1130,7 @@ export function useConversation() {
       console.error('Fallback engine error:', error);
       const cs = useConversationStore.getState();
       cs.setTyping(false);
-      cs.addBotMessage("I'm sorry, something went wrong. Could you try rephrasing that?");
+      cs.addBotMessage(t('hook.errorFallback'));
       cs.setInputDisabled(false);
     }
   }, []);
@@ -1174,7 +1153,7 @@ export function useConversation() {
     const anyEdge = currentNode.edges.find((e: { condition: string }) => e.condition === 'any');
     const rawNextId = anyEdge?.targetNodeId || 'business_type';
     const nextNodeId = resolveNodeSkip(rawNextId, useRequestStore.getState());
-    const nextNode = getNode(nextNodeId);
+    const nextNode = getLocalizedNode(nextNodeId);
 
     const msg = typeof nextNode.message === 'function'
       ? nextNode.message(useRequestStore.getState() as RequestFields)
@@ -1224,15 +1203,15 @@ export function useConversation() {
       const cs2 = useConversationStore.getState();
       cs2.setTyping(false);
       const followId = cs2.addStreamingBotMessage();
-      await typewriterStream(followId, "Great choices. Your request is ready to submit. Please review the summary panel and submit when you're satisfied.");
+      await typewriterStream(followId, t('hook.greatChoicesReview'));
       useConversationStore.getState().finalizeStreamingMessage(followId, [
-        { id: 'submit', label: 'Submit Request' },
-        { id: 'edit', label: 'I want to change something' },
+        { id: 'submit', label: t('hook.submitLabel') },
+        { id: 'edit', label: t('hook.editLabel') },
       ]);
       useConversationStore.getState().transitionTo('review');
       useConversationStore.getState().setInputDisabled(false);
     } else {
-      const stepNode = getNode(firstStepNodeId);
+      const stepNode = getLocalizedNode(firstStepNodeId);
       const stepMsg = typeof stepNode.message === 'function'
         ? stepNode.message(useRequestStore.getState() as RequestFields)
         : stepNode.message;
@@ -1242,8 +1221,8 @@ export function useConversation() {
       const followId = cs2.addStreamingBotMessage();
       // Use appropriate prefix based on whether we're entering contact/provider capture or additional info
       const prefix = ['contact_name', 'contact_email', 'contact_phone', 'contact_company', 'current_provider'].includes(firstStepNodeId)
-        ? "Great choices. Just a few details to finalize your request.\n\n"
-        : "Great choices.\n\n";
+        ? t('hook.greatChoicesContact')
+        : t('hook.greatChoices');
       await typewriterStream(followId, prefix + stepMsg);
       useConversationStore.getState().finalizeStreamingMessage(followId);
       useConversationStore.getState().transitionTo(firstStepNodeId);

@@ -4,12 +4,14 @@ import { motion } from 'framer-motion';
 import { RotateCcw } from 'lucide-react';
 import { usePulseStore } from '@/store/pulseStore';
 import { timeAgo } from '@/lib/formatters';
+import { useTranslation } from '@/i18n/LocaleProvider';
 
 interface PulseHeaderProps {
   onRefresh: () => void;
 }
 
 export function PulseHeader({ onRefresh }: PulseHeaderProps) {
+  const { t } = useTranslation();
   const lastRefreshed = usePulseStore((s) => s.lastRefreshed);
   const maritimeLoading = usePulseStore((s) => s.maritime.loading);
   const aviationLoading = usePulseStore((s) => s.aviation.loading);
@@ -25,10 +27,10 @@ export function PulseHeader({ onRefresh }: PulseHeaderProps) {
     >
       <div>
         <h1 className="text-[28px] font-bold text-gray-900 tracking-tight leading-none">
-          Control Tower
+          {t('pulse.controlTower')}
         </h1>
         <p className="text-[13px] text-gray-400 mt-1.5">
-          UAE Logistics Intelligence
+          {t('pulse.intelligence')}
         </p>
       </div>
 
@@ -38,7 +40,7 @@ export function PulseHeader({ onRefresh }: PulseHeaderProps) {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          <span className="text-[11px] font-semibold text-emerald-600">Live</span>
+          <span className="text-[11px] font-semibold text-emerald-600">{t('pulse.live')}</span>
         </div>
 
         {lastRefreshed && (
@@ -51,7 +53,7 @@ export function PulseHeader({ onRefresh }: PulseHeaderProps) {
           onClick={onRefresh}
           disabled={isLoading}
           className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-40 transition-all"
-          title="Refresh"
+          title={t('pulse.refresh')}
         >
           <RotateCcw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
         </button>

@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import Link from 'next/link';
 import { Cloud, Sun, CloudRain, CloudSnow, CloudLightning, CloudDrizzle, Cloudy, ChevronDown, UserPlus } from 'lucide-react';
 import { AlternatingLogo } from '@/components/ui/AlternatingLogo';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { LocaleLink } from '@/components/ui/LocaleLink';
+import { useTranslation } from '@/i18n/LocaleProvider';
 
 interface WeatherData {
   temp: number;
@@ -21,13 +23,13 @@ function getWeatherIcon(code: number) {
   return <Sun className="w-[14px] h-[14px] text-amber-400" />;
 }
 
-function useDubaiTime() {
+function useDubaiTime(locale: string) {
   const [time, setTime] = useState('');
 
   useEffect(() => {
     const update = () => {
       setTime(
-        new Date().toLocaleTimeString('en-US', {
+        new Date().toLocaleTimeString(locale === 'ar' ? 'ar-AE' : 'en-US', {
           timeZone: 'Asia/Dubai',
           hour: 'numeric',
           minute: '2-digit',
@@ -38,7 +40,7 @@ function useDubaiTime() {
     update();
     const interval = setInterval(update, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [locale]);
 
   return time;
 }
@@ -66,6 +68,7 @@ function useWeather() {
 }
 
 function QuickLinks() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -83,22 +86,22 @@ function QuickLinks() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 hover:text-gray-900 transition-colors border border-gray-200/60"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 bg-white/80 backdrop-blur-sm hover:bg-gray-50 transition-colors"
       >
-        Quick Links
+        {t('dashboard.quickLinks')}
         <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 py-1.5 z-50">
-          <Link
+        <div className="absolute start-0 top-full mt-2 w-56 bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 py-1.5 z-50">
+          <LocaleLink
             href="/connect"
             onClick={() => setOpen(false)}
             className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-gray-900 font-medium hover:bg-blue-50 hover:text-blue-700 transition-colors"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            Connect to an Expert
-          </Link>
+            {t('dashboard.connectExpert')}
+          </LocaleLink>
           <div className="mx-3 my-1 border-t border-gray-100" />
           <a
             href="https://7x.ae"
@@ -107,15 +110,15 @@ function QuickLinks() {
             onClick={() => setOpen(false)}
             className="block px-4 py-2.5 text-[13px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
           >
-            About 7X
+            {t('dashboard.about7x')}
           </a>
-          <Link
+          <LocaleLink
             href="/services"
             onClick={() => setOpen(false)}
             className="block px-4 py-2.5 text-[13px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
           >
-            Available Services
-          </Link>
+            {t('dashboard.availableServices')}
+          </LocaleLink>
         </div>
       )}
     </div>
@@ -123,14 +126,16 @@ function QuickLinks() {
 }
 
 export function DashboardHeader() {
-  const time = useDubaiTime();
+  const { locale } = useTranslation();
+  const time = useDubaiTime(locale);
   const weather = useWeather();
 
   return (
     <header className="h-14 flex items-center justify-between px-5 md:px-8 shrink-0">
       {/* Left — Quick Links */}
-      <div className="w-[200px]">
+      <div className="w-[200px] flex items-center gap-2">
         <QuickLinks />
+        <LanguageSwitcher />
       </div>
 
       {/* Center — Alternating Logo */}

@@ -2,14 +2,17 @@
 
 import { motion } from 'framer-motion';
 import type { ServiceMatch } from '@/engine/types';
+import { useTranslation } from '@/i18n/LocaleProvider';
 
 export function RecommendedServices({ services }: { services: ServiceMatch[] }) {
+  const { t } = useTranslation();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <h4 className="text-xs font-semibold text-gray-900 mb-3">Recommended Services</h4>
+      <h4 className="text-xs font-semibold text-gray-900 mb-3">{t('recommendedServices.title')}</h4>
       <div className="space-y-2.5">
         {services.map((service, i) => (
           <motion.div
