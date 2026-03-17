@@ -160,6 +160,52 @@ async function persistSubmission(refNumber: string) {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// ── Known value sets used to fix AI field-extraction mistakes ──
+const KNOWN_INDUSTRY_VALUES = new Set([
+  'e-commerce / d2c', 'retail', 'healthcare / pharma', 'manufacturing',
+  'food & beverage', 'food and beverage', 'government', 'ecommerce',
+  'e-commerce', 'd2c', 'healthcare', 'pharma', 'pharmaceutical',
+]);
+const KNOWN_LOCATION_VALUES = new Set([
+  'dubai', 'abu dhabi', 'sharjah', 'other uae', 'outside uae',
+  'within the uae', 'gcc countries', 'gcc', 'international',
+  'multiple destinations', 'uae', 'ksa', 'kuwait', 'bahrain',
+  'oman', 'qatar', 'europe', 'usa', 'africa', 'asia',
+]);
+
+/**
+ * Sanitise AI-extracted fields so that known industry labels never land in
+ * location fields and vice-versa.  Fixes the "Food & Beverage → Origin" bug.
+ */
+function sanitizeExtractedFields(fields: Partial<RequestFields>): Partial<RequestFields> {
+  const out = { ...fields };
+
+  // If originLocation looks like an industry, move it to businessType
+  if (out.originLocation && KNOWN_INDUSTRY_VALUES.has(out.originLocation.toLowerCase())) {
+    if (!out.businessType) out.businessType = out.originLocation;
+    out.originLocation = null;
+  }
+
+  // If destinationLocation looks like an industry, move it
+  if (out.destinationLocation && KNOWN_INDUSTRY_VALUES.has(out.destinationLocation.toLowerCase())) {
+    if (!out.businessType) out.businessType = out.destinationLocation;
+    out.destinationLocation = null;
+  }
+
+  // If businessType looks like a location, move it to originLocation
+  if (out.businessType && KNOWN_LOCATION_VALUES.has(out.businessType.toLowerCase())) {
+    if (!out.originLocation) out.originLocation = out.businessType;
+    out.businessType = null;
+  }
+
+  return out;
+}
+
+/** Set of node IDs that require chip selection — free text is not allowed */
+const CHIP_ONLY_NODES = new Set([
+  'entity_type', 'individual_redirect',
+]);
+
 /** Validate phone: 7+ digits, not all same digit */
 function isValidPhone(phone: string): boolean {
   const digitsOnly = phone.replace(/\D/g, '');
@@ -357,10 +403,12 @@ async function sendConfirmationEmail(refNumber: string, rs: ReturnType<typeof us
         cargoVolume: rs.cargoVolume,
         customsRequired: rs.customsRequired,
         storageType: rs.storageType,
-        recommendedServices: (rs.recommendedServices || []).map((s) => ({
-          name: s.name,
-          category: s.category,
-        })),
+        recommendedServices: (rs.recommendedServices || [])
+          .filter((s, i, arr) => arr.findIndex((x) => x.name === s.name) === i)
+          .map((s) => ({
+            name: s.name,
+            category: s.category,
+          })),
       }),
     });
   } catch (error) {
@@ -695,6 +743,23 @@ export function useConversation() {
     const convStore = useConversationStore.getState();
     const reqStore = useRequestStore.getState();
 
+    // ── Bug-3 fix: block free text on chip-only nodes (entity_type, etc.) ──
+    if (CHIP_ONLY_NODES.has(convStore.currentNodeId)) {
+      const node = getNode(convStore.currentNodeId);
+      convStore.addUserMessage(text);
+      convStore.setInputDisabled(true);
+      convStore.setTyping(true);
+      await delay(randomDelay());
+      convStore.setTyping(false);
+      convStore.addBotMessage(
+        'Please select one of the options above to continue.',
+        node.chips,
+        node.multiSelect,
+      );
+      convStore.setInputDisabled(false);
+      return;
+    }
+
     convStore.addUserMessage(text);
     convStore.setInputDisabled(true);
     convStore.setTyping(true);
@@ -855,8 +920,10 @@ export function useConversation() {
 
       // Apply extracted fields to the request store (triggers highlight)
       if (aiResponse.extractedFields) {
+        // Sanitise: prevent known industry values landing in location fields etc.
+        const sanitized = sanitizeExtractedFields(aiResponse.extractedFields);
         const rs = useRequestStore.getState();
-        for (const [field, value] of Object.entries(aiResponse.extractedFields)) {
+        for (const [field, value] of Object.entries(sanitized)) {
           if (value !== null && value !== undefined && value !== '') {
             rs.updateField(field as keyof RequestFields, value as string | string[] | null);
           }
@@ -1127,12 +1194,17 @@ export function useConversation() {
     const rs = useRequestStore.getState();
     const cs = useConversationStore.getState();
 
+    // Deduplicate services by name before storing
+    const uniqueServices = selectedServices.filter(
+      (s, i, arr) => arr.findIndex((x) => x.name === s.name) === i,
+    );
+
     // Store selected services
-    rs.setRecommendedServices(selectedServices);
+    rs.setRecommendedServices(uniqueServices);
 
     // Show what user selected
     cs.addUserMessage(
-      `Selected: ${selectedServices.map((s) => s.name).join(', ')}`
+      `Selected: ${uniqueServices.map((s) => s.name).join(', ')}`
     );
     cs.setInputDisabled(true);
     cs.setTyping(true);

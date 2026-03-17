@@ -96,7 +96,11 @@ export interface IntakeEmailData {
 }
 
 function buildIntakeHtml(data: IntakeEmailData): string {
-  const services = data.recommendedServices
+  // Deduplicate services by name to avoid repeated entries in the email
+  const uniqueServices = data.recommendedServices.filter(
+    (s, i, arr) => arr.findIndex((x) => x.name === s.name) === i,
+  );
+  const services = uniqueServices
     .map((s) => `<li style="padding:4px 0;color:#374151;">${esc(s.name)} <span style="color:#9ca3af;font-size:12px;">(${esc(s.category)})</span></li>`)
     .join('');
 
