@@ -17,6 +17,7 @@ export default function LandingPage() {
     >
       <iframe
         src={src}
+        allow="autoplay"
         style={{
           display: 'block',
           width: '100%',

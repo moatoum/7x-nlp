@@ -235,6 +235,9 @@ function NotFound({ code }: { code: string }) {
   );
 }
 
+/* ── Reference format validation ── */
+const REF_PATTERN = /^7X-(?:L-)?\d{8}-[A-Z0-9]{4}$/;
+
 /* ── Inner Content (uses useSearchParams) ── */
 function TrackContent() {
   const { t } = useTranslation();
@@ -244,15 +247,22 @@ function TrackContent() {
   const [code, setCode] = useState('');
   const [result, setResult] = useState<Submission | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [invalidFormat, setInvalidFormat] = useState(false);
   const [searched, setSearched] = useState(false);
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     const ref = searchParams.get('ref');
     if (ref) {
-      setCode(ref);
+      const upper = ref.toUpperCase();
+      setCode(upper);
+      if (!REF_PATTERN.test(upper)) {
+        setInvalidFormat(true);
+        setSearched(true);
+        return;
+      }
       setSearching(true);
-      fetchByReference(ref).then((found) => {
+      fetchByReference(upper).then((found) => {
         if (found) {
           setResult(found);
         } else {
@@ -269,6 +279,15 @@ function TrackContent() {
       e.preventDefault();
       const trimmed = code.trim();
       if (!trimmed) return;
+
+      setInvalidFormat(false);
+      if (!REF_PATTERN.test(trimmed)) {
+        setInvalidFormat(true);
+        setResult(null);
+        setNotFound(false);
+        setSearched(true);
+        return;
+      }
 
       setSearching(true);
       const found = await fetchByReference(trimmed);
@@ -327,6 +346,7 @@ function TrackContent() {
                   setSearched(false);
                   setResult(null);
                   setNotFound(false);
+                  setInvalidFormat(false);
                 }
               }}
               placeholder={t('track.placeholder')}
@@ -344,6 +364,19 @@ function TrackContent() {
         </motion.form>
 
         {result && <TrackingResult submission={result} />}
+        {invalidFormat && searched && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mt-6 text-center"
+          >
+            <div className="inline-flex items-center gap-2.5 px-5 py-3.5 bg-white/70 backdrop-blur-md rounded-xl border border-gray-100">
+              <XCircle className="w-4.5 h-4.5 text-amber-400" />
+              <p className="text-sm font-medium text-gray-600">{t('track.invalidFormat')}</p>
+            </div>
+          </motion.div>
+        )}
         {notFound && searched && <NotFound code={code} />}
       </main>
 

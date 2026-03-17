@@ -165,6 +165,7 @@ const en = {
     trackButton: 'Track',
     tracking: 'Tracking',
     submitted: 'Submitted',
+    invalidFormat: 'Invalid format. Expected: 7X-YYYYMMDD-XXXX',
     noRequestFound: 'No request found',
     noMatch: 'No match for {code}. Please check the code and try again.',
     newRequest: 'New Request',

@@ -732,8 +732,8 @@ const nodes: Record<string, ConversationNode> = {
     type: 'question',
     message: 'Where are you based? This helps us match local services.',
     chips: [
-      { id: 'dubai', label: 'Dubai' },
       { id: 'abu_dhabi', label: 'Abu Dhabi' },
+      { id: 'dubai', label: 'Dubai' },
       { id: 'sharjah', label: 'Sharjah' },
       { id: 'other_uae', label: 'Other UAE' },
       { id: 'outside_uae', label: 'Outside UAE' },
@@ -820,8 +820,8 @@ const nodes: Record<string, ConversationNode> = {
     type: 'question',
     message: 'Where are you based?',
     chips: [
-      { id: 'dubai', label: 'Dubai' },
       { id: 'abu_dhabi', label: 'Abu Dhabi' },
+      { id: 'dubai', label: 'Dubai' },
       { id: 'sharjah', label: 'Sharjah' },
       { id: 'other_uae', label: 'Other UAE' },
       { id: 'outside_uae', label: 'Outside UAE' },

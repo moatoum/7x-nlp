@@ -1,12 +1,11 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/i18n/LocaleProvider';
 
 export function LanguageSwitcher({ className = '' }: { className?: string }) {
   const { locale, t } = useTranslation();
   const pathname = usePathname();
-  const router = useRouter();
 
   const switchLocale = () => {
     const newLocale = locale === 'en' ? 'ar' : 'en';
@@ -16,10 +15,15 @@ export function LanguageSwitcher({ className = '' }: { className?: string }) {
     segments[1] = newLocale;
     const newPath = segments.join('/');
 
+    // Clear persisted conversation so it restarts in the new language after reload
+    sessionStorage.removeItem('7x-conversation');
+    sessionStorage.removeItem('7x-request');
+
     // Store preference in cookie
     document.cookie = `locale=${newLocale};path=/;max-age=${60 * 60 * 24 * 365}`;
 
-    router.push(newPath);
+    // Full page navigation to ensure clean state
+    window.location.href = newPath;
   };
 
   return (

@@ -90,9 +90,9 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
 
 /* Mobile responsive enhancements */
 @media (max-width: 767px) {
-  .page-wrapper { padding: 0.6rem !important; padding-top: 0.5rem !important; }
+  .page-wrapper { padding: 0.6rem !important; padding-top: 1.2rem !important; }
   .section_hero { margin-top: 0 !important; padding-top: 0 !important; }
-  .hero_body { margin-top: 0 !important; height: calc(100vh - 1rem) !important; min-height: 0 !important; border-radius: 1rem !important; }
+  .hero_body { margin-top: 0 !important; height: calc(100vh - 1.2rem) !important; min-height: 0 !important; border-radius: 1rem !important; overflow: hidden !important; }
   .padding-global.is-hero { padding-left: 0 !important; padding-right: 0 !important; }
   .navbar_wrapper { position: relative !important; z-index: 1000; margin-bottom: -3.5rem !important; }
   .navbar { padding-top: 1rem !important; padding-bottom: 0.75rem !important; }
@@ -139,8 +139,8 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
     gap: 0;
     position: absolute;
     top: calc(100% + 8px);
-    right: 1.25rem;
-    width: 200px;
+    right: 0.75rem;
+    width: 240px;
     background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -169,6 +169,7 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
   .hero-inner_body .text-size-72 {
     font-size: 2rem !important;
     line-height: 1.12 !important;
+    font-weight: 700 !important;
   }
   .hero-inner_body .text-size-18 {
     font-size: 0.8rem !important;
