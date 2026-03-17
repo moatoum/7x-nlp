@@ -442,6 +442,18 @@ async function typewriterStream(
 
 export function useConversation() {
   const startConversation = useCallback(async () => {
+    // Wait for Zustand persist hydration before making any decisions.
+    // Even though sessionStorage is sync, Zustand processes hydration as a
+    // microtask (.then()), so the store may not yet reflect persisted state.
+    if (!useConversationStore.persist.hasHydrated()) {
+      await new Promise<void>((resolve) => {
+        const unsub = useConversationStore.persist.onFinishHydration(() => {
+          unsub();
+          resolve();
+        });
+      });
+    }
+
     const conv = useConversationStore.getState();
 
     // Check if session was restored from sessionStorage
@@ -449,6 +461,11 @@ export function useConversation() {
       if (conv.isSessionExpired()) {
         conv.reset();
         useRequestStore.getState().reset();
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('7x-conversation');
+          sessionStorage.removeItem('7x-request');
+        }
+        // Fall through to fresh start below (re-read state after reset)
       } else {
         // Session restored — show welcome back and let user continue
         conv.setTyping(false);
@@ -461,11 +478,13 @@ export function useConversation() {
       }
     }
 
-    if (conv.started) return;
-    conv.setStarted(true);
+    // Re-read state (reset() above creates a new state object)
+    const current = useConversationStore.getState();
+    if (current.started) return;
+    current.setStarted(true);
 
-    conv.setTyping(true);
-    conv.setInputDisabled(true);
+    current.setTyping(true);
+    current.setInputDisabled(true);
     await delay(600);
 
     const req = useRequestStore.getState();
@@ -490,6 +509,19 @@ export function useConversation() {
       convStore.addUserMessage(chipLabel);
       convStore.setInputDisabled(false);
       convStore.setTyping(false);
+      return;
+    }
+
+    // Handle "Start fresh" from session restore — full reset & reinitialise
+    if (chipId === 'restart') {
+      convStore.reset();
+      reqStore.reset();
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('7x-conversation');
+        sessionStorage.removeItem('7x-request');
+      }
+      // started is now false → the useEffect in ConversationPanel will
+      // call startConversation() which shows the first welcome message
       return;
     }
 

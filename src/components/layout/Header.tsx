@@ -17,15 +17,15 @@ export function Header() {
 
   const handleRestart = useCallback(() => {
     if (!window.confirm('Start a new conversation? Your current progress will be lost.')) return;
-    useConversationStore.getState().reset();
-    useRequestStore.getState().reset();
-    // Clear session storage
+    // Clear session storage FIRST to prevent persist middleware from rehydrating stale state
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('7x-conversation');
       sessionStorage.removeItem('7x-request');
     }
-    // Reload to cleanly restart
-    window.location.reload();
+    // Reset stores — started becomes false, which triggers ConversationPanel's
+    // useEffect to call startConversation() and show the first welcome message
+    useConversationStore.getState().reset();
+    useRequestStore.getState().reset();
   }, []);
 
   return (
