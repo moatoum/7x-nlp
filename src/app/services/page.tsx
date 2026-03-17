@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -162,17 +163,15 @@ export default function ServicesPage() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-[1200px] mx-auto px-5 md:px-8 h-14 flex items-center justify-between">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 h-14 flex items-center justify-center relative">
           <Link
             href="/"
-            className="flex items-center gap-2 text-[13px] text-gray-500 hover:text-gray-900 transition-colors"
+            className="absolute left-5 md:left-8 flex items-center gap-2 text-[13px] text-gray-500 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
           </Link>
-          <span className="text-[13px] font-semibold text-gray-900 tracking-tight">
-            7X
-          </span>
+          <Image src="/7xlogo-dark.svg" alt="7X" width={48} height={28} priority />
         </div>
       </header>
 

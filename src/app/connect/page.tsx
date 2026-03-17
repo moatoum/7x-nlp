@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowLeft, UserPlus, CheckCircle2, Loader2 } from 'lucide-react';
 
@@ -92,12 +93,12 @@ export default function ConnectPage() {
     <div className="min-h-screen bg-[#fafafa]">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center">
-          <Link href="/" className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-center relative">
+          <Link href="/" className="absolute left-4 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Back
           </Link>
-          <span className="ml-auto text-sm font-semibold text-gray-900">7X</span>
+          <Image src="/7xlogo-dark.svg" alt="7X" width={48} height={28} priority />
         </div>
       </header>
 
