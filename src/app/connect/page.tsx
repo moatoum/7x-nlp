@@ -19,13 +19,12 @@ export default function ConnectPage() {
     contactName: '',
     businessEmail: '',
     phone: '',
-    businessWebsite: '',
+    entityName: '',
     uaeRegistered: true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [refNumber, setRefNumber] = useState('');
 
   function validate(): boolean {
     const errs: Record<string, string> = {};
@@ -34,6 +33,7 @@ export default function ConnectPage() {
     else if (!EMAIL_REGEX.test(form.businessEmail)) errs.businessEmail = 'Invalid email format';
     if (!form.phone.trim()) errs.phone = 'Phone is required';
     else if (!isValidPhone(form.phone)) errs.phone = 'Invalid phone number (at least 7 digits)';
+    if (!form.entityName.trim()) errs.entityName = 'Entity name is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -53,8 +53,6 @@ export default function ConnectPage() {
         setErrors({ form: data.error || 'Something went wrong' });
         return;
       }
-      const data = await res.json();
-      setRefNumber(data.referenceNumber);
       setSubmitted(true);
     } catch {
       setErrors({ form: 'Failed to submit. Please try again.' });
@@ -75,11 +73,8 @@ export default function ConnectPage() {
             <CheckCircle2 className="w-6 h-6 text-emerald-500" />
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Request Submitted</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Your reference number is <span className="font-mono font-medium text-gray-900">{refNumber}</span>
-          </p>
           <p className="text-sm text-gray-400 mb-6">
-            One of our logistics experts will reach out to you within 2 business hours.
+            One of our logistics experts will reach out to you within 24 hours.
           </p>
           <Link
             href="/"
@@ -162,16 +157,17 @@ export default function ConnectPage() {
               {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
             </div>
 
-            {/* Website */}
+            {/* Entity Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Business Website</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Entity Name *</label>
               <input
-                type="url"
-                value={form.businessWebsite}
-                onChange={(e) => setForm({ ...form, businessWebsite: e.target.value })}
-                placeholder="https://yourcompany.com"
-                className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-colors"
+                type="text"
+                value={form.entityName}
+                onChange={(e) => setForm({ ...form, entityName: e.target.value })}
+                placeholder="Company or organization name"
+                className={`w-full h-11 px-4 rounded-xl border ${errors.entityName ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'} text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-colors`}
               />
+              {errors.entityName && <p className="text-xs text-red-500 mt-1">{errors.entityName}</p>}
             </div>
 
             {/* UAE Registration */}

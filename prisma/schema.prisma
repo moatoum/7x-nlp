@@ -88,7 +88,7 @@ model Lead {
   contactName      String   @map("contact_name")
   businessEmail    String   @map("business_email")
   phone            String
-  businessWebsite  String?  @map("business_website")
+  entityName       String   @map("entity_name")
   uaeRegistered    Boolean  @map("uae_registered")
 
   notes            String?

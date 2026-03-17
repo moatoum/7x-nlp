@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-const VALID_STATUSES = new Set(['new', 'contacted', 'qualified', 'closed']);
+const VALID_STATUSES = new Set(['new', 'attempting', 'contacted', 'qualified', 'disqualified', 'closed']);
 
 // GET /api/leads/[id]
 export async function GET(

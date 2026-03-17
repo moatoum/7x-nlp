@@ -307,7 +307,7 @@ async function handleSubmission(): Promise<boolean> {
   try {
     await persistSubmission(refNumber);
     cs.addBotMessage(
-      `Your request has been submitted successfully.\n\nReference: ${refNumber}\n\nA confirmation email has been sent to ${rs.contactEmail}. Our logistics specialists will reach out within 2 business hours. Thank you for choosing 7X.`
+      `Your request has been submitted successfully.\n\nReference: ${refNumber}\n\nA confirmation email has been sent to ${rs.contactEmail}. Our logistics specialists will reach out within 24 hours. Thank you for choosing 7X.`
     );
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);

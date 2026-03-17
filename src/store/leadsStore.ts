@@ -10,7 +10,7 @@ export interface Lead {
   contactName: string;
   businessEmail: string;
   phone: string;
-  businessWebsite: string | null;
+  entityName: string;
   uaeRegistered: boolean;
   notes: string | null;
 }
@@ -21,6 +21,7 @@ interface LeadsState {
   error: string | null;
   fetchLeads: () => Promise<void>;
   updateLeadStatus: (id: string, status: string) => Promise<void>;
+  updateLeadNotes: (id: string, notes: string) => Promise<void>;
 }
 
 export const useLeadsStore = create<LeadsState>()((set) => ({
@@ -59,6 +60,30 @@ export const useLeadsStore = create<LeadsState>()((set) => ({
           set({ leads: data });
         }
         throw new Error('Failed to update lead status');
+      }
+    } catch (err) {
+      set({ error: (err as Error).message });
+    }
+  },
+
+  updateLeadNotes: async (id, notes) => {
+    // Optimistic update
+    set((state) => ({
+      leads: state.leads.map((l) => (l.id === id ? { ...l, notes } : l)),
+    }));
+    try {
+      const res = await fetch(`/api/leads/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes }),
+      });
+      if (!res.ok) {
+        const revertRes = await fetch('/api/leads');
+        if (revertRes.ok) {
+          const data: Lead[] = await revertRes.json();
+          set({ leads: data });
+        }
+        throw new Error('Failed to update lead notes');
       }
     } catch (err) {
       set({ error: (err as Error).message });

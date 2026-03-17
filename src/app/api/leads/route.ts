@@ -9,7 +9,7 @@ const leadLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 }); // 10 pe
 const MAX_NAME = 255;
 const MAX_EMAIL = 255;
 const MAX_PHONE = 30;
-const MAX_WEBSITE = 500;
+const MAX_ENTITY = 255;
 
 function generateLeadRef() {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -66,9 +66,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Valid phone number is required' }, { status: 400 });
     }
 
-    const website = typeof body.businessWebsite === 'string' ? body.businessWebsite.trim() : '';
-    if (website && website.length > MAX_WEBSITE) {
-      return NextResponse.json({ error: 'Website URL is too long' }, { status: 400 });
+    const entityName = typeof body.entityName === 'string' ? body.entityName.trim() : '';
+    if (!entityName || entityName.length > MAX_ENTITY) {
+      return NextResponse.json({ error: 'Entity name is required (max 255 chars)' }, { status: 400 });
     }
 
     const lead = await prisma.lead.create({
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         contactName: name,
         businessEmail: email,
         phone: phone,
-        businessWebsite: website || null,
+        entityName: entityName,
         uaeRegistered: body.uaeRegistered === true,
       },
     });

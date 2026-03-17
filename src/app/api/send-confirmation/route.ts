@@ -92,7 +92,7 @@ function buildEmailHtml(data: ConfirmationPayload): string {
           Hi ${esc(data.contactName)},
         </p>
         <p style="margin:12px 0 0;font-size:14px;color:#374151;line-height:1.6;">
-          Your logistics request has been submitted successfully. Our team will review your requirements and reach out within <strong>2 business hours</strong>.
+          Your logistics request has been submitted successfully. Our team will review your requirements and reach out within <strong>24 hours</strong>.
         </p>
       </div>
 
