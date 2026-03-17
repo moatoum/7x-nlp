@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
+import { sendEmail, buildExpertEmailPayload } from '@/lib/notification-engine';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const leadLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 }); // 10 per minute
@@ -82,6 +83,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Send confirmation email (fire and forget — don't block the response)
+    sendExpertConfirmation(lead).catch((err) =>
+      console.error('Expert confirmation email failed:', err),
+    );
+
     return NextResponse.json(
       { ...lead, createdAt: lead.createdAt.getTime() },
       { status: 201 }
@@ -90,4 +96,26 @@ export async function POST(request: NextRequest) {
     console.error('POST /api/leads error:', error);
     return NextResponse.json({ error: 'Failed to create lead' }, { status: 500 });
   }
+}
+
+async function sendExpertConfirmation(lead: {
+  referenceNumber: string;
+  contactName: string;
+  businessEmail: string;
+  phone: string;
+  entityName: string;
+  uaeRegistered: boolean;
+}) {
+  if (
+    !process.env.NOTIFICATION_ENGINE_URL ||
+    !process.env.NOTIFICATION_ENGINE_API_KEY ||
+    !process.env.NOTIFICATION_EMAIL_TEMPLATE_ID
+  ) {
+    console.warn('Notification Engine not configured, skipping expert email');
+    return;
+  }
+
+  const payload = buildExpertEmailPayload(lead);
+  const result = await sendEmail(payload);
+  console.log('Expert confirmation email sent, txnId:', result.transactionId);
 }

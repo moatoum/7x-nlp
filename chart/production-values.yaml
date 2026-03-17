@@ -29,8 +29,14 @@ env:
     value: "ALg3BuKQfpuWpA9xZRcLF1xooaJzN2g9Ntap1xMMAsMI6U1GDl4uJQQJ99CCACHYHv6XJ3w3AAAAACOGEJtt"
   - name: AZURE_AI_DEPLOYMENT
     value: "claude-sonnet-4-5"
-  - name: RESEND_API_KEY
-    value: "re_hn64mAGa_J464ngAwGmzFkGvdzguCF5dr"
+  - name: NOTIFICATION_ENGINE_URL
+    value: "https://notification-dev.epapps.ae"
+  - name: NOTIFICATION_ENGINE_API_KEY
+    value: "309818c2759f475ab7b44fb35555270c:9830fb4ffd2e16f9869b6ed247e364d8"
+  - name: NOTIFICATION_EMAIL_TEMPLATE_ID
+    value: "d-a8b1a95549b04debbeb1c908f141a21f"
+  - name: NOTIFICATION_EMAIL_FROM
+    value: "no-reply@7x.ae"
   - name: ADMIN_USERNAME
     value: "admin"
   - name: ADMIN_PASSWORD
