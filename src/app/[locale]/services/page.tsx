@@ -19,7 +19,7 @@ interface ServiceCategory {
   services: ServiceItem[];
 }
 
-const categories: ServiceCategory[] = [
+const categoriesEn: ServiceCategory[] = [
   {
     id: 'domestic-courier',
     name: 'Domestic Courier & Parcel',
@@ -114,10 +114,105 @@ const categories: ServiceCategory[] = [
   },
 ];
 
-const totalServices = categories.reduce((sum, cat) => sum + cat.services.length, 0);
+const categoriesAr: ServiceCategory[] = [
+  {
+    id: 'domestic-courier',
+    name: 'البريد السريع والطرود المحلية',
+    services: [
+      { solution: 'التوصيل عند الطلب', description: 'توصيل فائق السرعة من مراكز التوزيع الحضرية', sla: 'أقل من ساعتين' },
+      { solution: 'التوصيل في نفس اليوم', description: 'توصيل العينات المخبرية والمستلزمات الطبية', sla: 'خلال 4-6 ساعات' },
+      { solution: 'التوصيل في اليوم التالي', description: 'توصيل قياسي في اليوم التالي للتجارة الإلكترونية', sla: 'اليوم التالي' },
+      { solution: 'تزويد المولات والمتاجر', description: 'توصيل ليلي لتزويد متاجر التجزئة', sla: 'حسب جدول المول' },
+      { solution: 'التوصيل بتحكم حراري', description: 'توصيل المنتجات الغذائية المبردة والمجمدة', sla: 'اليوم التالي' },
+      { solution: 'توصيل البضائع عالية القيمة', description: 'توصيل آمن مع تأمين وتحقق', sla: 'اليوم التالي' },
+      { solution: 'توصيل البضائع الخطرة', description: 'نقل شحنات بطاريات الليثيوم', sla: 'اليوم التالي' },
+      { solution: 'التوصيل بتحقق الهوية', description: 'توصيل يتطلب إثبات هوية أو رمز تحقق', sla: 'اليوم التالي' },
+      { solution: 'شبكة التوصيل الخارجية', description: 'التوصيل إلى نقاط الاستلام والتسليم', sla: 'اليوم التالي' },
+    ],
+  },
+  {
+    id: 'international',
+    name: 'البريد السريع والطرود الدولية',
+    services: [
+      { solution: 'الشحن السريع الممتاز', description: 'شحن سريع عبر الحدود', sla: '2-3 أيام' },
+      { solution: 'الشحن السريع المؤجل', description: 'حل شحن دولي منخفض التكلفة براً', sla: '5-7 أيام' },
+      { solution: 'الشحن السريع القياسي', description: 'حل متوازن بين التكلفة ووقت العبور', sla: '3-5 أيام' },
+      { solution: 'الشحن بتحكم حراري', description: 'شحن دولي بسلسلة تبريد', sla: '3-5 أيام' },
+      { solution: 'شحن البضائع الخطرة', description: 'شحن دولي للبطاريات والمواد المصنفة ID 8000', sla: '3-5 أيام' },
+    ],
+  },
+  {
+    id: 'freight',
+    name: 'الشحن الجوي والبحري',
+    services: [
+      { solution: 'الشحن الجوي', description: 'نقل البضائع الصناعية جواً' },
+      { solution: 'استئجار طائرة شحن', description: 'طائرة مخصصة للبضائع العاجلة' },
+      { solution: 'الشحن الجوي المبرّد', description: 'شحن حاويات مبردة' },
+      { solution: 'الشحن الجوي للبضائع الخطرة', description: 'شحن جوي للبضائع الخطرة وفق قواعد IATA' },
+      { solution: 'شحن بحري حاوية كاملة', description: 'شحن حاويات كاملة للبضائع الصناعية' },
+      { solution: 'شحن بحري حاوية مشتركة', description: 'شحن حاويات مشتركة للمصدرين الصغار' },
+      { solution: 'شحن بحري حاوية مبردة', description: 'نقل بحري بتحكم حراري' },
+      { solution: 'شحن بحري بضائع خطرة', description: 'شحن بحري لمواد الطاقة الخطرة' },
+      { solution: 'شحن البضائع كبيرة الحجم', description: 'شحن المعدات الصناعية كبيرة الحجم' },
+    ],
+  },
+  {
+    id: 'road-freight',
+    name: 'الشحن البري والنقل بالشاحنات',
+    services: [
+      { solution: 'حمولة شاحنة كاملة', description: 'شاحنات مخصصة لنقل البضائع الصناعية' },
+      { solution: 'حمولة أقل من شاحنة', description: 'سعة شاحنة مشتركة للشحنات الصغيرة' },
+      { solution: 'النقل بشاحنات مبردة', description: 'نقل بشاحنات بتحكم حراري' },
+      { solution: 'نقل البضائع الخطرة', description: 'نقل متخصص للمواد الخطرة بالشاحنات' },
+      { solution: 'النقل الثقيل', description: 'نقل معدات البناء كبيرة الحجم' },
+    ],
+  },
+  {
+    id: 'warehousing',
+    name: 'التخزين والتنفيذ',
+    services: [
+      { solution: 'تخزين عام - البر الرئيسي', description: 'تخزين مع رسوم وضرائب مدفوعة داخل بر دبي الرئيسي' },
+      { solution: 'تخزين عام - المنطقة الحرة', description: 'تخزين معفى أو مؤجل من الرسوم وضريبة القيمة المضافة' },
+      { solution: 'التخزين البارد', description: 'تخزين بسلسلة تبريد مع خيارات متعددة للتحكم بالحرارة والرطوبة' },
+      { solution: 'تنفيذ التجارة الإلكترونية', description: 'انتقاء وتعبئة على مستوى القطعة' },
+      { solution: 'التنفيذ المصغّر', description: 'تنفيذ حضري يتيح التوصيل السريع' },
+      { solution: 'تخزين البضائع الخطرة', description: 'تخزين البضائع الخطرة في منشآت متوافقة' },
+    ],
+  },
+  {
+    id: 'reverse',
+    name: 'الخدمات اللوجستية العكسية',
+    services: [
+      { solution: 'المرتجعات بطلب العميل', description: 'جمع ومعالجة الطلبات المرتجعة عبر الإنترنت' },
+      { solution: 'مرتجعات الضمان', description: 'إرجاع الأجهزة المعيبة إلى الشركات المصنعة' },
+      { solution: 'الإرجاع والإصلاح', description: 'نقل المعدات إلى مرافق الإصلاح' },
+    ],
+  },
+  {
+    id: 'trade-customs',
+    name: 'خدمات التجارة والجمارك',
+    services: [
+      { solution: 'التخليص الجمركي للاستيراد', description: 'تخليص جمركي للشحنات الواردة عبر الحدود' },
+      { solution: 'التخليص الجمركي للتصدير', description: 'إعداد مستندات التصدير والمعالجة الجمركية' },
+      { solution: 'توثيق البضائع الخطرة', description: 'إعداد إقرارات البضائع الخطرة' },
+    ],
+  },
+  {
+    id: 'postal',
+    name: 'الخدمات البريدية',
+    services: [
+      { solution: 'البريد العادي', description: 'توصيل البريد الشخصي للأفراد والشركات' },
+      { solution: 'البريد المسجل', description: 'توصيل آمن للمستندات القانونية' },
+      { solution: 'الطرود البريدية', description: 'توصيل الطرود عبر الشبكات البريدية' },
+      { solution: 'الطرود الصغيرة الدولية', description: 'شحن الطرود الصغيرة دولياً' },
+    ],
+  },
+];
 
 export default function ServicesPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const categories = locale === 'ar' ? categoriesAr : categoriesEn;
+  const totalServices = categories.reduce((sum, cat) => sum + cat.services.length, 0);
   const [activeId, setActiveId] = useState(categories[0].id);
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
   const isClickScrolling = useRef(false);

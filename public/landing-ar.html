@@ -83,16 +83,20 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
   border-color: rgba(255,255,255,0.4);
 }
 
+/* Burger & mobile menu — hidden on desktop */
+.nav-mobile-actions { display: none; }
+.mobile-menu { display: none; }
+
 /* Mobile responsive enhancements */
 @media (max-width: 767px) {
-  .page-wrapper { padding: 0.5rem !important; }
+  .page-wrapper { padding: 0.6rem !important; padding-top: 0.5rem !important; }
   .section_hero { margin-top: 0 !important; padding-top: 0 !important; }
   .hero_body { margin-top: 0 !important; height: calc(100vh - 1rem) !important; min-height: 0 !important; border-radius: 1rem !important; }
   .padding-global.is-hero { padding-left: 0 !important; padding-right: 0 !important; }
   .navbar_wrapper { position: relative !important; z-index: 1000; margin-bottom: -3.5rem !important; }
   .navbar { padding-top: 1rem !important; padding-bottom: 0.75rem !important; }
   .hero-inner_body { padding-top: 5.5rem !important; padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
-  .nav-body { display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; }
+  .nav-body { display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; position: relative !important; }
   .nav-brand { margin-left: 0 !important; margin-right: 0 !important; }
   .logo-group { gap: 4px !important; }
   .navbar .padding-global { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
@@ -112,6 +116,57 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
     display: flex !important;
     align-items: center;
     gap: 0.75rem;
+  }
+  .burger-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .burger-btn span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 1px;
+    transition: all 0.3s;
+  }
+  .mobile-menu {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 1.25rem;
+    width: 200px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 14px;
+    padding: 0.5rem;
+    z-index: 999;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .mobile-menu.open {
+    display: flex;
+  }
+  .mobile-menu a {
+    color: rgba(255,255,255,0.9);
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 0.55rem 0.75rem;
+    transition: all 0.2s;
+    border-radius: 8px;
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+  }
+  .mobile-menu a:hover,
+  .mobile-menu a:active {
+    background: rgba(255,255,255,0.1);
   }
   .hero-inner_body .text-size-72 {
     font-size: 2rem !important;
@@ -173,7 +228,15 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
             <a href="/en" target="_top" class="lang-switch">English</a>
           </nav>
           <div class="nav-mobile-actions">
-            <a href="/en" target="_top" class="lang-switch">English</a>
+            <button class="burger-btn" onclick="document.getElementById('mobile-menu').classList.toggle('open')" aria-label="القائمة">
+              <span></span><span></span><span></span>
+            </button>
+          </div>
+          <div id="mobile-menu" class="mobile-menu">
+            <a href="/ar/connect" target="_top">تواصل مع خبير</a>
+            <a href="/ar/services" target="_top">الخدمات المتاحة</a>
+            <a href="https://7x.ae" target="_blank" rel="noopener noreferrer">عن 7X</a>
+            <a href="/en" target="_top" class="lang-switch" style="align-self: flex-start; margin-top: 0.25rem;">English</a>
           </div>
         </div>
       </div>
