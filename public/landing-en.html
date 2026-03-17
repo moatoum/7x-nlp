@@ -94,9 +94,15 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
   .navbar { padding-top: 1rem !important; padding-bottom: 0.75rem !important; }
   .hero-inner_body { padding-top: 5.5rem !important; padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
   .nav-body { display: flex !important; flex-direction: row !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; }
-  .nav-brand { margin-right: auto !important; }
+  .nav-brand { margin-right: 0 !important; }
+  .logo-group { gap: 4px !important; }
   .navbar .padding-global { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
-  .tranzport-logo { width: 47px !important; }
+  .tranzport-logo { width: 40px !important; }
+  .partner-logos { gap: 6px !important; }
+  .partner-logos img:first-of-type { height: 22px !important; }
+  .partner-logos img:last-of-type { height: 19px !important; }
+  .partner-separator { height: 22px !important; }
+  .lang-switch { font-size: 0.65rem !important; padding: 0.25rem 0.55rem !important; }
   .nav-links-inline { display: none !important; }
   .nav-body {
     justify-content: space-between !important;
@@ -148,9 +154,17 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
     <div data-animation="default" data-collapse="none" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="navbar w-nav">
       <div class="padding-global">
         <div class="nav-body">
-          <a href="/en" target="_top" class="nav-brand w-nav-brand">
-            <img src="/7xlogo.svg" loading="lazy" alt="Logo" class="tranzport-logo" style="width: 110px; height: auto;"/>
-          </a>
+          <div class="logo-group" style="display: flex; align-items: center; gap: 0; margin-right: auto;">
+            <a href="/en" target="_top" class="nav-brand w-nav-brand" style="margin-right: 0 !important; width: auto !important; height: auto !important; display: flex !important; align-items: center !important;">
+              <img src="/7xlogo.svg" loading="lazy" alt="Logo" class="tranzport-logo" style="width: 90px; height: auto;"/>
+            </a>
+            <div class="partner-logos" style="display: flex; align-items: center; gap: 10px; margin-left: 10px;">
+              <div class="partner-separator" style="width: 1px; height: 32px; background: rgba(255,255,255,0.3); margin: 0 4px;"></div>
+              <img src="/adiologo.png" alt="ADIO" style="height: 32px; width: auto; opacity: 0.85;" />
+              <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.15); margin: 0 4px;"></div>
+              <img src="/adcustoms.png" alt="AD Customs" style="height: 28px; width: auto; opacity: 0.85;" />
+            </div>
+          </div>
           <nav class="nav-links-inline" style="display: flex; align-items: center; gap: 2rem;">
             <a href="/en/connect" target="_top" style="color: #F9F9FF; font-size: 0.875rem; opacity: 0.8; transition: opacity 0.3s;">Connect to an Expert</a>
             <a href="https://7x.ae" target="_blank" rel="noopener noreferrer" style="color: #F9F9FF; font-size: 0.875rem; opacity: 0.8; transition: opacity 0.3s;">About 7X</a>
@@ -251,7 +265,7 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
           <div class="section-img_wrapper">
             <div class="hero-video w-embed">
               <video class="hero-video" autoplay loop muted playsinline>
-                <source src="/link-hero.mp4" type="video/mp4" />
+                <source src="/link-hero-video.mp4" type="video/mp4" />
               </video>
             </div>
             <div class="hero-video_bottom">

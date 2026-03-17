@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { toClientSubmission } from '@/lib/mappers';
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
+import { requireAdmin } from '@/lib/require-admin';
 
 const submitLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 }); // 10 per minute
 
@@ -22,8 +23,11 @@ function strArr(val: unknown, maxItems = MAX_ARRAY): string[] {
   return val.filter((v): v is string => typeof v === 'string').slice(0, maxItems).map((s) => s.slice(0, MAX_STR));
 }
 
-// GET /api/submissions — List all
-export async function GET() {
+// GET /api/submissions — List all (admin only)
+export async function GET(request: NextRequest) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
+
   try {
     const submissions = await prisma.submission.findMany({
       include: { notes: true, recommendedServices: true },

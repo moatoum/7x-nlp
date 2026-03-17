@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { toClientNote } from '@/lib/mappers';
+import { requireAdmin } from '@/lib/require-admin';
 
 const VALID_VISIBILITY = new Set(['internal', 'external']);
 
-// POST /api/submissions/[id]/notes — Add a note
+// POST /api/submissions/[id]/notes — Add a note (admin only)
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json();
 

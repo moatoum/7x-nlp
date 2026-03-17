@@ -21,12 +21,10 @@ const PUBLIC_API_ROUTES = new Set([
   '/api/admin/auth',
   '/api/chat',
   '/api/health',
-  '/api/migrate',
   '/api/send-confirmation',
   '/api/pulse/maritime',
   '/api/pulse/aviation',
   '/api/pulse/news',
-  '/api/news',
   '/api/submissions/track',
 ]);
 

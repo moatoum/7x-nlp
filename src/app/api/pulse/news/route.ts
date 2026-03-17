@@ -3,6 +3,15 @@ import type { PulseNewsItem } from '@/lib/pulse-types';
 
 export const dynamic = 'force-dynamic';
 
+interface NewsApiArticle {
+  title?: string;
+  source?: { name?: string };
+  url?: string;
+  publishedAt?: string;
+  description?: string;
+  urlToImage?: string;
+}
+
 const API_KEY = process.env.NEWSAPI_KEY || '';
 
 // In-memory cache (5 min TTL)
@@ -33,8 +42,7 @@ export async function GET() {
     const json = await res.json();
     const rawArticles = json.articles || [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const articles: PulseNewsItem[] = rawArticles.map((a: any, i: number) => ({
+    const articles: PulseNewsItem[] = rawArticles.map((a: NewsApiArticle, i: number) => ({
       id: `news-${i}-${Date.now()}`,
       title: a.title || 'Untitled',
       source: a.source?.name || 'Unknown',

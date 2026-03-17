@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { toClientSubmission } from '@/lib/mappers';
+import { requireAdmin } from '@/lib/require-admin';
 
-// GET /api/submissions/[id]
+// GET /api/submissions/[id] (admin only)
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
+
   try {
     const submission = await prisma.submission.findUnique({
       where: { id: params.id },
@@ -27,11 +31,14 @@ export async function GET(
 const VALID_STATUSES = new Set(['submitted', 'under_review', 'assigned', 'actioned', 'closed']);
 const VALID_TAGS = new Set(['NXN', 'EMX']);
 
-// PATCH /api/submissions/[id] — Update status and/or tag
+// PATCH /api/submissions/[id] — Update status and/or tag (admin only)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json();
 

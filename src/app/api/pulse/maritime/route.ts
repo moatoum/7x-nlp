@@ -3,6 +3,26 @@ import type { VesselInfo } from '@/lib/pulse-types';
 
 export const dynamic = 'force-dynamic';
 
+interface DatalasticVessel {
+  uuid?: string;
+  mmsi?: string;
+  name?: string;
+  type_specific?: string;
+  type?: string;
+  country_iso?: string;
+  flag?: string;
+  navigational_status?: string;
+  status?: string;
+  speed?: number;
+  lat?: number;
+  latitude?: number;
+  lon?: number;
+  longitude?: number;
+  destination?: string;
+  last_position_epoch?: number;
+  last_position_UTC?: string;
+}
+
 // In-memory cache (5 min TTL)
 let cache: { data: VesselInfo[]; timestamp: number } | null = null;
 const CACHE_TTL = 5 * 60 * 1000;
@@ -56,8 +76,7 @@ async function fetchVessels(keyword: string): Promise<VesselInfo[]> {
   const json = await res.json();
   const rawVessels = json.data || [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return rawVessels.slice(0, 8).map((v: any, i: number) => ({
+  return rawVessels.slice(0, 8).map((v: DatalasticVessel, i: number) => ({
     id: v.uuid || v.mmsi || `vessel-${i}`,
     name: v.name || 'Unknown Vessel',
     type: v.type_specific || v.type || 'Cargo',

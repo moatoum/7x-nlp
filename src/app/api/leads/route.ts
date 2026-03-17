@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 import { sendEmail, buildExpertEmailPayload } from '@/lib/notification-engine';
+import { requireAdmin } from '@/lib/require-admin';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const leadLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 }); // 10 per minute
@@ -18,8 +19,11 @@ function generateLeadRef() {
   return `7X-L-${date}-${code}`;
 }
 
-// GET /api/leads — List all leads (admin)
-export async function GET() {
+// GET /api/leads — List all leads (admin only)
+export async function GET(request: NextRequest) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
+
   try {
     const leads = await prisma.lead.findMany({
       orderBy: { createdAt: 'desc' },

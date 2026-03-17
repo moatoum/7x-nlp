@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/require-admin';
 
 const VALID_STATUSES = new Set(['new', 'attempting', 'contacted', 'qualified', 'disqualified', 'closed']);
 
-// GET /api/leads/[id]
+// GET /api/leads/[id] (admin only)
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
+
   try {
     const lead = await prisma.lead.findUnique({
       where: { id: params.id },
@@ -24,11 +28,14 @@ export async function GET(
   }
 }
 
-// PATCH /api/leads/[id] — Update lead status or notes
+// PATCH /api/leads/[id] — Update lead status or notes (admin only)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
+
   try {
     const body = await request.json();
 

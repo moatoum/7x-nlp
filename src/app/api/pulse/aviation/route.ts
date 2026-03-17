@@ -3,6 +3,15 @@ import type { FlightInfo } from '@/lib/pulse-types';
 
 export const dynamic = 'force-dynamic';
 
+interface AviationStackFlight {
+  flight?: { iata?: string; icao?: string };
+  airline?: { name?: string };
+  departure?: { airport?: string; timezone?: string; iata?: string; scheduled?: string; actual?: string };
+  arrival?: { airport?: string; timezone?: string; iata?: string; scheduled?: string; actual?: string };
+  flight_status?: string;
+  aircraft?: { registration?: string };
+}
+
 // In-memory cache (5 min TTL) — critical for free tier (100 req/month)
 let cache: { data: FlightInfo[]; timestamp: number } | null = null;
 const CACHE_TTL = 5 * 60 * 1000;
@@ -38,8 +47,7 @@ export async function GET() {
 
     const rawFlights = json.data || [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const flights: FlightInfo[] = rawFlights.map((f: any, i: number) => ({
+    const flights: FlightInfo[] = rawFlights.map((f: AviationStackFlight, i: number) => ({
       id: `${f.flight?.iata || 'FL'}-${i}`,
       airline: f.airline?.name || 'Unknown Airline',
       flightNumber: f.flight?.iata || f.flight?.icao || `FL${i}`,
