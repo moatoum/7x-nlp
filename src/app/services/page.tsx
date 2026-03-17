@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowLeft } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import { cn } from '@/lib/cn';
 
 interface ServiceItem {
@@ -171,7 +171,9 @@ export default function ServicesPage() {
             <ArrowLeft className="w-4 h-4" />
             Back
           </Link>
-          <Image src="/7xlogo-dark.svg" alt="7X" width={48} height={28} priority />
+          <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center">
+            <Logo color="white" className="h-3 w-auto" />
+          </div>
         </div>
       </header>
 

@@ -158,9 +158,6 @@ function buildIntakeHtml(data: IntakeEmailData): string {
       </p>
     </div>
   </div>
-  <div style="text-align:center;margin-top:24px;">
-    <p style="margin:0;font-size:11px;color:#9ca3af;">&copy; 2026 LINK &mdash; Powered by 7X, Emirates Post Group</p>
-  </div>
 </div>`;
 }
 
@@ -231,9 +228,6 @@ function buildExpertHtml(data: ExpertEmailData): string {
         </tr>
       </table>
     </div>
-  </div>
-  <div style="text-align:center;margin-top:24px;">
-    <p style="margin:0;font-size:11px;color:#9ca3af;">&copy; 2026 LINK &mdash; Powered by 7X, Emirates Post Group</p>
   </div>
 </div>`;
 }
