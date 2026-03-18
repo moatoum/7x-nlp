@@ -258,7 +258,7 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
                 <h1 class="text-size-72">البوابة الوطنية الموحدة للدعم اللوجستي على مستوى الدولة</h1>
               </div>
               <div class="margin-b-12" style="max-width: 680px; margin-top: 2.5rem;">
-                <p class="text-size-18 opacity-60">تُعد منصة «LINK» بوابة وطنية موحدة تُمكّن الشركات والجهات الحكومية في دولة الإمارات العربية المتحدة من الوصول إلى مسار واضح ومنظم لطلب خدمات الدعم اللوجستي، بما يضمن ربطهم بالشركاء المناسبين ضمن منظومة متكاملة من مزودي خدمات التجارة والنقل.</p>
+                <p class="text-size-18 opacity-60">تُعد منصة «LINK» بوابة وطنية موحدة تُمكّن الشركات والجهات الحكومية في دولة الإمارات العربية المتحدة من الوصول إلى مسار واضح ومنظم لطلب خدمات الدعم اللوجستي، بما يضمن ربطهم بالشركاء المناسبين ضمن منظومة متكاملة من مزودي خدمات التجارة والخدمات اللوجستية.</p>
               </div>
             </div>
             <div class="hflex is-hero-bottom">
@@ -267,7 +267,7 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
                 <a href="/ar/track" target="_top" class="button-secondary w-inline-block"><div>تتبّع الطلب</div></a>
               </div>
               <div class="slider-hero_component">
-                <div class="slider-hero swiper" style="direction: ltr;">
+                <div class="slider-hero swiper" style="direction: rtl;">
                   <div class="slider-hero-wrapper swiper-wrapper">
                     <a class="slider-hero-slide w-inline-block swiper-slide" href="/ar/intake" target="_top">
                       <div class="slider-hero-slide_info">
@@ -351,6 +351,7 @@ document.addEventListener('DOMContentLoaded', function () {
     new Swiper($(this).find(".swiper")[0], {
       speed: 800,
       slidesPerView: 'auto',
+      dir: 'rtl',
       mousewheel: { forceToAxis: true },
       autoplay: { delay: 2000, disableOnInteraction: false },
       scrollbar: {

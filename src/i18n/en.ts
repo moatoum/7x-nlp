@@ -30,7 +30,7 @@ const en = {
     placeholderThinking: 'Thinking...',
     helpText: 'You can type naturally or select from the options above',
     linkAssistant: 'LINK Assistant',
-    tradeAdvisor: 'Trade and Transport Advisor',
+    tradeAdvisor: 'Trade and Logistics Advisor',
     confirmSelection: 'Confirm Selection ({count})',
     continue: 'Continue',
     ariaConversationLog: 'Conversation',

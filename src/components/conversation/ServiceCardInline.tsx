@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import type { ServiceMatch } from '@/engine/types';
 import { Check } from 'lucide-react';
+import { useTranslation } from '@/i18n/LocaleProvider';
+import { SERVICE_NAMES_AR, SERVICE_DESCRIPTIONS_AR, CATEGORY_LABELS, CATEGORY_LABELS_AR } from '@/engine/catalog';
 
 interface ServiceCardInlineProps {
   service: ServiceMatch;
@@ -13,6 +15,14 @@ interface ServiceCardInlineProps {
 }
 
 export function ServiceCardInline({ service, index, selectable, selected, onToggle }: ServiceCardInlineProps) {
+  const { locale } = useTranslation();
+  const isAr = locale === 'ar';
+  const displayName = (isAr && SERVICE_NAMES_AR[service.id]) || service.name;
+  const displayDesc = (isAr && SERVICE_DESCRIPTIONS_AR[service.id]) || service.description;
+  const displayCat = isAr
+    ? (CATEGORY_LABELS_AR[service.category] || CATEGORY_LABELS[service.category] || service.category)
+    : (CATEGORY_LABELS[service.category] || service.category);
+
   return (
     <motion.button
       type="button"
@@ -42,10 +52,10 @@ export function ServiceCardInline({ service, index, selectable, selected, onTogg
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <h4 className="text-[13px] font-semibold text-gray-900 truncate">{service.name}</h4>
-            <span className="text-[10px] text-gray-300 shrink-0">{service.category}</span>
+            <h4 className="text-[13px] font-semibold text-gray-900 truncate">{displayName}</h4>
+            <span className="text-[10px] text-gray-300 shrink-0">{displayCat}</span>
           </div>
-          <p className="text-[12px] text-gray-400 mt-0.5 line-clamp-1">{service.description}</p>
+          <p className="text-[12px] text-gray-400 mt-0.5 line-clamp-1">{displayDesc}</p>
         </div>
       </div>
     </motion.button>
