@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import type { ServiceMatch } from '@/engine/types';
 import { Check } from 'lucide-react';
 import { useTranslation } from '@/i18n/LocaleProvider';
-import { SERVICE_NAMES_AR, SERVICE_DESCRIPTIONS_AR, CATEGORY_LABELS, CATEGORY_LABELS_AR } from '@/engine/catalog';
+import { SERVICE_NAMES_AR, SERVICE_DESCRIPTIONS_AR, getCategoryLabelAr } from '@/engine/catalog';
 
 interface ServiceCardInlineProps {
   service: ServiceMatch;
@@ -19,9 +19,7 @@ export function ServiceCardInline({ service, index, selectable, selected, onTogg
   const isAr = locale === 'ar';
   const displayName = (isAr && SERVICE_NAMES_AR[service.id]) || service.name;
   const displayDesc = (isAr && SERVICE_DESCRIPTIONS_AR[service.id]) || service.description;
-  const displayCat = isAr
-    ? (CATEGORY_LABELS_AR[service.category] || CATEGORY_LABELS[service.category] || service.category)
-    : (CATEGORY_LABELS[service.category] || service.category);
+  const displayCat = isAr ? getCategoryLabelAr(service.category) : service.category;
 
   return (
     <motion.button
@@ -30,7 +28,7 @@ export function ServiceCardInline({ service, index, selectable, selected, onTogg
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, delay: index * 0.04 }}
       onClick={selectable ? () => onToggle?.(service.id) : undefined}
-      className={`w-full text-left border rounded-xl px-3.5 py-2.5 transition-all duration-150 ${
+      className={`w-full text-start border rounded-xl px-3.5 py-2.5 transition-all duration-150 ${
         selectable ? 'cursor-pointer' : 'cursor-default'
       } ${
         selected

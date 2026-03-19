@@ -284,6 +284,16 @@ export const SERVICE_DESCRIPTIONS_AR: Record<string, string> = {
   'ps-financial': '\u062E\u062F\u0645\u0627\u062A \u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0623\u0645\u0648\u0627\u0644 \u0639\u0628\u0631 \u0627\u0644\u0634\u0628\u0643\u0629 \u0627\u0644\u0628\u0631\u064A\u062F\u064A\u0629',
 };
 
+// Reverse map: English category label → Arabic category label
+const CATEGORY_EN_TO_AR: Record<string, string> = Object.fromEntries(
+  Object.entries(CATEGORY_LABELS).map(([key, enLabel]) => [enLabel, CATEGORY_LABELS_AR[key] || enLabel])
+);
+
+/** Look up Arabic category label from either a key or English label */
+export function getCategoryLabelAr(categoryKeyOrLabel: string): string {
+  return CATEGORY_LABELS_AR[categoryKeyOrLabel] || CATEGORY_EN_TO_AR[categoryKeyOrLabel] || categoryKeyOrLabel;
+}
+
 /** Return localized service fields based on locale */
 export function getLocalizedServiceFields(serviceId: string, categoryKey: string, locale: string) {
   if (locale !== 'ar') {

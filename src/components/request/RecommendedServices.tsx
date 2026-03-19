@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import type { ServiceMatch } from '@/engine/types';
 import { useTranslation } from '@/i18n/LocaleProvider';
-import { SERVICE_NAMES_AR, SERVICE_DESCRIPTIONS_AR, CATEGORY_LABELS, CATEGORY_LABELS_AR } from '@/engine/catalog';
+import { SERVICE_NAMES_AR, SERVICE_DESCRIPTIONS_AR, getCategoryLabelAr } from '@/engine/catalog';
 
 export function RecommendedServices({ services }: { services: ServiceMatch[] }) {
   const { t, locale } = useTranslation();
@@ -19,9 +19,7 @@ export function RecommendedServices({ services }: { services: ServiceMatch[] }) 
         {services.map((service, i) => {
           const displayName = (isAr && SERVICE_NAMES_AR[service.id]) || service.name;
           const displayDesc = (isAr && SERVICE_DESCRIPTIONS_AR[service.id]) || service.description;
-          const displayCat = isAr
-            ? (CATEGORY_LABELS_AR[service.category] || CATEGORY_LABELS[service.category] || service.category)
-            : (CATEGORY_LABELS[service.category] || service.category);
+          const displayCat = isAr ? getCategoryLabelAr(service.category) : service.category;
 
           return (
             <motion.div

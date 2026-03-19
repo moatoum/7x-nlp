@@ -202,6 +202,55 @@ html.lock-scroll, body.lock-scroll { overflow: hidden; }
 @media (min-width: 768px) {
   .nav-mobile-actions { display: none !important; }
 }
+
+/* Desktop: ensure hero grows to fit content on short viewports */
+@media (min-width: 768px) {
+  .hero_body {
+    min-height: 100vh !important;
+    height: auto !important;
+  }
+  .section-img_wrapper {
+    position: absolute !important;
+    inset: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
+/* Short desktop screens */
+@media (min-width: 768px) and (max-height: 820px) {
+  .hero-inner_body {
+    padding-top: 9rem !important;
+    padding-bottom: 2.5rem !important;
+  }
+  .hero-inner_body .text-size-72 {
+    font-size: 3.2rem !important;
+    line-height: 1.1 !important;
+  }
+}
+@media (min-width: 768px) and (max-height: 680px) {
+  .hero-inner_body {
+    padding-top: 6.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  .hero-inner_body .text-size-72 {
+    font-size: 2.5rem !important;
+    line-height: 1.1 !important;
+  }
+  .hero-inner_body .margin-b-12 p.opacity-60 {
+    font-size: 0.85rem !important;
+    line-height: 1.4 !important;
+  }
+  .slider-hero-slide_info .text-size-20 {
+    font-size: 0.95rem !important;
+  }
+}
+
+/* Very wide screens */
+@media (min-width: 1920px) {
+  .hero-inner_body {
+    max-width: 100rem !important;
+  }
+}
 </style>
 </head>
 <body>
