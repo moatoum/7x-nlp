@@ -32,19 +32,19 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/favicon.png",
-        width: 512,
-        height: 512,
+        url: "/graphthumb.png",
+        width: 1200,
+        height: 630,
         alt: "LINK by 7X",
       },
     ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "LINK — by 7X",
     description:
       "LINK is 7X's single national access point — connecting every logistics request to the right team, solution, and partner across the ecosystem.",
-    images: ["/favicon.png"],
+    images: ["/graphthumb.png"],
   },
 };
 
