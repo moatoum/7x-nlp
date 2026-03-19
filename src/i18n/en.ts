@@ -10,7 +10,7 @@ const en = {
     ctaTrackRequest: 'Track Your Request',
     copyright: '\u00A9 2026 LINK \u2014 Powered by 7X, Emirates Post Group',
     quickLinks: 'Quick Links',
-    connectExpert: 'Connect to an Expert',
+    connectExpert: 'Connect with an Expert',
     about7x: 'About 7X',
     availableServices: 'Available Services',
   },
@@ -127,7 +127,7 @@ const en = {
   // -- Connect Page --
   connect: {
     back: 'Back',
-    title: 'Connect to an Expert',
+    title: 'Connect with an Expert',
     subtitle: 'We will match you with a logistics specialist',
     fullName: 'Full Name *',
     businessEmail: 'Business Email *',
