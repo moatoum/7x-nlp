@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -23,7 +23,11 @@ import { CATEGORY_LABELS } from '@/engine/catalog';
 import { formatDate, timeAgo } from '@/lib/formatters';
 import { useTranslation } from '@/i18n/LocaleProvider';
 import { LocaleLink } from '@/components/ui/LocaleLink';
+import { TurnstileWidget } from '@/components/ui/TurnstileWidget';
 import type { Submission } from '@/engine/types';
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+const TURNSTILE_TRACKING_ENABLED = process.env.NEXT_PUBLIC_TURNSTILE_TRACKING_ENABLED === 'true';
 
 /* ── Status Steps ── */
 function useSteps() {
@@ -244,10 +248,17 @@ function TrackContent() {
   const [invalidFormat, setInvalidFormat] = useState(false);
   const [searched, setSearched] = useState(false);
   const [searching, setSearching] = useState(false);
+  const turnstileTokenRef = useRef<string | null>(null);
+  const [turnstileReady, setTurnstileReady] = useState(!TURNSTILE_TRACKING_ENABLED);
+
+  const buildHeaders = useCallback(() => {
+    if (!TURNSTILE_TRACKING_ENABLED || !turnstileTokenRef.current) return undefined;
+    return { 'x-turnstile-token': turnstileTokenRef.current };
+  }, []);
 
   useEffect(() => {
     const ref = searchParams.get('ref');
-    if (ref) {
+    if (ref && turnstileReady) {
       const upper = ref.toUpperCase();
       setCode(upper);
       if (!REF_PATTERN.test(upper)) {
@@ -256,7 +267,7 @@ function TrackContent() {
         return;
       }
       setSearching(true);
-      fetchByReference(upper).then((found) => {
+      fetchByReference(upper, buildHeaders()).then((found) => {
         if (found) {
           setResult(found);
         } else {
@@ -266,7 +277,7 @@ function TrackContent() {
         setSearching(false);
       });
     }
-  }, [searchParams, fetchByReference]);
+  }, [searchParams, fetchByReference, turnstileReady, buildHeaders]);
 
   const handleSearch = useCallback(
     async (e: React.FormEvent) => {
@@ -284,7 +295,7 @@ function TrackContent() {
       }
 
       setSearching(true);
-      const found = await fetchByReference(trimmed);
+      const found = await fetchByReference(trimmed, buildHeaders());
       if (found) {
         setResult(found);
         setNotFound(false);
@@ -295,7 +306,7 @@ function TrackContent() {
       setSearched(true);
       setSearching(false);
     },
-    [code, fetchByReference]
+    [code, fetchByReference, buildHeaders]
   );
 
   return (
@@ -349,12 +360,28 @@ function TrackContent() {
             />
             <button
               type="submit"
-              disabled={searching}
+              disabled={searching || (TURNSTILE_TRACKING_ENABLED && !turnstileReady)}
               className="absolute end-2 top-1/2 -translate-y-1/2 h-[40px] px-5 rounded-full bg-black text-white text-[13px] font-medium hover:bg-gray-900 transition-all disabled:opacity-50"
             >
               {searching ? t('track.searching') : t('track.trackButton')}
             </button>
           </div>
+
+          {TURNSTILE_TRACKING_ENABLED && TURNSTILE_SITE_KEY && (
+            <div className="mt-4 flex justify-center">
+              <TurnstileWidget
+                siteKey={TURNSTILE_SITE_KEY}
+                onVerify={(token) => {
+                  turnstileTokenRef.current = token;
+                  setTurnstileReady(true);
+                }}
+                onExpire={() => {
+                  turnstileTokenRef.current = null;
+                  setTurnstileReady(false);
+                }}
+              />
+            </div>
+          )}
         </motion.form>
 
         {result && <TrackingResult submission={result} />}

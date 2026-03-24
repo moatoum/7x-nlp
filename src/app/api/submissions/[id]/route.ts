@@ -6,14 +6,15 @@ import { requireAdmin } from '@/lib/require-admin';
 // GET /api/submissions/[id] (admin only)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAdmin(request);
   if (authError) return authError;
+  const { id } = await params;
 
   try {
     const submission = await prisma.submission.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { notes: true, recommendedServices: true },
     });
 
@@ -34,10 +35,11 @@ const VALID_TAGS = new Set(['NXN', 'EMX']);
 // PATCH /api/submissions/[id] — Update status and/or tag (admin only)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAdmin(request);
   if (authError) return authError;
+  const { id } = await params;
 
   try {
     const body = await request.json();
@@ -61,7 +63,7 @@ export async function PATCH(
     }
 
     const submission = await prisma.submission.update({
-      where: { id: params.id },
+      where: { id },
       data,
       include: { notes: true, recommendedServices: true },
     });

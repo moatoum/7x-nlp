@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 
@@ -15,11 +15,16 @@ const ibmPlexArabic = IBM_Plex_Sans_Arabic({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: "LINK — by 7X",
   description:
     "LINK is 7X's single national access point — connecting every logistics request to the right team, solution, and partner across the ecosystem.",
-  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
   icons: {
     icon: "/favicon.png",
     apple: "/favicon.png",

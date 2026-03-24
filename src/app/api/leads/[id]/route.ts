@@ -7,14 +7,15 @@ const VALID_STATUSES = new Set(['new', 'attempting', 'contacted', 'qualified', '
 // GET /api/leads/[id] (admin only)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAdmin(request);
   if (authError) return authError;
+  const { id } = await params;
 
   try {
     const lead = await prisma.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!lead) {
@@ -31,10 +32,11 @@ export async function GET(
 // PATCH /api/leads/[id] — Update lead status or notes (admin only)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAdmin(request);
   if (authError) return authError;
+  const { id } = await params;
 
   try {
     const body = await request.json();
@@ -66,7 +68,7 @@ export async function PATCH(
     }
 
     const lead = await prisma.lead.update({
-      where: { id: params.id },
+      where: { id },
       data,
     });
 

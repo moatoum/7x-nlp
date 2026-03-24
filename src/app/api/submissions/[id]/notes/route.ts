@@ -8,10 +8,11 @@ const VALID_VISIBILITY = new Set(['internal', 'external']);
 // POST /api/submissions/[id]/notes — Add a note (admin only)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = await requireAdmin(request);
   if (authError) return authError;
+  const { id } = await params;
 
   try {
     const body = await request.json();
@@ -32,7 +33,7 @@ export async function POST(
 
     // Verify submission exists
     const submission = await prisma.submission.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true },
     });
     if (!submission) {
@@ -44,7 +45,7 @@ export async function POST(
         content: body.content.trim().slice(0, 2000),
         visibility,
         author: typeof body.author === 'string' ? body.author.slice(0, 100) : 'Admin',
-        submissionId: params.id,
+        submissionId: id,
       },
     });
 

@@ -79,6 +79,14 @@ model RecommendedService {
   @@map("recommended_services")
 }
 
+model ChatSession {
+  token     String   @id
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("chat_sessions")
+}
+
 model AdminSession {
   token     String   @id
   username  String

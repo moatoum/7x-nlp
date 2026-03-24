@@ -27,7 +27,7 @@ interface SubmissionsState {
   getByReference: (ref: string) => Submission | undefined;
 
   /** Fetch a single submission by reference from DB (tracking page) */
-  fetchByReference: (ref: string) => Promise<Submission | null>;
+  fetchByReference: (ref: string, extraHeaders?: Record<string, string>) => Promise<Submission | null>;
 }
 
 export const useSubmissionsStore = create<SubmissionsState>()((set, get) => ({
@@ -118,9 +118,11 @@ export const useSubmissionsStore = create<SubmissionsState>()((set, get) => ({
       (s) => s.referenceNumber.toLowerCase() === ref.toLowerCase()
     ),
 
-  fetchByReference: async (ref) => {
+  fetchByReference: async (ref, extraHeaders) => {
     try {
-      const res = await fetch(`/api/submissions/track/${encodeURIComponent(ref)}`);
+      const res = await fetch(`/api/submissions/track/${encodeURIComponent(ref)}`, {
+        headers: extraHeaders,
+      });
       if (!res.ok) return null;
       return await res.json();
     } catch {

@@ -34,6 +34,8 @@ const en = {
     confirmSelection: 'Confirm Selection ({count})',
     continue: 'Continue',
     ariaConversationLog: 'Conversation',
+    verifying: 'Verifying... One moment.',
+    verifyError: 'Verification failed. Please try again.',
   },
 
   // -- Typing Indicator --

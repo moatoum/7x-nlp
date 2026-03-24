@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useConversationStore } from '@/store/conversationStore';
 import { useConversation } from '@/hooks/useConversation';
 import { useAutoScroll } from '@/hooks/useAutoScroll';
@@ -9,19 +9,66 @@ import { BotMessage } from './BotMessage';
 import { UserMessage } from './UserMessage';
 import { TypingIndicator } from './TypingIndicator';
 import { TextInput } from './TextInput';
+import { TurnstileWidget } from '@/components/ui/TurnstileWidget';
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+const TURNSTILE_CHAT_ENABLED = process.env.NEXT_PUBLIC_TURNSTILE_CHAT_ENABLED === 'true';
 
 export function ConversationPanel() {
   const { t } = useTranslation();
   const { messages, isTyping, inputDisabled, started, currentNodeId } = useConversationStore();
   const { startConversation, handleChipSelect, handleTextSubmit, handleMultiSelect, handleServiceConfirm } = useConversation();
 
+  const [chatVerified, setChatVerified] = useState(!TURNSTILE_CHAT_ENABLED);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState(false);
+
   const scrollRef = useAutoScroll([messages.length, isTyping]);
 
+  const handleTurnstileVerify = useCallback(async (token: string) => {
+    setVerifying(true);
+    setVerifyError(false);
+    try {
+      const res = await fetch('/api/chat/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ turnstileToken: token }),
+      });
+      if (res.ok) {
+        setChatVerified(true);
+      } else {
+        setVerifyError(true);
+      }
+    } catch {
+      setVerifyError(true);
+    } finally {
+      setVerifying(false);
+    }
+  }, []);
+
   useEffect(() => {
-    if (!started) {
+    if (!started && chatVerified) {
       startConversation();
     }
-  }, [started, startConversation]);
+  }, [started, startConversation, chatVerified]);
+
+  if (!chatVerified && TURNSTILE_SITE_KEY) {
+    return (
+      <div className="flex flex-col h-full bg-white items-center justify-center px-6">
+        <div className="text-center max-w-sm">
+          <p className="text-sm text-gray-500 mb-4">{t('conversation.verifying')}</p>
+          <TurnstileWidget
+            siteKey={TURNSTILE_SITE_KEY}
+            onVerify={handleTurnstileVerify}
+            onError={() => setVerifyError(true)}
+            onExpire={() => setVerifyError(true)}
+            className="flex justify-center"
+          />
+          {verifyError && <p className="text-xs text-red-500 mt-3">{t('conversation.verifyError')}</p>}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-white">

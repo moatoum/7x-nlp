@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildSystemPrompt } from '@/engine/ai';
 import type { RequestFields } from '@/engine/types';
+import { validateChatSession } from '@/lib/chat-session';
 
 // Simple in-memory rate limiter (per IP, resets on server restart)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -42,6 +43,18 @@ function getEnv(key: string): string | undefined {
 
 export async function POST(request: NextRequest) {
   try {
+    // Turnstile chat session verification
+    if (process.env.TURNSTILE_CHAT_ENABLED === 'true') {
+      const chatToken = request.cookies.get('chat_session')?.value;
+      const valid = await validateChatSession(chatToken);
+      if (!valid) {
+        return NextResponse.json(
+          { error: 'Verification required' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Rate limiting
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     if (!checkRateLimit(ip)) {
