@@ -21,7 +21,7 @@ export async function verifyTurnstileToken(
   token: string,
   remoteIp?: string
 ): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
+  const secret = process.env.TURNSTILE_SECRET_KEY || '0x4AAAAAACvVBBrrDN_K5W-BHCLePBn--iU';
   if (!secret) {
     console.error('TURNSTILE_SECRET_KEY not configured');
     return false;
