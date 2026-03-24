@@ -30,16 +30,15 @@ export async function verifyTurnstileToken(
   if (!token) return false;
 
   try {
-    const body: Record<string, string> = {
-      secret,
-      response: token,
-    };
-    if (remoteIp) body.remoteip = remoteIp;
+    const formData = new URLSearchParams();
+    formData.append('secret', secret);
+    formData.append('response', token);
+    if (remoteIp) formData.append('remoteip', remoteIp);
 
     const res = await fetch(VERIFY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData.toString(),
     });
 
     if (!res.ok) {
