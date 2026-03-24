@@ -48,7 +48,7 @@ export async function verifyTurnstileToken(
 
     const result: TurnstileResult = await res.json();
     if (!result.success) {
-      console.warn('Turnstile verification failed:', result['error-codes']);
+      console.warn('Turnstile verification failed:', JSON.stringify(result));
     }
     return result.success;
   } catch (err) {

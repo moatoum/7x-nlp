@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     const valid = await verifyTurnstileToken(turnstileToken, ip);
 
     if (!valid) {
+      console.warn('Chat verify: Turnstile token rejected for IP', ip);
       return NextResponse.json({ error: 'Verification failed' }, { status: 403 });
     }
 
@@ -30,7 +31,8 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch {
+  } catch (err) {
+    console.error('Chat verify error:', err);
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }
