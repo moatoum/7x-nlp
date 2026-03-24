@@ -47,8 +47,7 @@ env:
     value: "knI2UBml0vWD0vA6"
   - name: NEXT_PUBLIC_TURNSTILE_SITE_KEY
     value: "0x4AAAAAACvVBCWFkqXFEZho"
-  - name: TURNSTILE_SECRET_KEY
-    value: "0x4AAAAAACvVBBrrDN_K5W-BHCLePBn--iU"
+  # TURNSTILE_SECRET_KEY must be set via pipeline variable or helm override
   - name: TURNSTILE_CHAT_ENABLED
     value: "true"
   - name: TURNSTILE_TRACKING_ENABLED
