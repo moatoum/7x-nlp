@@ -10,7 +10,7 @@ type PrismaSubmissionFull = PrismaSubmission & {
   recommendedServices: PrismaService[];
 };
 
-/** Convert Prisma DB record → client Submission type */
+/** Convert Prisma DB record → client Submission type (full, admin-only) */
 export function toClientSubmission(db: PrismaSubmissionFull): Submission {
   return {
     id: db.id,
@@ -45,6 +45,23 @@ export function toClientSubmission(db: PrismaSubmissionFull): Submission {
     totalMessages: db.totalMessages,
     recommendedServices: db.recommendedServices.map(toClientServiceMatch),
     notes: db.notes.map(toClientNote),
+  };
+}
+
+/** Convert Prisma DB record → public-safe DTO for tracking (no PII, external notes only) */
+export function toPublicSubmission(db: PrismaSubmissionFull): Partial<Submission> {
+  return {
+    referenceNumber: db.referenceNumber,
+    status: db.status as Submission['status'],
+    createdAt: db.createdAt.getTime(),
+    serviceCategory: db.serviceCategory,
+    originLocation: db.originLocation,
+    destinationLocation: db.destinationLocation,
+    urgency: db.urgency,
+    recommendedServices: db.recommendedServices.map(toClientServiceMatch),
+    notes: db.notes
+      .filter((n) => n.visibility === 'external')
+      .map(toClientNote),
   };
 }
 

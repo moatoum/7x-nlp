@@ -12,9 +12,6 @@ import {
   XCircle,
   UserCheck,
   Zap,
-  Building2,
-  User,
-  Mail,
   MapPin,
   Clock,
   MessageSquare,
@@ -133,9 +130,6 @@ function TrackingResult({ submission }: { submission: Submission }) {
 
         <div className="px-6 py-5 space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            {submission.companyName && <DetailItem icon={Building2} label={t('track.labelCompany')} value={submission.companyName} />}
-            {submission.contactName && <DetailItem icon={User} label={t('track.labelContact')} value={submission.contactName} />}
-            {submission.contactEmail && <DetailItem icon={Mail} label={t('track.labelEmail')} value={submission.contactEmail} />}
             {submission.serviceCategory && <DetailItem icon={Package} label={t('track.labelService')} value={categoryLabel} />}
             {(submission.originLocation || submission.destinationLocation) && (
               <DetailItem

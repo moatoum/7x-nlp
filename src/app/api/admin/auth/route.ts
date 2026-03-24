@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     );
 
     if (account) {
-      const token = createSession(account.username, account.role);
+      const token = await createSession(account.username, account.role);
 
       const response = NextResponse.json({
         success: true,
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 // DELETE /api/admin/auth — Logout
 export async function DELETE(req: NextRequest) {
   const token = req.cookies.get('admin_session')?.value;
-  destroySession(token);
+  await destroySession(token);
 
   const response = NextResponse.json({ success: true });
   response.cookies.set('admin_session', '', { httpOnly: true, path: '/', maxAge: 0 });

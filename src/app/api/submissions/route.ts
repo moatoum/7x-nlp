@@ -25,7 +25,7 @@ function strArr(val: unknown, maxItems = MAX_ARRAY): string[] {
 
 // GET /api/submissions — List all (admin only)
 export async function GET(request: NextRequest) {
-  const authError = requireAdmin(request);
+  const authError = await requireAdmin(request);
   if (authError) return authError;
 
   try {

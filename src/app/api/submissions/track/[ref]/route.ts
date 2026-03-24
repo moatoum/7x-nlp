@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { toClientSubmission } from '@/lib/mappers';
+import { toPublicSubmission } from '@/lib/mappers';
 
 // GET /api/submissions/track/[ref] — Track by reference number
 export async function GET(
@@ -17,7 +17,7 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    return NextResponse.json(toClientSubmission(submission));
+    return NextResponse.json(toPublicSubmission(submission));
   } catch (error) {
     console.error('GET /api/submissions/track/[ref] error:', error);
     return NextResponse.json({ error: 'Failed to fetch submission' }, { status: 500 });

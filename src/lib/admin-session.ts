@@ -1,48 +1,39 @@
 import crypto from 'crypto';
-
-/**
- * Server-side admin session management.
- *
- * In production, migrate to Redis/DB-backed sessions.
- * This in-memory store is acceptable for single-instance deployments.
- */
+import { prisma } from '@/lib/prisma';
 
 const SESSION_TTL = 8 * 60 * 60 * 1000; // 8 hours
 
-interface SessionData {
-  username: string;
-  role: string;
-  expiresAt: number;
-}
-
-const sessions = new Map<string, SessionData>();
-
 /** Create a new session and return its token */
-export function createSession(username: string, role: string): string {
+export async function createSession(username: string, role: string): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex');
-  sessions.set(token, {
-    username,
-    role,
-    expiresAt: Date.now() + SESSION_TTL,
+  await prisma.adminSession.create({
+    data: {
+      token,
+      username,
+      role,
+      expiresAt: new Date(Date.now() + SESSION_TTL),
+    },
   });
   return token;
 }
 
 /** Validate a session token. Returns user info or null. */
-export function validateSession(token: string | undefined): { username: string; role: string } | null {
+export async function validateSession(token: string | undefined): Promise<{ username: string; role: string } | null> {
   if (!token) return null;
-  const session = sessions.get(token);
+  const session = await prisma.adminSession.findUnique({ where: { token } });
   if (!session) return null;
-  if (Date.now() > session.expiresAt) {
-    sessions.delete(token);
+  if (new Date() > session.expiresAt) {
+    await prisma.adminSession.delete({ where: { token } });
     return null;
   }
   return { username: session.username, role: session.role };
 }
 
 /** Remove a session */
-export function destroySession(token: string | undefined): void {
-  if (token) sessions.delete(token);
+export async function destroySession(token: string | undefined): Promise<void> {
+  if (token) {
+    await prisma.adminSession.delete({ where: { token } }).catch(() => {});
+  }
 }
 
 /** TTL in seconds for cookie maxAge */

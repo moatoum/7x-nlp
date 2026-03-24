@@ -6,68 +6,16 @@ const DEFAULT_LOCALE = 'en';
 /**
  * Server-side middleware.
  *
- * 1. Locale detection & redirection for page routes
- * 2. Admin auth for protected API routes
+ * Handles locale detection & redirection for page routes.
+ * API auth is handled at the route level via requireAdmin().
  */
-
-// Routes that require admin authentication
-const PROTECTED_API_PREFIXES = [
-  '/api/submissions',
-  '/api/leads',
-];
-
-// Routes that are explicitly public (exempt from auth)
-const PUBLIC_API_ROUTES = new Set([
-  '/api/admin/auth',
-  '/api/chat',
-  '/api/health',
-  '/api/send-confirmation',
-  '/api/pulse/maritime',
-  '/api/pulse/aviation',
-  '/api/pulse/news',
-  '/api/submissions/track',
-]);
-
-function isPublicRoute(pathname: string): boolean {
-  if (PUBLIC_API_ROUTES.has(pathname)) return true;
-  if (pathname.startsWith('/api/submissions/track/')) return true;
-  if (pathname.startsWith('/api/pulse/')) return true;
-  return false;
-}
-
-function isProtectedApiRoute(pathname: string): boolean {
-  return PROTECTED_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-}
-
-function handleApiAuth(request: NextRequest, pathname: string) {
-  if (isPublicRoute(pathname)) {
-    return NextResponse.next();
-  }
-
-  if (isProtectedApiRoute(pathname)) {
-    const sessionToken = request.cookies.get('admin_session')?.value;
-    const method = request.method;
-    const isPublicWrite =
-      method === 'POST' &&
-      (pathname === '/api/submissions' || pathname === '/api/leads');
-
-    if (!isPublicWrite && !sessionToken) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-  }
-
-  return NextResponse.next();
-}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // === API routes: handle auth only ===
+  // === API routes: skip middleware, auth handled by requireAdmin() in route handlers ===
   if (pathname.startsWith('/api/')) {
-    return handleApiAuth(request, pathname);
+    return NextResponse.next();
   }
 
   // === Skip admin, static, and internal routes ===

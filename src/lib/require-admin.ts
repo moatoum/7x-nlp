@@ -5,7 +5,7 @@ import { validateSession } from '@/lib/admin-session';
  * Validate admin session for protected API routes.
  * Returns null if authorized, or a 401/403 response if not.
  */
-export function requireAdmin(request: NextRequest): NextResponse | null {
+export async function requireAdmin(request: NextRequest): Promise<NextResponse | null> {
   // CSRF protection: reject state-changing requests from cross-origin
   if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(request.method)) {
     const origin = request.headers.get('origin');
@@ -23,7 +23,7 @@ export function requireAdmin(request: NextRequest): NextResponse | null {
   }
 
   const token = request.cookies.get('admin_session')?.value;
-  const session = validateSession(token);
+  const session = await validateSession(token);
 
   if (!session) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
