@@ -63,7 +63,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-  } catch {
+  } catch (error) {
+    console.error('POST /api/admin/auth error:', error);
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }
